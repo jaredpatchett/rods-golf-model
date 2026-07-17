@@ -364,6 +364,7 @@
       <select class="fselect" id="rsRound">
         <option value="R1">R1</option><option value="R2">R2</option>
         <option value="R3">R3</option><option value="R4">R4</option>
+        <option value="T72">Tournament (72)</option>
       </select>
     </div>
     <div class="field">
@@ -405,7 +406,7 @@
       <tbody id="rscoreBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. There's no DataGolf feed for round-score O/U, so market% only appears once you type in the price from your sportsbook. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
+  <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. Pick <b>Tournament (72)</b> in the Round dropdown for a 72-hole total-strokes line instead of a single round — it sums 4 simulated rounds per trial rather than 1. There's no DataGolf feed for either round-score or tournament-total O/U (confirmed — their live betting tools only cover Outright and Match-Up/3-Ball markets), so market% only appears once you type in the price from your sportsbook. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
 </div>
 
 <!-- ============ TAB 5: OUTRIGHTS ============ -->
@@ -832,11 +833,15 @@ function birkdaleCourseRow() {
   const row = F.find(r => String(r[0]).toLowerCase().includes('birkdale')) || F[0];
   return row ? { sd: row[3], blowup: row[4] } : { sd: RS_TOUR_BASELINE_SD, blowup: RS_DEFAULT_BLOWUP };
 }
-function modelUnderProb(mean, line) {
+function modelUnderProb(meanPerRound, line, roundsCount = 1) {
   const { sd, blowup } = birkdaleCourseRow();
   const useSd = sd || RS_TOUR_BASELINE_SD, useBlowup = (blowup === undefined || blowup === null) ? RS_DEFAULT_BLOWUP : blowup;
   let under = 0;
-  for (let i = 0; i < RS_TRIALS; i++) { if (simRound(mean, useSd, useBlowup) < line) under++; }
+  for (let i = 0; i < RS_TRIALS; i++) {
+    let total = 0;
+    for (let r = 0; r < roundsCount; r++) total += simRound(meanPerRound, useSd, useBlowup);
+    if (total < line) under++;
+  }
   return under / RS_TRIALS;
 }
 function impliedProb(price) {
@@ -863,15 +868,16 @@ function populatePlayerDatalist() {
 function addRoundScoreProp() {
   const name = document.getElementById('rsPlayer').value.trim();
   const round = document.getElementById('rsRound').value;
+  const roundsCount = round === 'T72' ? 4 : 1; // tournament total sums 4 simulated rounds, same mixture model each
   const line = parseFloat(document.getElementById('rsLine').value);
   const underPrice = document.getElementById('rsUnderPrice').value.trim();
   const overPrice = document.getElementById('rsOverPrice').value.trim();
   if (!name || isNaN(line)) { alert('Enter a player name and a line.'); return; }
   const prow = P.find(r => r[0].toLowerCase() === name.toLowerCase());
   if (!prow) { alert('Player not found in the current field — check the spelling / search list.'); return; }
-  const mean = prow[1];
-  if (mean === null || mean === undefined) { alert('No PROJ score available for this player yet.'); return; }
-  const modelUnder = modelUnderProb(mean, line);
+  const meanPerRound = prow[1];
+  if (meanPerRound === null || meanPerRound === undefined) { alert('No PROJ score available for this player yet.'); return; }
+  const modelUnder = modelUnderProb(meanPerRound, line, roundsCount);
   const modelOver = 1 - modelUnder;
   const marketUnder = underPrice ? impliedProb(underPrice) : null;
   const marketOver = overPrice ? impliedProb(overPrice) : null;
