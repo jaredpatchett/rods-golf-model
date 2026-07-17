@@ -44,7 +44,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
-from sim_engine import run_matchup_sim
+from sim_engine import run_matchup_sim, run_finish_sim
 
 BASE = "https://feeds.datagolf.com"
 OUT  = "rods_data.json"
@@ -61,6 +61,7 @@ EP = {
     "pretourn": "/preds/pre-tournament",          # win/top-N/make-cut probabilities (confirmed live: NO projected
                                                      # score field exists here despite the original assumption)
     "matchups": "/betting-tools/matchups",        # model vs book 2-ball odds
+    "outrights":"/betting-tools/outrights",       # tournament win/top-N market odds (per DataGolf's own docs)
     "field":    "/field-updates",                  # tee times / wave (AM-PM)
 }
 
@@ -225,31 +226,56 @@ def pick_book_price(odds_dict):
     """
     DataGolf's real shape (confirmed on a live pull): odds is nested per book,
     e.g. {"bet365": {"p1": "-111", "p2": "-111"}, "bovada": {...}, ...} — not
-    a flat p1_odds field. Walk BOOK_PREFERENCE and return the first book's p1
-    price found, plus which book it came from (for display).
+    a flat p1_odds field. Walk BOOK_PREFERENCE and return BOTH players' prices
+    from the first book that has them, plus which book it came from. Both
+    sides are needed (not just p1) so a FADE call — which means betting the
+    *other* player — can still show the correct real price rather than
+    reusing p1's price for a bet that's actually on p2.
+    """
+    if not isinstance(odds_dict, dict):
+        return None, None, None
+    for book in BOOK_PREFERENCE:
+        entry = odds_dict.get(book)
+        if isinstance(entry, dict) and entry.get("p1") is not None:
+            return entry["p1"], entry.get("p2"), book
+    # fall back to whatever book is present, in whatever order the dict gives us
+    for book, entry in odds_dict.items():
+        if isinstance(entry, dict) and entry.get("p1") is not None:
+            return entry["p1"], entry.get("p2"), book
+    return None, None, None
+
+
+def pick_single_book_price(odds_dict):
+    """
+    Same book-preference walk as pick_book_price, but for single-outcome
+    markets (outrights: win/top-5/etc.) where each book maps to one price,
+    not a p1/p2 pair — e.g. {"bet365": "+2500", "bovada": "+2200", ...}.
     """
     if not isinstance(odds_dict, dict):
         return None, None
     for book in BOOK_PREFERENCE:
         entry = odds_dict.get(book)
-        if isinstance(entry, dict) and entry.get("p1") is not None:
-            return entry["p1"], book
-    # fall back to whatever book is present, in whatever order the dict gives us
+        if entry is not None:
+            return entry, book
     for book, entry in odds_dict.items():
-        if isinstance(entry, dict) and entry.get("p1") is not None:
-            return entry["p1"], book
+        if entry is not None:
+            return entry, book
     return None, None
 
 
 def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_rounds=1):
     """
     Map DataGolf matchup tool -> Rod's `M` rows:
-      [playerA, playerB, wave, modelPct, marketPct, price]
+      [playerA, playerB, wave, modelPct, marketPct, priceA, priceB]
 
     Pulls the two players and the book price/market number from DataGolf, but
     the model% comes from sim_engine.py (projected scores + this event's
     course variance/blowup), NOT from DataGolf's own matchup probability —
     see the module docstring for why that swap matters.
+
+    priceB (player B's own price) is captured alongside priceA so a FADE call
+    — which means betting player B, not A — can show a real, correct price
+    instead of reusing A's price for a bet that's actually on B.
     """
     def pick(row, *names):
         for n in names:
@@ -268,15 +294,17 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         p1 = normalize_name(p1); p2 = normalize_name(p2)
         # book implied — DataGolf nests odds per sportsbook; walk BOOK_PREFERENCE
         market = pick(r, "p1_implied_prob", "market_prob", "p1_book_prob")
-        price, book_used = pick_book_price(r.get("odds"))
+        priceA, priceB, book_used = pick_book_price(r.get("odds"))
         market_prob = as_prob(market)
-        if market_prob is None and price is not None:
-            market_prob = implied_prob_from_american(price)  # derive from the price if DG didn't give a % directly
+        if market_prob is None and priceA is not None:
+            market_prob = implied_prob_from_american(priceA)  # derive from the price if DG didn't give a % directly
         w1 = wave_by_name.get(p1, "?"); w2 = wave_by_name.get(p2, "?")
         wave = w1 if w1 == w2 else f"{w1}/{w2}"
         pairs.append((p1, p2))
-        price_display = f"{price} ({book_used})" if price is not None else "—"
-        meta.append({"a": p1, "b": p2, "wave": wave, "market": market_prob, "price": price_display})
+        priceA_display = f"{priceA} ({book_used})" if priceA is not None else "—"
+        priceB_display = f"{priceB} ({book_used})" if priceB is not None else "—"
+        meta.append({"a": p1, "b": p2, "wave": wave, "market": market_prob,
+                      "price": priceA_display, "priceB": priceB_display})
 
     # one batched sim call for every matchup on the slate
     model_probs = run_matchup_sim(proj_by_name, pairs, course_row=course_row, n_rounds=n_rounds)
@@ -292,6 +320,53 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
             return -999
         return m["model"] - m["market"]
     out.sort(key=edge, reverse=True)
+    return out
+
+
+# ------------------------------------------------------------------
+# MAP 4: outright win market (the `W` array) — tournament winner odds
+# ------------------------------------------------------------------
+def build_outrights_market(outrights_payload):
+    """
+    Map DataGolf's outrights market -> {normalized_name: {"market": prob, "price": display_str}}
+    Single-outcome market (unlike matchups' p1/p2 pairs), so each book maps
+    to one price per player — see pick_single_book_price.
+    """
+    def pick(row, *names):
+        for n in names:
+            if n in row and row[n] is not None:
+                return row[n]
+        return None
+
+    out = {}
+    for r in as_rows(outrights_payload):
+        name = pick(r, "player_name", "name")
+        if not name:
+            continue
+        norm_name = normalize_name(name)
+        price, book_used = pick_single_book_price(r.get("odds"))
+        market_prob = implied_prob_from_american(price) if price is not None else None
+        out[norm_name] = {
+            "market": market_prob,
+            "price": f"{price} ({book_used})" if price is not None else "—",
+        }
+    return out
+
+
+def build_outrights(finish_sim_results, outrights_market):
+    """
+    Merge the full-field win simulation (sim_engine.run_finish_sim) with
+    DataGolf's real market win odds -> Rod's `W` rows:
+      [name, modelWinPct, marketWinPct, price]
+    Included for every player the sim has a win probability for, even if no
+    market price was found (renders as "—" on the page, same convention as
+    the other tables).
+    """
+    out = []
+    for name, sim_row in finish_sim_results.items():
+        mkt = outrights_market.get(name, {})
+        out.append([name, round(sim_row["win"], 4), mkt.get("market"), mkt.get("price", "—")])
+    out.sort(key=lambda r: -r[1])  # best model win% first
     return out
 
 
@@ -431,21 +506,29 @@ def fetch_matchups_with_fallback(key, tour):
         return [], None, 1
 
 
-def build(tour, matchup_rounds=None):
+def build(tour, matchup_rounds=None, finish_trials=10000):
     key = get_key()
-    print(f"[1/5] player decompositions ({tour}) ...")
+    print(f"[1/6] player decompositions ({tour}) ...")
     decomp = fetch(EP["decomp"], key, tour=tour)
-    print(f"[2/5] skill ratings ...")
+    print(f"[2/6] skill ratings ...")
     skill = fetch(EP["skill"], key)  # not tour-specific — season-level skill ratings
-    print(f"[3/5] pre-tournament predictions ({tour}) ...")
+    print(f"[3/6] pre-tournament predictions ({tour}) ...")
     pretourn = fetch(EP["pretourn"], key, tour=tour, odds_format="percent")  # win/top-N/make-cut probs;
-    # not used yet — no projected-score field exists here (confirmed live). Kept for when
-    # run_finish_sim() in sim_engine.py gets built out for make-cut/top-N markets.
-    print(f"[4/5] field / tee times ({tour}) ...")
+    # not used directly — no projected-score field exists here (confirmed live). Kept in
+    # case you want to sanity-check the finish sim against DataGolf's own probabilities.
+    print(f"[4/6] field / tee times ({tour}) ...")
     field = fetch(EP["field"], key, tour=tour)
-    print(f"[5/5] matchups ({tour}) ...")
+    print(f"[5/6] matchups ({tour}) ...")
     matchup_rows, market_used, auto_rounds = fetch_matchups_with_fallback(key, tour)
     print(f"   using market: {market_used} ({len(matchup_rows)} matchups)")
+    print(f"[6/6] outrights (win market, {tour}) ...")
+    try:
+        outrights_payload = fetch(EP["outrights"], key, tour=tour, market="win", odds_format="american")
+        outrights_market = build_outrights_market(outrights_payload)
+    except SystemExit as e:
+        print(f"   outrights unavailable ({e}) — win market will be model-only")
+        outrights_market = {}
+
     # explicit --matchup-rounds always wins if the caller passed one; otherwise
     # use whatever round count matches the market that actually had data
     n_rounds = matchup_rounds if matchup_rounds is not None else auto_rounds
@@ -462,9 +545,14 @@ def build(tour, matchup_rounds=None):
     # matchup settles on made-cut rounds only, which this sim doesn't model yet.
     match = build_matchups(matchup_rows, waves, proj_by_name, target_course_row, n_rounds=n_rounds)
 
+    print(f"   running full-field finish sim ({finish_trials} trials) ...")
+    finish_sim_results = run_finish_sim(proj_by_name, course_row=target_course_row,
+                                         n_rounds=4, n_trials=finish_trials)
+    W = build_outrights(finish_sim_results, outrights_market)
+
     # convert to the compact array shapes the page's JS already expects
     P = [[r["name"], r["proj"], r["ttg"], r["ott"], r["app"], r["put"], r["arg"], r["fit"]] for r in proj]
-    M = [[m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"]] for m in match]
+    M = [[m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"], m["priceB"]] for m in match]
 
     data = {
         "meta": {
@@ -474,11 +562,11 @@ def build(tour, matchup_rounds=None):
             "source": f"DataGolf projections (Path A) + sim_engine.py for model% [{market_used}]",
             "draw_bias": None,   # fill when you add forecast/results logic
         },
-        "P": P, "F": F, "M": M,
+        "P": P, "F": F, "M": M, "W": W,
     }
     with open(OUT, "w") as f:
         json.dump(data, f, indent=1)
-    print(f"\nWrote {OUT}: {len(P)} players, {len(M)} matchups.")
+    print(f"\nWrote {OUT}: {len(P)} players, {len(M)} matchups, {len(W)} win-market rows.")
     return data
 
 
@@ -490,17 +578,21 @@ def main():
                      help="rounds summed per player in the sim. Default: auto-detected from "
                           "whichever market actually has data (4 for tournament_matchups, "
                           "1 for round_matchups). Set explicitly to override.")
+    ap.add_argument("--finish-trials", type=int, default=10000,
+                     help="Monte Carlo trials for the full-field win-probability sim. "
+                          "10000 runs in a few seconds for a ~156-player field; raise for "
+                          "tighter estimates, lower if the pipeline needs to run faster.")
     args = ap.parse_args()
     if args.watch:
         print(f"watch mode: every {args.watch}s (ctrl-C to stop)")
         while True:
             try:
-                build(args.tour, matchup_rounds=args.matchup_rounds)
+                build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials)
             except SystemExit as e:
                 print(e)
             time.sleep(args.watch)
     else:
-        build(args.tour, matchup_rounds=args.matchup_rounds)
+        build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials)
 
 
 if __name__ == "__main__":
