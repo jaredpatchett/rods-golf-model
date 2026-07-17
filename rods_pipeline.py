@@ -52,8 +52,14 @@ COURSE_FIT_TABLE = "course_fit_table.json"   # written by load_course_fit_xlsx.p
 
 # ---- endpoints we use for Path A ----
 EP = {
-    "decomp":   "/preds/player-decompositions",   # SG components + course fit/history
-    "pretourn": "/preds/pre-tournament",          # win/top-N + projected scores
+    "decomp":   "/preds/player-decompositions",   # fit-adjustment breakdown + final_pred (confirmed live: age/country/
+                                                     # course-history/fit adjustments feeding a final_pred number —
+                                                     # NOT raw sg_ott/sg_app/etc, despite what the field name suggests)
+    "skill":    "/preds/skill-ratings",            # THE actual source of sg_ott/sg_app/sg_arg/sg_putt/sg_t2g
+                                                     # (confirmed via DataGolf's own API docs — separate endpoint
+                                                     # from decompositions, season-level skill ratings by category)
+    "pretourn": "/preds/pre-tournament",          # win/top-N/make-cut probabilities (confirmed live: NO projected
+                                                     # score field exists here despite the original assumption)
     "matchups": "/betting-tools/matchups",        # model vs book 2-ball odds
     "field":    "/field-updates",                  # tee times / wave (AM-PM)
 }
@@ -114,15 +120,59 @@ def num(x, nd=1):
 # ------------------------------------------------------------------
 # MAP 1: projections table (the `P` array)
 # ------------------------------------------------------------------
-def build_projections(decomp_payload):
+# Approximate baseline round score used to convert final_pred (a strokes-
+# gained-vs-field prediction, confirmed live to run ~2.0-2.7 for the top of
+# the field) into an absolute score for the PROJ column. This is a rough
+# constant, not derived from real course data — Path B (computing your own
+# Birkdale scoring baseline from round-level history, see course_fit_engine.py)
+# replaces this with something real. Until then it's directionally correct
+# (better predicted players get a lower/better PROJ number) but the absolute
+# number is an approximation. 71.0 ≈ Birkdale's par 70 + a small toughening
+# margin typical of Open Championship setups.
+BASELINE_ROUND_SCORE = 71.0
+
+
+def build_skill_ratings(skill_payload):
     """
-    Map DataGolf player-decompositions -> Rod's `P` rows:
+    Map DataGolf skill-ratings -> {dg_id: {ttg, ott, app, put, arg}, name: {...}}
+    This is the actual source of category strokes-gained (confirmed via DataGolf's
+    docs: sg_putt, sg_arg, sg_app, sg_ott, sg_t2g, sg_bs, sg_total, ...).
+    Indexed by BOTH dg_id and normalized name since join reliability across
+    DataGolf's different feeds is inconsistent — dg_id is preferred when present.
+    """
+    def pick(row, *names):
+        for n in names:
+            if n in row and row[n] is not None:
+                return row[n]
+        return None
+
+    by_id, by_name = {}, {}
+    for r in as_rows(skill_payload):
+        vals = {
+            "ttg": num(pick(r, "sg_t2g", "t2g")),
+            "ott": num(pick(r, "sg_ott", "ott")),
+            "app": num(pick(r, "sg_app", "app")),
+            "put": num(pick(r, "sg_putt", "sg_put", "putt")),
+            "arg": num(pick(r, "sg_arg", "arg")),
+        }
+        dg_id = pick(r, "dg_id")
+        name = pick(r, "player_name", "name")
+        if dg_id is not None:
+            by_id[dg_id] = vals
+        if name:
+            by_name[normalize_name(name)] = vals
+    return by_id, by_name
+
+
+def build_projections(decomp_payload, skill_by_id, skill_by_name):
+    """
+    Map DataGolf player-decompositions + skill-ratings -> Rod's `P` rows:
       [name, proj, ttg, ott, app, put, arg, fit]
 
-    DataGolf decomposition fields (names may vary slightly by feed version):
-      player_name, sg_total (or 'total'), sg_ott, sg_app, sg_arg, sg_putt, sg_t2g,
-      and a course-fit component (often 'course_fit' or 'fit').
-    We defensively check a few likely key names for each.
+    - name/dg_id/proj/fit come from player-decompositions (confirmed live fields:
+      player_name, dg_id, final_pred, total_fit_adjustment)
+    - ttg/ott/app/put/arg come from skill-ratings, joined by dg_id (falls back
+      to normalized name if dg_id isn't present in either feed)
     """
     def pick(row, *names):
         for n in names:
@@ -136,40 +186,29 @@ def build_projections(decomp_payload):
         name = pick(r, "player_name", "name")
         if not name:
             continue
-        # DataGolf gives skill/SG components; PROJ (projected score) usually comes from
-        # pre-tournament preds and is merged in build() below. Store SG parts here.
+        norm_name = normalize_name(name)
+        dg_id = pick(r, "dg_id")
+        skill = skill_by_id.get(dg_id) if dg_id is not None else None
+        if skill is None:
+            skill = skill_by_name.get(norm_name, {})
+
+        final_pred = pick(r, "final_pred", "baseline_pred")
+        proj = num(BASELINE_ROUND_SCORE - final_pred) if final_pred is not None else None
+
         out.append({
-            "name": normalize_name(name),
-            "proj": None,  # filled from pre-tournament merge
-            "ttg":  num(pick(r, "sg_t2g", "t2g")),
-            "ott":  num(pick(r, "sg_ott", "ott")),
-            "app":  num(pick(r, "sg_app", "app")),
-            "put":  num(pick(r, "sg_putt", "sg_put", "putt")),
-            "arg":  num(pick(r, "sg_arg", "arg")),
-            "fit":  num(pick(r, "course_fit", "fit", "fit_adj", "cf")),
-            "_dg_id": pick(r, "dg_id"),
+            "name": norm_name,
+            "proj": proj,
+            "ttg":  skill.get("ttg"),
+            "ott":  skill.get("ott"),
+            "app":  skill.get("app"),
+            "put":  skill.get("put"),
+            "arg":  skill.get("arg"),
+            "fit":  num(pick(r, "total_fit_adjustment", "course_fit", "fit", "fit_adj", "cf")),
+            "_dg_id": dg_id,
         })
-    return out
-
-
-def merge_projected_score(proj_rows, pretourn_payload):
-    """Add the projected 72-hole (or per-round) score to each player from pre-tournament preds."""
-    def pick(row, *names):
-        for n in names:
-            if n in row and row[n] is not None:
-                return row[n]
-        return None
-    idx = {}
-    for r in as_rows(pretourn_payload):
-        nm = normalize_name(pick(r, "player_name", "name") or "")
-        # projected score field varies: 'proj_score', 'projected_score', or derive from adj scoring
-        idx[nm] = pick(r, "proj_score_avg", "projected_score", "proj_score", "adj_score")
-    for row in proj_rows:
-        v = idx.get(row["name"])
-        row["proj"] = num(v)
     # sort best (lowest) proj first; None sinks to bottom
-    proj_rows.sort(key=lambda x: (x["proj"] is None, x["proj"] if x["proj"] is not None else 999))
-    return proj_rows
+    out.sort(key=lambda x: (x["proj"] is None, x["proj"] if x["proj"] is not None else 999))
+    return out
 
 
 # ------------------------------------------------------------------
@@ -394,21 +433,25 @@ def fetch_matchups_with_fallback(key, tour):
 
 def build(tour, matchup_rounds=None):
     key = get_key()
-    print(f"[1/4] player decompositions ({tour}) ...")
+    print(f"[1/5] player decompositions ({tour}) ...")
     decomp = fetch(EP["decomp"], key, tour=tour)
-    print(f"[2/4] pre-tournament predictions ({tour}) ...")
-    pretourn = fetch(EP["pretourn"], key, tour=tour, odds_format="percent")
-    print(f"[3/4] field / tee times ({tour}) ...")
+    print(f"[2/5] skill ratings ...")
+    skill = fetch(EP["skill"], key)  # not tour-specific — season-level skill ratings
+    print(f"[3/5] pre-tournament predictions ({tour}) ...")
+    pretourn = fetch(EP["pretourn"], key, tour=tour, odds_format="percent")  # win/top-N/make-cut probs;
+    # not used yet — no projected-score field exists here (confirmed live). Kept for when
+    # run_finish_sim() in sim_engine.py gets built out for make-cut/top-N markets.
+    print(f"[4/5] field / tee times ({tour}) ...")
     field = fetch(EP["field"], key, tour=tour)
-    print(f"[4/4] matchups ({tour}) ...")
+    print(f"[5/5] matchups ({tour}) ...")
     matchup_rows, market_used, auto_rounds = fetch_matchups_with_fallback(key, tour)
     print(f"   using market: {market_used} ({len(matchup_rows)} matchups)")
     # explicit --matchup-rounds always wins if the caller passed one; otherwise
     # use whatever round count matches the market that actually had data
     n_rounds = matchup_rounds if matchup_rounds is not None else auto_rounds
 
-    proj = build_projections(decomp)
-    proj = merge_projected_score(proj, pretourn)
+    skill_by_id, skill_by_name = build_skill_ratings(skill)
+    proj = build_projections(decomp, skill_by_id, skill_by_name)
     waves = build_waves(field)
 
     F, target_course_row = load_course_fit()
