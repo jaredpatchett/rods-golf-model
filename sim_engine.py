@@ -125,20 +125,70 @@ def run_matchup_sim(players, matchups, course_row=None, n_rounds=1, n_trials=N_T
     return out
 
 
-def run_finish_sim(players, course_row=None, n_rounds=4, n_trials=N_TRIALS, top_n=(5, 10, 20)):
+def run_finish_sim(players, course_row=None, n_rounds=4, n_trials=10000, top_ns=(5, 10, 20)):
     """
-    Stub for future use: simulate a full field to get win / top-N / make-cut
-    probabilities. Not wired into the pipeline yet (matchups were the stated
-    priority — Vegas 2-ball lines, not finish markets) but the simulate_round()
-    core is already shared, so this is a same-day add whenever you want it:
-    simulate every player n_rounds times per trial, rank the field, tally
-    how often each player lands in the top_n or under the projected cut line.
-    Left unimplemented on purpose rather than shipped half-tested.
+    Full-field simulation: every player draws n_rounds simulated rounds per
+    trial (same simulate_round() core as the matchup sim), the field is
+    ranked by total simulated score each trial, and win/top-N rates are
+    tallied across all trials.
+
+    players: dict name -> {"mean": proj_score, "sd": player_sd_or_None}
+             (same shape as run_matchup_sim's players arg)
+    course_row: {'scoreSD':, 'blowup':} — same course-level fallback as the
+                matchup sim, applied when a player-level SD isn't known.
+    Returns: dict name -> {"win": frac, "top5": frac, "top10": frac, "top20": frac}
+             Players missing a projection are excluded from the field entirely
+             (can't rank someone with no projected score).
+
+    Cost note: n_rounds * n_trials * len(players) gaussian draws — for a
+    156-player field at the defaults here that's ~6.2M draws, which runs in
+    single-digit seconds in pure Python. Drop n_trials if this needs to be
+    faster; win-rate precision degrades gracefully (it's a Monte Carlo SE,
+    not a cliff).
     """
-    raise NotImplementedError(
-        "Finish-market sim not built yet — matchups were the stated priority. "
-        "The simulate_round() core here is ready to reuse when you want this."
-    )
+    if course_row:
+        course_sd = course_row.get("scoreSD") or TOUR_BASELINE_SD
+        var_mult = course_sd / TOUR_BASELINE_SD
+        blowup = course_row.get("blowup", DEFAULT_BLOWUP)
+    else:
+        course_sd, var_mult, blowup = TOUR_BASELINE_SD, 1.0, DEFAULT_BLOWUP
+
+    names, means, sds = [], [], []
+    for name, d in players.items():
+        if d.get("mean") is None:
+            continue
+        names.append(name)
+        means.append(d["mean"])
+        sds.append(d.get("sd") or player_sd(course_sd, var_mult))
+
+    n = len(names)
+    if n == 0:
+        return {}
+
+    wins = [0] * n
+    top_counts = {k: [0] * n for k in top_ns}
+    max_top = max(top_ns)
+    rng = random.Random(42)  # fixed seed: reproducible field-sim results across runs
+
+    for _ in range(n_trials):
+        totals = [
+            sum(simulate_round(means[i], sds[i], blowup, rng) for _ in range(n_rounds))
+            for i in range(n)
+        ]
+        # rank ascending (lowest total = best); track indices, not just sorted values
+        order = sorted(range(n), key=lambda i: totals[i])
+        wins[order[0]] += 1
+        for k in top_ns:
+            for idx in order[:k]:
+                top_counts[k][idx] += 1
+
+    out = {}
+    for i, name in enumerate(names):
+        row = {"win": wins[i] / n_trials}
+        for k in top_ns:
+            row[f"top{k}"] = top_counts[k][i] / n_trials
+        out[name] = row
+    return out
 
 
 if __name__ == "__main__":
