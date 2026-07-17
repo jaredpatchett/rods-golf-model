@@ -97,7 +97,11 @@ def as_rows(payload):
     """DataGolf wraps rows in different keys depending on endpoint; normalize to a list."""
     if isinstance(payload, list):
         return payload
-    for k in ("players", "matchups", "match_list", "field", "data", "baseline", "rows"):
+    # 'odds' is here specifically for outrights: confirmed live that its top-level payload
+    # has BOTH 'books_offering' (a flat list of book name strings) and 'odds' (the real
+    # 156-player list) — the generic fallback below picked books_offering first since it's
+    # also a list and came first in the dict, silently truncating "the field" to 13 book names.
+    for k in ("players", "matchups", "match_list", "odds", "field", "data", "baseline", "rows"):
         if isinstance(payload, dict) and isinstance(payload.get(k), list):
             return payload[k]
     # some feeds nest under a single dict key -> take first list value found
@@ -245,21 +249,32 @@ def pick_book_price(odds_dict):
     return None, None, None
 
 
-def pick_single_book_price(odds_dict):
+def pick_single_book_price(row):
     """
-    Same book-preference walk as pick_book_price, but for single-outcome
-    markets (outrights: win/top-5/etc.) where each book maps to one price,
-    not a p1/p2 pair — e.g. {"bet365": "+2500", "bovada": "+2200", ...}.
+    Same book-preference walk as pick_book_price, but for outrights markets
+    where each book's price sits directly on the row as a flat field — e.g.
+    {"bet365": "+500", "draftkings": "+450", ..., "player_name": "...", "dg_id": ...}
+    — confirmed live: NOT nested under a sub-'odds' key the way matchups is.
+    "datagolf" is excluded even though it's in BOOK_PREFERENCE's fallback
+    position — confirmed live it's a nested {"baseline":, "baseline_history_fit":}
+    object, not a plain price, and would silently return a dict as a "price"
+    if not filtered out here.
     """
-    if not isinstance(odds_dict, dict):
+    if not isinstance(row, dict):
         return None, None
     for book in BOOK_PREFERENCE:
-        entry = odds_dict.get(book)
-        if entry is not None:
+        if book == "datagolf":
+            continue  # not a real market price — see docstring
+        entry = row.get(book)
+        if isinstance(entry, (str, int, float)):
             return entry, book
-    for book, entry in odds_dict.items():
-        if entry is not None:
-            return entry, book
+    # fall back to any other book-shaped field present, skipping known non-price keys
+    skip_keys = {"player_name", "name", "dg_id", "datagolf"}
+    for k, entry in row.items():
+        if k in skip_keys:
+            continue
+        if isinstance(entry, (str, int, float)):
+            return entry, k
     return None, None
 
 
@@ -344,7 +359,7 @@ def build_outrights_market(outrights_payload):
         if not name:
             continue
         norm_name = normalize_name(name)
-        price, book_used = pick_single_book_price(r.get("odds"))
+        price, book_used = pick_single_book_price(r)  # prices sit directly on the row, confirmed live
         market_prob = implied_prob_from_american(price) if price is not None else None
         out[norm_name] = {
             "market": market_prob,
