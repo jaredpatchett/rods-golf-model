@@ -18,4 +18,4 @@ jobs:
       - name: Run discovery script
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
-        run: python3 discover_open_history.py
+        run: python3 discover_round_shape.py
