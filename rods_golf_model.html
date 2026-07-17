@@ -245,6 +245,7 @@
   <button class="tab" data-tab="fit">Course Fit</button>
   <button class="tab" data-tab="match">2-Ball Matchups</button>
   <button class="tab" data-tab="rscore">Round Score</button>
+  <button class="tab" data-tab="outrights">Outrights</button>
   <button class="tab" data-tab="tracker">Tracker</button>
 </div>
 
@@ -407,7 +408,38 @@
   <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. There's no DataGolf feed for round-score O/U, so market% only appears once you type in the price from your sportsbook. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
 </div>
 
-<!-- ============ TAB 5: TRACKER ============ -->
+<!-- ============ TAB 5: OUTRIGHTS ============ -->
+<div class="tabpane" id="tab-outrights">
+  <div class="controls">
+    <input class="search" id="outSearch" placeholder="Search player...">
+    <div class="filters">
+      <button class="fbtn on" id="mWin">WIN</button>
+      <button class="fbtn" id="mTop5">TOP 5</button>
+      <button class="fbtn" id="mTop10">TOP 10</button>
+      <button class="fbtn" id="mTop20">TOP 20</button>
+    </div>
+    <span class="count" id="outCount"></span>
+    <div class="legend"><span class="lbl">MODEL % vs MARKET %</span></div>
+  </div>
+  <div class="wide">
+    <table id="outTable">
+      <thead>
+        <tr>
+          <th class="player">Player</th>
+          <th>Model %</th>
+          <th>Market %</th>
+          <th>Edge</th>
+          <th>Price</th>
+          <th>Call</th>
+        </tr>
+      </thead>
+      <tbody id="outBody"></tbody>
+    </table>
+  </div>
+  <div class="note"><b>Model %</b> comes from the same full-field Monte Carlo as the Win column on Projections — every player simmed together, ranked each trial, tallied for whichever finish threshold you've selected above. <b>Market %</b> is DataGolf's real book odds for that specific market. Switch markets with the buttons above; edge and the BET/FADE call recompute automatically. <b>+trk</b> one-click adds a BET call to the Tracker.</div>
+</div>
+
+<!-- ============ TAB 6: TRACKER ============ -->
 <div class="tabpane" id="tab-tracker">
   <div class="summary" id="trackerSummary"></div>
   <div class="form-panel">
@@ -534,6 +566,46 @@ function winCallFor(edge) {
   if (pct <= -1.5) return { call: 'FADE', cls: 'fade' }; // outright win% swings are small in absolute terms
   return { call: 'PASS', cls: 'thin' };
 }
+
+// ---------------- outrights tab: win / top5 / top10 / top20, switchable ----------------
+let outMarket = 'win'; // 'win' | 'top5' | 'top10' | 'top20'
+function outDataFor(marketKey) {
+  return { win: W, top5: W5, top10: W10, top20: W20 }[marketKey] || [];
+}
+function buildOutrights(search='') {
+  const body = document.getElementById('outBody');
+  if (!body) return;
+  body.innerHTML = '';
+  const data = outDataFor(outMarket);
+  let rows = data.filter(r => r[0].toLowerCase().includes(search.toLowerCase()));
+  document.getElementById('outCount').textContent = `${rows.length} players`;
+  rows = rows.map(r => {
+    const [name, model, market, price] = r;
+    const edge = market !== null ? model - market : null;
+    return { name, model, market, price, edge };
+  });
+  rows.sort((a,b) => (b.edge ?? -999) - (a.edge ?? -999));
+  rows.forEach(r => {
+    const wc = winCallFor(r.edge);
+    body.innerHTML += `<tr>
+      <td class="pname"><span class="pinit">${initials(r.name)}</span>${r.name}</td>
+      <td class="cell heat" style="background:${heat(r.model/(outMarket==='win'?0.15:1))}">${(r.model*100).toFixed(1)}%</td>
+      <td class="cell">${r.market!==null?(r.market*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell ${r.edge!==null?(r.edge>=0?'val-pos':'val-neg'):''}">${r.edge!==null?(r.edge>=0?'+':'')+(r.edge*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell" style="color:var(--text-dim)">${r.price}</td>
+      <td class="cell" style="text-align:center">
+        <span class="pill ${wc.cls}">${wc.call}</span>
+        ${wc.call==='BET'&&r.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r.name.replace(/'/g,"\\'")} (${outMarket})','${r.price.replace(/'/g,"\\'")}')">+trk</button>`:''}
+      </td>
+    </tr>`;
+  });
+}
+function setOutMarket(key, btn) {
+  outMarket = key;
+  document.querySelectorAll('#tab-outrights .fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  buildOutrights(document.getElementById('outSearch').value);
+}
 function buildProjections(filter=''){
   const container=document.getElementById('projSections');
   container.innerHTML='';
@@ -650,6 +722,27 @@ const W_FALLBACK=[
 ["Xander Schauffele",0.048,0.05,"+1900 (bet365)"],
 ["Jon Rahm",0.041,0.04,"+2400 (bet365)"]
 ];
+const W5_FALLBACK=[
+["Scottie Scheffler",0.42,0.38,"-160 (bet365)"],
+["Rory McIlroy",0.31,0.30,"+120 (bet365)"],
+["Tommy Fleetwood",0.24,0.22,"+220 (bet365)"],
+["Xander Schauffele",0.22,0.24,"+200 (bet365)"],
+["Jon Rahm",0.19,0.18,"+280 (bet365)"]
+];
+const W10_FALLBACK=[
+["Scottie Scheffler",0.58,0.55,"-250 (bet365)"],
+["Rory McIlroy",0.46,0.44,"-105 (bet365)"],
+["Tommy Fleetwood",0.38,0.35,"+140 (bet365)"],
+["Xander Schauffele",0.35,0.37,"+130 (bet365)"],
+["Jon Rahm",0.31,0.30,"+165 (bet365)"]
+];
+const W20_FALLBACK=[
+["Scottie Scheffler",0.74,0.70,"-450 (bet365)"],
+["Rory McIlroy",0.63,0.60,"-180 (bet365)"],
+["Tommy Fleetwood",0.55,0.52,"-105 (bet365)"],
+["Xander Schauffele",0.52,0.54,"-100 (bet365)"],
+["Jon Rahm",0.48,0.46,"+105 (bet365)"]
+];
 function novig(pFor){
   // crude: assume symmetric market, no-vig ~ pFor (already fair-ish) - here derive from price is skipped for sample
   return pFor; // placeholder equals market for sample
@@ -712,6 +805,11 @@ document.getElementById('fAll').addEventListener('click',function(){matchFilter=
 document.getElementById('fEdge').addEventListener('click',function(){matchFilter='edge';setActive(this);buildMatch();});
 document.getElementById('fSame').addEventListener('click',function(){matchFilter='same';setActive(this);buildMatch();});
 function setActive(btn){btn.parentNode.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+document.getElementById('outSearch').addEventListener('input',e=>buildOutrights(e.target.value));
+document.getElementById('mWin').addEventListener('click',function(){setOutMarket('win',this);});
+document.getElementById('mTop5').addEventListener('click',function(){setOutMarket('top5',this);});
+document.getElementById('mTop10').addEventListener('click',function(){setOutMarket('top10',this);});
+document.getElementById('mTop20').addEventListener('click',function(){setOutMarket('top20',this);});
 
 // ---------------- round score: client-side sim (mirrors sim_engine.py's mixture model) ----------------
 const RS_TOUR_BASELINE_SD = 2.9;
@@ -978,9 +1076,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------------- data source: rods_data.json (from pipeline) or fallback ----------------
-let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK, W = W_FALLBACK;
+let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK, W = W_FALLBACK, W5 = W5_FALLBACK, W10 = W10_FALLBACK, W20 = W20_FALLBACK;
 
-function renderAll(){ buildProjections(); buildFit(); buildMatch(); populatePlayerDatalist(); }
+function renderAll(){ buildProjections(); buildFit(); buildMatch(); buildOutrights(); populatePlayerDatalist(); }
 
 function applyMeta(meta){
   if(!meta) return;
@@ -998,6 +1096,9 @@ fetch('rods_data.json',{cache:'no-store'})
     if(Array.isArray(d.F)&&d.F.length) F=d.F;
     if(Array.isArray(d.M)&&d.M.length) M=d.M;
     if(Array.isArray(d.W)&&d.W.length) W=d.W;
+    if(Array.isArray(d.W5)&&d.W5.length) W5=d.W5;
+    if(Array.isArray(d.W10)&&d.W10.length) W10=d.W10;
+    if(Array.isArray(d.W20)&&d.W20.length) W20=d.W20;
     // recompute per-column ranges for heat scaling now that P changed
     cols.forEach(ci=>{
       const vals=P.map(r=>r[ci]).filter(v=>v!==null&&v!==undefined);
