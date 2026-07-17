@@ -90,7 +90,7 @@ def as_rows(payload):
     """DataGolf wraps rows in different keys depending on endpoint; normalize to a list."""
     if isinstance(payload, list):
         return payload
-    for k in ("players", "matchups", "field", "data", "baseline", "rows"):
+    for k in ("players", "matchups", "match_list", "field", "data", "baseline", "rows"):
         if isinstance(payload, dict) and isinstance(payload.get(k), list):
             return payload[k]
     # some feeds nest under a single dict key -> take first list value found
@@ -175,6 +175,33 @@ def merge_projected_score(proj_rows, pretourn_payload):
 # ------------------------------------------------------------------
 # MAP 2: matchups table (the `M` array)
 # ------------------------------------------------------------------
+# Book preference order when picking which sportsbook's price to show as
+# "market" — real books first (most consistently present across matchups per
+# the live sample), datagolf's own line last since that's their model output,
+# not a market price, and we want market% to be genuinely market-sourced.
+BOOK_PREFERENCE = ("bet365", "bovada", "betcris", "draftkings", "fanduel", "pinnacle", "datagolf")
+
+
+def pick_book_price(odds_dict):
+    """
+    DataGolf's real shape (confirmed on a live pull): odds is nested per book,
+    e.g. {"bet365": {"p1": "-111", "p2": "-111"}, "bovada": {...}, ...} — not
+    a flat p1_odds field. Walk BOOK_PREFERENCE and return the first book's p1
+    price found, plus which book it came from (for display).
+    """
+    if not isinstance(odds_dict, dict):
+        return None, None
+    for book in BOOK_PREFERENCE:
+        entry = odds_dict.get(book)
+        if isinstance(entry, dict) and entry.get("p1") is not None:
+            return entry["p1"], book
+    # fall back to whatever book is present, in whatever order the dict gives us
+    for book, entry in odds_dict.items():
+        if isinstance(entry, dict) and entry.get("p1") is not None:
+            return entry["p1"], book
+    return None, None
+
+
 def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_rounds=1):
     """
     Map DataGolf matchup tool -> Rod's `M` rows:
@@ -200,17 +227,17 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         if not p1 or not p2:
             continue
         p1 = normalize_name(p1); p2 = normalize_name(p2)
-        # book implied — DataGolf exposes odds per book; take a consensus/first available
+        # book implied — DataGolf nests odds per sportsbook; walk BOOK_PREFERENCE
         market = pick(r, "p1_implied_prob", "market_prob", "p1_book_prob")
-        price = pick(r, "p1_odds", "odds", "p1_book_odds", "price")
+        price, book_used = pick_book_price(r.get("odds"))
         market_prob = as_prob(market)
         if market_prob is None and price is not None:
             market_prob = implied_prob_from_american(price)  # derive from the price if DG didn't give a % directly
         w1 = wave_by_name.get(p1, "?"); w2 = wave_by_name.get(p2, "?")
         wave = w1 if w1 == w2 else f"{w1}/{w2}"
         pairs.append((p1, p2))
-        meta.append({"a": p1, "b": p2, "wave": wave, "market": market_prob,
-                      "price": str(price) if price is not None else "—"})
+        price_display = f"{price} ({book_used})" if price is not None else "—"
+        meta.append({"a": p1, "b": p2, "wave": wave, "market": market_prob, "price": price_display})
 
     # one batched sim call for every matchup on the slate
     model_probs = run_matchup_sim(proj_by_name, pairs, course_row=course_row, n_rounds=n_rounds)
@@ -339,7 +366,33 @@ def load_course_fit(target_course_name_hint="Royal Birkdale"):
     return F, {"scoreSD": target[3], "blowup": target[4]}
 
 
-def build(tour, matchup_rounds=4):
+def fetch_matchups_with_fallback(key, tour):
+    """
+    Try tournament_matchups first (72-hole market); if DataGolf reports it's
+    not being offered yet (confirmed on a live pull: match_list comes back as
+    a string like "No tournament_matchups being offered right now." instead
+    of a list), fall back to round_matchups, which was live and populated.
+    Returns (rows, market_used, rounds_for_sim).
+    """
+    try:
+        payload = fetch(EP["matchups"], key, tour=tour, market="tournament_matchups", odds_format="american")
+        rows = as_rows(payload)
+        if rows:
+            return rows, "tournament_matchups", 4
+        print("   tournament_matchups not posted yet — falling back to round_matchups")
+    except SystemExit as e:
+        print(f"   tournament_matchups failed ({e}) — falling back to round_matchups")
+
+    try:
+        payload = fetch(EP["matchups"], key, tour=tour, market="round_matchups", odds_format="american")
+        rows = as_rows(payload)
+        return rows, "round_matchups", 1
+    except SystemExit as e:
+        print(f"   round_matchups also failed ({e}) — leaving matchups empty")
+        return [], None, 1
+
+
+def build(tour, matchup_rounds=None):
     key = get_key()
     print(f"[1/4] player decompositions ({tour}) ...")
     decomp = fetch(EP["decomp"], key, tour=tour)
@@ -348,11 +401,11 @@ def build(tour, matchup_rounds=4):
     print(f"[3/4] field / tee times ({tour}) ...")
     field = fetch(EP["field"], key, tour=tour)
     print(f"[4/4] matchups ({tour}) ...")
-    try:
-        matchups = fetch(EP["matchups"], key, tour=tour, market="tournament_matchups", odds_format="american")
-    except SystemExit as e:
-        print(f"   (matchups unavailable: {e}) — leaving matchups empty")
-        matchups = []
+    matchup_rows, market_used, auto_rounds = fetch_matchups_with_fallback(key, tour)
+    print(f"   using market: {market_used} ({len(matchup_rows)} matchups)")
+    # explicit --matchup-rounds always wins if the caller passed one; otherwise
+    # use whatever round count matches the market that actually had data
+    n_rounds = matchup_rounds if matchup_rounds is not None else auto_rounds
 
     proj = build_projections(decomp)
     proj = merge_projected_score(proj, pretourn)
@@ -360,12 +413,11 @@ def build(tour, matchup_rounds=4):
 
     F, target_course_row = load_course_fit()
     proj_by_name = {r["name"]: {"mean": r["proj"], "sd": None} for r in proj}
-    # NOTE: the "tournament_matchups" market pulled above is a 72-hole market, so the sim
-    # sums 4 simulated rounds per player (matchup_rounds=4 below). This ignores cuts/WDs —
-    # a real 72-hole matchup settles on made-cut rounds only, which this sim doesn't model
-    # yet. Fine for a first pass; flag it if you're pricing outrights near the cut line.
-    # If you switch DataGolf's market param to "round_matchups", pass matchup_rounds=1 instead.
-    match = build_matchups(matchups, waves, proj_by_name, target_course_row, n_rounds=matchup_rounds)
+    # NOTE: n_rounds sums that many simulated rounds per player in the sim, matched
+    # automatically to whichever market actually had data (4 for tournament_matchups,
+    # 1 for round_matchups). This ignores cuts/WDs on the 4-round path — a real 72-hole
+    # matchup settles on made-cut rounds only, which this sim doesn't model yet.
+    match = build_matchups(matchup_rows, waves, proj_by_name, target_course_row, n_rounds=n_rounds)
 
     # convert to the compact array shapes the page's JS already expects
     P = [[r["name"], r["proj"], r["ttg"], r["ott"], r["app"], r["put"], r["arg"], r["fit"]] for r in proj]
@@ -376,7 +428,7 @@ def build(tour, matchup_rounds=4):
             "event": "The 154th Open — Royal Birkdale",
             "players": len(P),
             "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "source": "DataGolf projections (Path A) + sim_engine.py for model%",
+            "source": f"DataGolf projections (Path A) + sim_engine.py for model% [{market_used}]",
             "draw_bias": None,   # fill when you add forecast/results logic
         },
         "P": P, "F": F, "M": M,
@@ -391,8 +443,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tour", default="pga", help="pga | euro | opp | alt (try euro if The Open isn't on pga feed)")
     ap.add_argument("--watch", type=int, default=0, help="re-pull every N seconds (0 = once)")
-    ap.add_argument("--matchup-rounds", type=int, default=4,
-                     help="rounds summed per player in the sim (4 for tournament_matchups, 1 for round_matchups)")
+    ap.add_argument("--matchup-rounds", type=int, default=None,
+                     help="rounds summed per player in the sim. Default: auto-detected from "
+                          "whichever market actually has data (4 for tournament_matchups, "
+                          "1 for round_matchups). Set explicitly to override.")
     args = ap.parse_args()
     if args.watch:
         print(f"watch mode: every {args.watch}s (ctrl-C to stop)")
