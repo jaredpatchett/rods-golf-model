@@ -223,7 +223,10 @@ def build_projections(decomp_payload, skill_by_id, skill_by_name):
 # "market" — real books first (most consistently present across matchups per
 # the live sample), datagolf's own line last since that's their model output,
 # not a market price, and we want market% to be genuinely market-sourced.
-BOOK_PREFERENCE = ("bet365", "bovada", "betcris", "draftkings", "fanduel", "pinnacle", "datagolf")
+BOOK_PREFERENCE = ("draftkings", "bet365", "bovada", "betcris", "fanduel", "pinnacle", "datagolf")
+# draftkings is first because that's the book Rod actually has an account with — the price
+# shown on the page should be the price he can actually get, not just the first one found.
+# Falls back down the list only when DraftKings hasn't posted a price for that player/market.
 
 
 def pick_book_price(odds_dict):
