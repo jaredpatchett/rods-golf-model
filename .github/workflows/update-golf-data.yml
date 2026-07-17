@@ -1,20 +1,12 @@
 name: Update Rod's Golf Model data
 
-# Runs the pipeline in GitHub's cloud (not your Mac), writes rods_data.json,
-# and commits it back to the repo. Cloudflare Pages (or GitHub Pages) picks
-# up the new commit and redeploys automatically — same pattern as the soccer
-# dashboard.
-
 on:
-  workflow_dispatch: {}       # adds a manual "Run workflow" button in the Actions tab
+  workflow_dispatch: {}
   schedule:
-    # Every 30 minutes, during (roughly) US daytime/evening on tournament days.
-    # Cron is UTC. Adjust the hour range or interval as needed — GitHub's
-    # scheduler can lag a few minutes under load, that's normal.
     - cron: "*/30 12-23 * * *"
 
 permissions:
-  contents: write   # needed so the workflow can commit rods_data.json back
+  contents: write
 
 jobs:
   update-data:
@@ -32,6 +24,11 @@ jobs:
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
         run: python3 rods_pipeline.py
+
+      - name: Debug matchups endpoint (temporary)
+        env:
+          DG_KEY: ${{ secrets.DG_KEY }}
+        run: python3 debug_matchups.py
 
       - name: Commit updated data if it changed
         run: |
