@@ -283,7 +283,7 @@
     <div class="legend"><span class="lbl">WORST</span><div class="ramp"></div><span class="lbl">BEST</span></div>
   </div>
   <div class="sections" id="projSections"></div>
-  <div class="note"><b>Sample data — layout only, not model output.</b> <b>PROJ</b> is the fit-adjusted projected score (par 70). <b>TTG / OTT / APP / PUT / ARG</b> are strokes-gained skill components (higher = better); <b>FIT</b> is Royal Birkdale's links reweighting applied to the player — expect ground-game and wind-control players to fit better here than at a parkland course. Wire to your DataGolf field pull for the real 156-player field.</div>
+  <div class="note"><b>Sample data — layout only, not model output.</b> <b>PROJ</b> is the fit-adjusted projected score (par 70). <b>TTG / OTT / APP / PUT / ARG</b> are strokes-gained skill components (higher = better); <b>FIT</b> is Royal Birkdale's links reweighting applied to the player — expect ground-game and wind-control players to fit better here than at a parkland course. <b>Win Mdl</b> is a full-field Monte Carlo (every player simmed together, ranked each trial) run server-side in the pipeline; <b>Win Mkt</b> is DataGolf's real tournament-winner book odds. <b>+trk</b> one-click adds a BET call straight to the Tracker tab. Wire to your DataGolf field pull for the real 156-player field.</div>
 </div>
 
 <!-- ============ TAB 2: COURSE FIT ============ -->
@@ -527,9 +527,18 @@ function norm(ci,v){
 function fmt(v){return v===null?'nan':(v>0&&![1].includes(arguments[1])?'':'')+v.toFixed(1);}
 function initials(name){const p=name.split(' ');return (p[0][0]+(p[p.length-1][0]||'')).toUpperCase();}
 
+function winCallFor(edge) {
+  if (edge === null) return { call: '—', cls: 'thin' };
+  const pct = edge * 100;
+  if (pct >= 1.5) return { call: 'BET', cls: 'edge' };   // tighter threshold than matchups —
+  if (pct <= -1.5) return { call: 'FADE', cls: 'fade' }; // outright win% swings are small in absolute terms
+  return { call: 'PASS', cls: 'thin' };
+}
 function buildProjections(filter=''){
   const container=document.getElementById('projSections');
   container.innerHTML='';
+  const winByName = {};
+  W.forEach(w => { winByName[w[0]] = { model: w[1], market: w[2], price: w[3] }; });
   const rows=P.map((r,i)=>({r,rank:i+1})).filter(o=>o.r[0].toLowerCase().includes(filter.toLowerCase()));
   document.getElementById('projCount').textContent=`Showing ${rows.length} players`;
   const perSec=Math.ceil(rows.length/3);
@@ -541,6 +550,7 @@ function buildProjections(filter=''){
     let html=`<div class="section-hd">${secNames[s]}</div><table><thead><tr>
       <th class="rank">#</th><th class="player">Player</th>
       <th>PROJ</th><th>TTG</th><th>OTT</th><th>APP</th><th>PUT</th><th>ARG</th><th>FIT</th>
+      <th>Win Mdl</th><th>Win Mkt</th><th>Call</th>
       </tr></thead><tbody>`;
     slice.forEach(o=>{
       const r=o.r;
@@ -553,6 +563,19 @@ function buildProjections(filter=''){
         const txt=v===null?'nan':v.toFixed(1);
         html+=`<td class="${cls}" style="${bg}">${txt}</td>`;
       });
+      const win = winByName[r[0]];
+      if (win) {
+        const edge = win.market !== null ? win.model - win.market : null;
+        const wc = winCallFor(edge);
+        html += `<td class="cell heat" style="background:${heat(win.model/0.15)}">${(win.model*100).toFixed(1)}%</td>
+          <td class="cell">${win.market!==null?(win.market*100).toFixed(1)+'%':'—'}</td>
+          <td class="cell" style="text-align:center">
+            <span class="pill ${wc.cls}">${wc.call}</span>
+            ${wc.call==='BET'&&win.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r[0].replace(/'/g,"\\'")}','${win.price.replace(/'/g,"\\'")}')">+trk</button>`:''}
+          </td>`;
+      } else {
+        html += `<td class="cell nan">nan</td><td class="cell nan">nan</td><td class="cell">—</td>`;
+      }
       html+='</tr>';
     });
     html+='</tbody></table>';
@@ -603,20 +626,29 @@ function buildFit(filter=''){
 
 // ---------------- matchup data ----------------
 // PLACEHOLDER - structure only. Replace Model% with sim output, Market%/price with real book odds.
-// [playerA, playerB, wave, modelPct, marketPct, price]
+// [playerA, playerB, wave, modelPct, marketPct, priceA, priceB]
 const M_FALLBACK=[
-["Tommy Fleetwood","Xander Schauffele","AM",0.552,0.505,"-115"],
-["Rory McIlroy","Jon Rahm","PM",0.531,0.500,"-110"],
-["Chris Gotterup","Ludvig Aberg","AM",0.548,0.510,"-118"],
-["Shane Lowry","Justin Rose","PM",0.564,0.520,"-125"],
-["Robert MacIntyre","Tyrrell Hatton","AM",0.539,0.500,"-110"],
-["Matt Fitzpatrick","Collin Morikawa","PM",0.508,0.495,"+100"],
-["Viktor Hovland","Hideki Matsuyama","AM",0.517,0.510,"-105"],
-["Jordan Spieth","Patrick Cantlay","PM",0.526,0.500,"-108"],
-["Bryson DeChambeau","Joaquin Niemann","AM",0.494,0.505,"+102"],
-["Brian Harman","Aaron Rai","PM",0.571,0.515,"-130"],
-["Sepp Straka","Sam Burns","AM",0.512,0.500,"-105"],
-["Min Woo Lee","Cameron Young","PM",0.483,0.490,"+108"]
+["Tommy Fleetwood","Xander Schauffele","AM",0.552,0.505,"-115 (bet365)","-105 (bet365)"],
+["Rory McIlroy","Jon Rahm","PM",0.531,0.500,"-110 (bet365)","-110 (bet365)"],
+["Chris Gotterup","Ludvig Aberg","AM",0.548,0.510,"-118 (bet365)","-102 (bet365)"],
+["Shane Lowry","Justin Rose","PM",0.564,0.520,"-125 (bet365)","+105 (bet365)"],
+["Robert MacIntyre","Tyrrell Hatton","AM",0.539,0.500,"-110 (bet365)","-110 (bet365)"],
+["Matt Fitzpatrick","Collin Morikawa","PM",0.508,0.495,"+100 (bet365)","-120 (bet365)"],
+["Viktor Hovland","Hideki Matsuyama","AM",0.517,0.510,"-105 (bet365)","-115 (bet365)"],
+["Jordan Spieth","Patrick Cantlay","PM",0.526,0.500,"-108 (bet365)","-112 (bet365)"],
+["Bryson DeChambeau","Joaquin Niemann","AM",0.494,0.505,"+102 (bet365)","-122 (bet365)"],
+["Brian Harman","Aaron Rai","PM",0.571,0.515,"-130 (bet365)","+110 (bet365)"],
+["Sepp Straka","Sam Burns","AM",0.512,0.500,"-105 (bet365)","-115 (bet365)"],
+["Min Woo Lee","Cameron Young","PM",0.483,0.490,"+108 (bet365)","-128 (bet365)"]
+];
+// ---------------- outright win-market data ----------------
+// PLACEHOLDER - structure only. [name, modelWinPct, marketWinPct, price]
+const W_FALLBACK=[
+["Scottie Scheffler",0.132,0.10,"+900 (bet365)"],
+["Rory McIlroy",0.081,0.075,"+1200 (bet365)"],
+["Tommy Fleetwood",0.052,0.045,"+2000 (bet365)"],
+["Xander Schauffele",0.048,0.05,"+1900 (bet365)"],
+["Jon Rahm",0.041,0.04,"+2400 (bet365)"]
 ];
 function novig(pFor){
   // crude: assume symmetric market, no-vig ~ pFor (already fair-ish) - here derive from price is skipped for sample
@@ -626,10 +658,10 @@ let matchFilter='all';
 function buildMatch(search=''){
   const body=document.getElementById('matchBody');body.innerHTML='';
   let rows=M.map(m=>{
-    const [a,b,wave,model,market,price]=m;
+    const [a,b,wave,model,market,priceA,priceB]=m;
     const nv=market; // sample: treat market as ~no-vig
     const edge=model-nv;
-    return {a,b,wave,model,market,nv,price,edge};
+    return {a,b,wave,model,market,nv,priceA,priceB,edge};
   });
   if(matchFilter==='edge')rows=rows.filter(r=>Math.abs(r.edge)>=0.03);
   if(matchFilter==='same')rows=rows.filter(r=>r.wave==='AM');
@@ -643,6 +675,11 @@ function buildMatch(search=''){
     else if(edgePct<=-3){call='FADE';cls='fade';}
     else{call='PASS';cls='thin';}
     const edgeCls=edgePct>=0?'val-pos':'val-neg';
+    // FADE means the value is on player B, not A — use B's own price, not A's, so the
+    // one-click tracker link reflects the bet you'd actually place.
+    const betSide = call==='BET' ? r.a : (call==='FADE' ? r.b : null);
+    const betPrice = call==='BET' ? r.priceA : (call==='FADE' ? r.priceB : null);
+    const canBet = betSide && betPrice && betPrice !== '—';
     body.innerHTML+=`<tr>
       <td class="pname"><b>${r.a}</b><span class="vs">vs</span><span style="color:var(--text-dim)">${r.b}</span></td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${r.wave}</td>
@@ -650,8 +687,11 @@ function buildMatch(search=''){
       <td class="cell">${(r.market*100).toFixed(1)}%</td>
       <td class="cell">${(r.nv*100).toFixed(1)}%</td>
       <td class="cell ${edgeCls}">${edgePct>=0?'+':''}${edgePct.toFixed(1)}%<span class="bar-wrap"><span class="bar" style="width:${Math.min(100,Math.abs(edgePct)*8)}%;background:${edgePct>=0?'var(--green)':'#c96a52'}"></span></span></td>
-      <td class="cell" style="color:var(--text-dim)">${r.price}</td>
-      <td class="cell" style="text-align:center"><span class="pill ${cls}">${call}</span></td>
+      <td class="cell" style="color:var(--text-dim)">${r.priceA}</td>
+      <td class="cell" style="text-align:center">
+        <span class="pill ${cls}">${call}</span>
+        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}')">+trk</button>`:''}
+      </td>
     </tr>`;
   });
 }
@@ -762,6 +802,8 @@ function renderRoundScore() {
     const edgeU = (p.marketUnder !== null) ? p.modelUnder - p.marketUnder : null;
     const edgeO = (p.marketOver !== null) ? p.modelOver - p.marketOver : null;
     const cu = rsCallFor(edgeU), co = rsCallFor(edgeO);
+    const canBetU = cu.call==='BET' && p.underPrice;
+    const canBetO = co.call==='BET' && p.overPrice;
     body.innerHTML += `<tr>
       <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}</td>
       <td class="cell" style="text-align:center">${p.round}</td>
@@ -769,11 +811,17 @@ function renderRoundScore() {
       <td class="cell heat" style="background:${heat((p.modelUnder-0.3)/0.4)}">${(p.modelUnder*100).toFixed(1)}%</td>
       <td class="cell">${p.marketUnder!==null?(p.marketUnder*100).toFixed(1)+'%':'—'}</td>
       <td class="cell ${edgeU!==null?(edgeU>=0?'val-pos':'val-neg'):''}">${edgeU!==null?(edgeU>=0?'+':'')+(edgeU*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell" style="text-align:center"><span class="pill ${cu.cls}">${cu.call}</span></td>
+      <td class="cell" style="text-align:center">
+        <span class="pill ${cu.cls}">${cu.call}</span>
+        ${canBetU?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'Under','${p.underPrice}')">+trk</button>`:''}
+      </td>
       <td class="cell heat" style="background:${heat((p.modelOver-0.3)/0.4)}">${(p.modelOver*100).toFixed(1)}%</td>
       <td class="cell">${p.marketOver!==null?(p.marketOver*100).toFixed(1)+'%':'—'}</td>
       <td class="cell ${edgeO!==null?(edgeO>=0?'val-pos':'val-neg'):''}">${edgeO!==null?(edgeO>=0?'+':'')+(edgeO*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell" style="text-align:center"><span class="pill ${co.cls}">${co.call}</span></td>
+      <td class="cell" style="text-align:center">
+        <span class="pill ${co.cls}">${co.call}</span>
+        ${canBetO?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'Over','${p.overPrice}')">+trk</button>`:''}
+      </td>
       <td class="cell"><button class="delbtn" onclick="deleteRoundScoreProp(${p.id})">✕</button></td>
     </tr>`;
   });
@@ -781,6 +829,34 @@ function renderRoundScore() {
 
 // ---------------- tracker: real bets, win/loss, running P&L ----------------
 let betTracker = loadLS('rodsModel_betTracker', []);
+
+// one-click links from the other tabs — pre-fill description/price/type, ask for
+// stake, push straight into the tracker, then jump to the Tracker tab so you can
+// see it landed.
+function quickAddToTracker(desc, type, price) {
+  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}\n\nStake ($)?`, '50');
+  if (stakeStr === null) return; // cancelled
+  const stake = parseFloat(stakeStr);
+  if (isNaN(stake) || stake <= 0) { alert('Enter a valid stake to add this bet.'); return; }
+  betTracker.push({
+    id: Date.now()+Math.random(),
+    date: new Date().toISOString().slice(0,10),
+    desc, type, price, stake, status: 'pending',
+  });
+  saveLS('rodsModel_betTracker', betTracker);
+  renderTracker();
+  document.querySelector('.tab[data-tab="tracker"]').click();
+}
+function addMatchupToTracker(side, a, b, call, price) {
+  const other = side === a ? b : a;
+  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price);
+}
+function addRoundScoreToTracker(name, round, line, side, price) {
+  quickAddToTracker(`${name} ${round} ${side} ${line}`, 'Round Score', price);
+}
+function addOutrightToTracker(name, price) {
+  quickAddToTracker(`${name} to Win`, 'Outright', price);
+}
 
 function payoutOnWin(price, stake) {
   const p = parseFloat(price);
@@ -902,7 +978,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------------- data source: rods_data.json (from pipeline) or fallback ----------------
-let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK;
+let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK, W = W_FALLBACK;
 
 function renderAll(){ buildProjections(); buildFit(); buildMatch(); populatePlayerDatalist(); }
 
@@ -921,6 +997,7 @@ fetch('rods_data.json',{cache:'no-store'})
     if(Array.isArray(d.P)&&d.P.length) P=d.P;
     if(Array.isArray(d.F)&&d.F.length) F=d.F;
     if(Array.isArray(d.M)&&d.M.length) M=d.M;
+    if(Array.isArray(d.W)&&d.W.length) W=d.W;
     // recompute per-column ranges for heat scaling now that P changed
     cols.forEach(ci=>{
       const vals=P.map(r=>r[ci]).filter(v=>v!==null&&v!==undefined);
