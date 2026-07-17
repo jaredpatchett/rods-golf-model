@@ -442,8 +442,15 @@
 
 <!-- ============ TAB 6: TRACKER ============ -->
 <div class="tabpane" id="tab-tracker">
+  <div class="toolrow" style="justify-content:space-between;align-items:center">
+    <div class="field" style="margin:0">
+      <label>Viewing</label>
+      <select class="fselect" id="trEventFilter" style="min-width:220px"></select>
+    </div>
+  </div>
   <div class="summary" id="trackerSummary"></div>
-  <div class="form-panel">
+  <div id="trackerByEvent"></div>
+  <div class="form-panel" style="margin-top:14px">
     <div class="field">
       <label>Date</label>
       <input class="finput" id="trDate" type="date" style="min-width:130px">
@@ -489,7 +496,7 @@
       <tbody id="trackerBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Real bets only.</b> Add a bet when you place it (status: Pending), then mark Win / Loss / Push once it settles — profit and the running totals above update automatically. Saved to this browser's localStorage; use Export CSV as a backup.</div>
+  <div class="note"><b>Real bets only.</b> Add a bet when you place it (status: Pending), then mark Win / Loss / Push once it settles — profit and the running totals above update automatically. New bets are auto-tagged with whichever tournament's data is currently loaded — switch <b>Viewing</b> above to drill into one event, or leave it on "All Events" for the cumulative record across everything you've tracked. Saved to this browser's localStorage; use Export CSV as a backup.</div>
 </div>
 
 <script>
@@ -811,6 +818,7 @@ document.getElementById('mWin').addEventListener('click',function(){setOutMarket
 document.getElementById('mTop5').addEventListener('click',function(){setOutMarket('top5',this);});
 document.getElementById('mTop10').addEventListener('click',function(){setOutMarket('top10',this);});
 document.getElementById('mTop20').addEventListener('click',function(){setOutMarket('top20',this);});
+document.getElementById('trEventFilter').addEventListener('change',function(){trackerEventFilter=this.value;renderTracker();});
 
 // ---------------- round score: client-side sim (mirrors sim_engine.py's mixture model) ----------------
 const RS_TOUR_BASELINE_SD = 2.9;
@@ -945,7 +953,7 @@ function quickAddToTracker(desc, type, price) {
   betTracker.push({
     id: Date.now()+Math.random(),
     date: new Date().toISOString().slice(0,10),
-    desc, type, price, stake, status: 'pending',
+    desc, type, price, stake, status: 'pending', event: currentEvent,
   });
   saveLS('rodsModel_betTracker', betTracker);
   renderTracker();
@@ -974,7 +982,7 @@ function addBet() {
   const price = document.getElementById('trPrice').value.trim();
   const stake = parseFloat(document.getElementById('trStake').value);
   if (!desc || !price || isNaN(stake) || stake <= 0) { alert('Fill in description, price, and a stake > 0.'); return; }
-  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending' });
+  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent });
   saveLS('rodsModel_betTracker', betTracker);
   document.getElementById('trDesc').value = '';
   document.getElementById('trPrice').value = '';
@@ -999,13 +1007,38 @@ function betProfit(b) {
   if (win === null) return null;
   return b.status === 'win' ? win : -b.stake;
 }
+let trackerEventFilter = 'all';
 function renderTracker() {
   const body = document.getElementById('trackerBody');
   const summary = document.getElementById('trackerSummary');
+  const byEvent = document.getElementById('trackerByEvent');
+  const filterSel = document.getElementById('trEventFilter');
   if (!body || !summary) return;
+
+  // one-time migration: bets added before event-tagging existed get backfilled
+  // with whichever tournament is currently loaded (a safe assumption — this
+  // tracker's only ever seen one event's worth of bets before this feature)
+  let migrated = false;
+  betTracker.forEach(b => { if (!b.event) { b.event = currentEvent; migrated = true; } });
+  if (migrated) saveLS('rodsModel_betTracker', betTracker);
+
+  // distinct events, most-recently-added first
+  const events = [];
+  betTracker.slice().reverse().forEach(b => { if (!events.includes(b.event)) events.push(b.event); });
+
+  if (filterSel) {
+    const prevVal = filterSel.value || 'all';
+    filterSel.innerHTML = `<option value="all">All Events (cumulative)</option>` +
+      events.map(e => `<option value="${e.replace(/"/g,'&quot;')}">${e}</option>`).join('');
+    filterSel.value = events.includes(prevVal) || prevVal === 'all' ? prevVal : 'all';
+    trackerEventFilter = filterSel.value;
+  }
+
+  const scoped = trackerEventFilter === 'all' ? betTracker : betTracker.filter(b => b.event === trackerEventFilter);
+
   body.innerHTML = '';
   let totalStaked = 0, totalStakedSettled = 0, totalProfit = 0, wins = 0, losses = 0, pushes = 0, pending = 0;
-  betTracker.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(b => {
+  scoped.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(b => {
     const profit = betProfit(b);
     totalStaked += b.stake;
     if (b.status === 'win') wins++;
@@ -1017,7 +1050,7 @@ function renderTracker() {
     const profitDisp = profit === null ? '—' : (profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
     const profitCls = profit === null ? '' : (profit>=0?'val-pos':'val-neg');
     body.innerHTML += `<tr>
-      <td class="pname">${b.desc}</td>
+      <td class="pname">${b.desc}<div style="color:var(--text-faint);font-size:9px;margin-top:2px">${b.event||''}</div></td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.date}</td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.type}</td>
       <td class="cell">${b.price}</td>
@@ -1034,12 +1067,42 @@ function renderTracker() {
     </tr>`;
   });
   const roi = totalStakedSettled > 0 ? (totalProfit/totalStakedSettled*100) : 0;
+  const summaryLabel = trackerEventFilter === 'all' ? 'Cumulative — All Events' : trackerEventFilter;
   summary.innerHTML = `
+    <div class="sblock"><div class="slbl">${summaryLabel}</div><div class="sval" style="font-size:11px;color:var(--text-dim)">${scoped.length} bet${scoped.length===1?'':'s'}</div></div>
     <div class="sblock"><div class="slbl">Record</div><div class="sval">${wins}-${losses}-${pushes}<span style="color:var(--text-faint);font-size:11px"> (${pending} pending)</span></div></div>
     <div class="sblock"><div class="slbl">Total Staked</div><div class="sval">$${totalStaked.toFixed(2)}</div></div>
     <div class="sblock"><div class="slbl">Profit / Loss</div><div class="sval ${totalProfit>=0?'pos':'neg'}">${totalProfit>=0?'+':'-'}$${Math.abs(totalProfit).toFixed(2)}</div></div>
     <div class="sblock"><div class="slbl">ROI (settled)</div><div class="sval ${roi>=0?'pos':'neg'}">${roi>=0?'+':''}${roi.toFixed(1)}%</div></div>
   `;
+
+  // per-event breakdown — always shows every event side by side, regardless of the filter above
+  if (byEvent) {
+    if (events.length <= 1) {
+      byEvent.innerHTML = '';
+    } else {
+      let rows = '';
+      events.forEach(ev => {
+        const evBets = betTracker.filter(b => b.event === ev);
+        let ew=0, el=0, ep=0, epend=0, estaked=0, eprofit=0;
+        evBets.forEach(b => {
+          const pf = betProfit(b);
+          estaked += b.stake;
+          if (b.status==='win') ew++; if (b.status==='loss') el++; if (b.status==='push') ep++;
+          if (b.status==='pending') epend++; else eprofit += pf;
+        });
+        rows += `<tr>
+          <td class="pname">${ev}</td>
+          <td class="cell" style="text-align:center">${ew}-${el}-${ep}<span style="color:var(--text-faint)"> (${epend}p)</span></td>
+          <td class="cell">$${estaked.toFixed(2)}</td>
+          <td class="cell ${eprofit>=0?'val-pos':'val-neg'}">${eprofit>=0?'+':'-'}$${Math.abs(eprofit).toFixed(2)}</td>
+        </tr>`;
+      });
+      byEvent.innerHTML = `<div class="section-hd" style="margin-top:14px">BY TOURNAMENT</div>
+        <table><thead><tr><th class="player">Event</th><th>Record</th><th>Staked</th><th>Profit</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
+    }
+  }
 }
 
 // ---------------- shared: localStorage + CSV export ----------------
@@ -1063,8 +1126,8 @@ function exportCSV(kind) {
     roundScoreProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
     filename = 'round_score_props.csv';
   } else {
-    rows = [['Date','Description','Type','Price','Stake','Status','Profit']];
-    betTracker.forEach(b => rows.push([b.date,b.desc,b.type,b.price,b.stake,b.status,betProfit(b)!==null?betProfit(b).toFixed(2):'']));
+    rows = [['Date','Event','Description','Type','Price','Stake','Status','Profit']];
+    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,betProfit(b)!==null?betProfit(b).toFixed(2):'']));
     filename = 'bet_tracker.csv';
   }
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -1086,6 +1149,7 @@ let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK, W = W_FALLBACK, W5 = W5_FALL
 
 function renderAll(){ buildProjections(); buildFit(); buildMatch(); buildOutrights(); populatePlayerDatalist(); }
 
+let currentEvent = 'Unlabeled Event'; // set from meta.event once real data loads; used to auto-tag new bets by tournament
 function applyMeta(meta){
   if(!meta) return;
   if(meta.players){ document.querySelectorAll('.meta .stat .v')[0].textContent = meta.players; }
@@ -1093,6 +1157,7 @@ function applyMeta(meta){
     const el=document.getElementById('drawBias');
     if(el){ const v=Number(meta.draw_bias); el.textContent=(v>0?'+':'')+v.toFixed(1)+' AM'; }
   }
+  if(meta.event){ currentEvent = meta.event; }
 }
 
 fetch('rods_data.json',{cache:'no-store'})
