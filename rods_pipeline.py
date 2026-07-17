@@ -353,20 +353,21 @@ def build_outrights_market(outrights_payload):
     return out
 
 
-def build_outrights(finish_sim_results, outrights_market):
+def build_outrights(finish_sim_results, outrights_market, sim_key):
     """
-    Merge the full-field win simulation (sim_engine.run_finish_sim) with
-    DataGolf's real market win odds -> Rod's `W` rows:
-      [name, modelWinPct, marketWinPct, price]
-    Included for every player the sim has a win probability for, even if no
-    market price was found (renders as "—" on the page, same convention as
-    the other tables).
+    Merge the full-field finish simulation (sim_engine.run_finish_sim) with
+    DataGolf's real market odds for one market -> rows:
+      [name, modelPct, marketPct, price]
+    sim_key selects which of the sim's outputs to use: 'win', 'top5', 'top10', 'top20'.
+    Included for every player the sim has a result for, even if no market
+    price was found (renders as "—" on the page, same convention as the
+    other tables).
     """
     out = []
     for name, sim_row in finish_sim_results.items():
         mkt = outrights_market.get(name, {})
-        out.append([name, round(sim_row["win"], 4), mkt.get("market"), mkt.get("price", "—")])
-    out.sort(key=lambda r: -r[1])  # best model win% first
+        out.append([name, round(sim_row[sim_key], 4), mkt.get("market"), mkt.get("price", "—")])
+    out.sort(key=lambda r: -r[1])  # best model% first
     return out
 
 
@@ -521,13 +522,19 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
     print(f"[5/6] matchups ({tour}) ...")
     matchup_rows, market_used, auto_rounds = fetch_matchups_with_fallback(key, tour)
     print(f"   using market: {market_used} ({len(matchup_rows)} matchups)")
-    print(f"[6/6] outrights (win market, {tour}) ...")
-    try:
-        outrights_payload = fetch(EP["outrights"], key, tour=tour, market="win", odds_format="american")
-        outrights_market = build_outrights_market(outrights_payload)
-    except SystemExit as e:
-        print(f"   outrights unavailable ({e}) — win market will be model-only")
-        outrights_market = {}
+    print(f"[6/6] outrights (win/top5/top10/top20, {tour}) ...")
+    # market param values per DataGolf's docs: win, top_5, top_10, top_20 (also make_cut/frl exist,
+    # not pulled here — not asked for, and make_cut needs real cut-line modeling this sim doesn't do yet)
+    FINISH_MARKETS = [("win", "win"), ("top_5", "top5"), ("top_10", "top10"), ("top_20", "top20")]
+    outrights_markets = {}
+    for dg_market, sim_key in FINISH_MARKETS:
+        try:
+            payload = fetch(EP["outrights"], key, tour=tour, market=dg_market, odds_format="american")
+            outrights_markets[sim_key] = build_outrights_market(payload)
+            print(f"   {dg_market}: {len(outrights_markets[sim_key])} players with a market price")
+        except SystemExit as e:
+            print(f"   {dg_market} unavailable ({e}) — that market will be model-only")
+            outrights_markets[sim_key] = {}
 
     # explicit --matchup-rounds always wins if the caller passed one; otherwise
     # use whatever round count matches the market that actually had data
@@ -548,7 +555,10 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
     print(f"   running full-field finish sim ({finish_trials} trials) ...")
     finish_sim_results = run_finish_sim(proj_by_name, course_row=target_course_row,
                                          n_rounds=4, n_trials=finish_trials)
-    W = build_outrights(finish_sim_results, outrights_market)
+    W = build_outrights(finish_sim_results, outrights_markets["win"], "win")
+    W5 = build_outrights(finish_sim_results, outrights_markets["top5"], "top5")
+    W10 = build_outrights(finish_sim_results, outrights_markets["top10"], "top10")
+    W20 = build_outrights(finish_sim_results, outrights_markets["top20"], "top20")
 
     # convert to the compact array shapes the page's JS already expects
     P = [[r["name"], r["proj"], r["ttg"], r["ott"], r["app"], r["put"], r["arg"], r["fit"]] for r in proj]
@@ -562,11 +572,12 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
             "source": f"DataGolf projections (Path A) + sim_engine.py for model% [{market_used}]",
             "draw_bias": None,   # fill when you add forecast/results logic
         },
-        "P": P, "F": F, "M": M, "W": W,
+        "P": P, "F": F, "M": M, "W": W, "W5": W5, "W10": W10, "W20": W20,
     }
     with open(OUT, "w") as f:
         json.dump(data, f, indent=1)
-    print(f"\nWrote {OUT}: {len(P)} players, {len(M)} matchups, {len(W)} win-market rows.")
+    print(f"\nWrote {OUT}: {len(P)} players, {len(M)} matchups, "
+          f"{len(W)}/{len(W5)}/{len(W10)}/{len(W20)} win/top5/top10/top20 rows.")
     return data
 
 
