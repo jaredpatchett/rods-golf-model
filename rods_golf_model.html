@@ -150,6 +150,59 @@
   .bar-wrap{display:inline-block;width:60px;height:6px;background:var(--line-2);border-radius:3px;overflow:hidden;vertical-align:middle;margin-left:8px}
   .bar{height:100%;background:var(--green);border-radius:3px}
 
+  /* ---------- forms (round score / tracker) ---------- */
+  .form-panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase}
+  .finput,.fselect{
+    background:var(--bg);border:1px solid var(--line-2);border-radius:5px;color:var(--text);
+    font-family:var(--mono);font-size:11px;padding:7px 9px;min-width:90px;
+  }
+  .finput:focus,.fselect:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 1px rgba(57,211,83,.2)}
+  .finput::placeholder{color:var(--text-faint)}
+  .field.wide-field .finput{min-width:220px}
+  .addbtn{
+    background:rgba(57,211,83,.12);border:1px solid var(--green);color:var(--green);
+    font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    padding:8px 16px;border-radius:5px;cursor:pointer;transition:all .12s;
+  }
+  .addbtn:hover{background:rgba(57,211,83,.22)}
+  .delbtn{
+    background:none;border:1px solid var(--line-2);color:var(--text-faint);
+    font-size:10px;padding:3px 7px;border-radius:4px;cursor:pointer;transition:all .12s;
+  }
+  .delbtn:hover{border-color:#c96a52;color:#c96a52}
+  .statusbtn{
+    background:var(--panel-2);border:1px solid var(--line-2);color:var(--text-dim);
+    font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:4px 8px;border-radius:4px;
+    cursor:pointer;margin-right:4px;transition:all .12s;
+  }
+  .statusbtn:hover{color:var(--text)}
+  .statusbtn.win{border-color:var(--green);color:var(--green);background:rgba(57,211,83,.1)}
+  .statusbtn.loss{border-color:#c96a52;color:#c96a52;background:rgba(201,106,82,.1)}
+  .statusbtn.push{border-color:var(--amber);color:var(--amber);background:rgba(217,164,65,.1)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .badge.pending{background:var(--line-2);color:var(--text-dim)}
+  .badge.win{background:rgba(57,211,83,.16);color:var(--green)}
+  .badge.loss{background:rgba(201,106,82,.16);color:#c96a52}
+  .badge.push{background:rgba(217,164,65,.16);color:var(--amber)}
+
+  /* ---------- summary strip (tracker) ---------- */
+  .summary{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+  .sblock{flex:1;padding:10px 16px;border-right:1px solid var(--line)}
+  .sblock:last-child{border-right:none}
+  .slbl{font-size:8px;letter-spacing:.18em;color:var(--text-faint);text-transform:uppercase;margin-bottom:3px}
+  .sval{font-size:16px;font-weight:700;color:var(--text)}
+  .sval.pos{color:var(--green)}
+  .sval.neg{color:#c96a52}
+
+  .toolrow{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}
+  .toolbtn{
+    background:none;border:1px solid var(--line-2);color:var(--text-dim);
+    font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:5px 10px;border-radius:4px;cursor:pointer;
+  }
+  .toolbtn:hover{color:var(--text);border-color:var(--text-dim)}
+
   .tabpane{display:none}
   .tabpane.active{display:block}
   .note{font-size:9px;color:var(--text-faint);margin-top:12px;letter-spacing:.04em;line-height:1.6}
@@ -191,6 +244,8 @@
   <button class="tab active" data-tab="proj">Projections</button>
   <button class="tab" data-tab="fit">Course Fit</button>
   <button class="tab" data-tab="match">2-Ball Matchups</button>
+  <button class="tab" data-tab="rscore">Round Score</button>
+  <button class="tab" data-tab="tracker">Tracker</button>
 </div>
 
 <div class="windstrip">
@@ -293,6 +348,115 @@
     </table>
   </div>
   <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. Sample numbers for layout.</div>
+</div>
+
+<!-- ============ TAB 4: ROUND SCORE ============ -->
+<div class="tabpane" id="tab-rscore">
+  <div class="form-panel">
+    <div class="field wide-field">
+      <label>Player</label>
+      <input class="finput" id="rsPlayer" list="rsPlayerList" placeholder="Start typing a name...">
+      <datalist id="rsPlayerList"></datalist>
+    </div>
+    <div class="field">
+      <label>Round</label>
+      <select class="fselect" id="rsRound">
+        <option value="R1">R1</option><option value="R2">R2</option>
+        <option value="R3">R3</option><option value="R4">R4</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Line</label>
+      <input class="finput" id="rsLine" type="number" step="0.5" placeholder="69.5" style="min-width:70px">
+    </div>
+    <div class="field">
+      <label>Under Price</label>
+      <input class="finput" id="rsUnderPrice" placeholder="-115" style="min-width:70px">
+    </div>
+    <div class="field">
+      <label>Over Price</label>
+      <input class="finput" id="rsOverPrice" placeholder="-105" style="min-width:70px">
+    </div>
+    <button class="addbtn" onclick="addRoundScoreProp()">Add Line</button>
+  </div>
+  <div class="toolrow">
+    <button class="toolbtn" onclick="exportCSV('roundscore')">Export CSV</button>
+    <button class="toolbtn" onclick="clearAll('roundscore')">Clear All</button>
+  </div>
+  <div class="wide">
+    <table id="rscoreTable">
+      <thead>
+        <tr>
+          <th class="player">Player</th>
+          <th>Rd</th>
+          <th>Line</th>
+          <th>Model Under%</th>
+          <th>Market Under%</th>
+          <th>Edge U</th>
+          <th>Call U</th>
+          <th>Model Over%</th>
+          <th>Market Over%</th>
+          <th>Edge O</th>
+          <th>Call O</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rscoreBody"></tbody>
+    </table>
+  </div>
+  <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. There's no DataGolf feed for round-score O/U, so market% only appears once you type in the price from your sportsbook. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
+</div>
+
+<!-- ============ TAB 5: TRACKER ============ -->
+<div class="tabpane" id="tab-tracker">
+  <div class="summary" id="trackerSummary"></div>
+  <div class="form-panel">
+    <div class="field">
+      <label>Date</label>
+      <input class="finput" id="trDate" type="date" style="min-width:130px">
+    </div>
+    <div class="field wide-field">
+      <label>Description</label>
+      <input class="finput" id="trDesc" placeholder="e.g. Fleetwood ML vs Schauffele">
+    </div>
+    <div class="field">
+      <label>Type</label>
+      <select class="fselect" id="trType">
+        <option>Matchup</option><option>Round Score</option><option>Outright</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Price</label>
+      <input class="finput" id="trPrice" placeholder="-110" style="min-width:70px">
+    </div>
+    <div class="field">
+      <label>Stake ($)</label>
+      <input class="finput" id="trStake" type="number" step="1" placeholder="50" style="min-width:70px">
+    </div>
+    <button class="addbtn" onclick="addBet()">Add Bet</button>
+  </div>
+  <div class="toolrow">
+    <button class="toolbtn" onclick="exportCSV('tracker')">Export CSV</button>
+    <button class="toolbtn" onclick="clearAll('tracker')">Clear All</button>
+  </div>
+  <div class="wide">
+    <table id="trackerTable">
+      <thead>
+        <tr>
+          <th class="player">Description</th>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Price</th>
+          <th>Stake</th>
+          <th>Status</th>
+          <th>Profit</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="trackerBody"></tbody>
+    </table>
+  </div>
+  <div class="note"><b>Real bets only.</b> Add a bet when you place it (status: Pending), then mark Win / Loss / Push once it settles — profit and the running totals above update automatically. Saved to this browser's localStorage; use Export CSV as a backup.</div>
 </div>
 
 <script>
@@ -509,10 +673,238 @@ document.getElementById('fEdge').addEventListener('click',function(){matchFilter
 document.getElementById('fSame').addEventListener('click',function(){matchFilter='same';setActive(this);buildMatch();});
 function setActive(btn){btn.parentNode.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
 
+// ---------------- round score: client-side sim (mirrors sim_engine.py's mixture model) ----------------
+const RS_TOUR_BASELINE_SD = 2.9;
+const RS_DEFAULT_BLOWUP = 0.09;
+const RS_BLOWUP_SHIFT = 4.5;
+const RS_TRIALS = 4000; // client-side budget; enough for a stable line price, fast in-browser
+
+function gaussSample(mean, sd) {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  return mean + z * sd;
+}
+function simRound(mean, sd, blowupRate) {
+  if (Math.random() < blowupRate) return gaussSample(mean + RS_BLOWUP_SHIFT, sd * 1.4);
+  return gaussSample(mean, sd);
+}
+function birkdaleCourseRow() {
+  const row = F.find(r => String(r[0]).toLowerCase().includes('birkdale')) || F[0];
+  return row ? { sd: row[3], blowup: row[4] } : { sd: RS_TOUR_BASELINE_SD, blowup: RS_DEFAULT_BLOWUP };
+}
+function modelUnderProb(mean, line) {
+  const { sd, blowup } = birkdaleCourseRow();
+  const useSd = sd || RS_TOUR_BASELINE_SD, useBlowup = (blowup === undefined || blowup === null) ? RS_DEFAULT_BLOWUP : blowup;
+  let under = 0;
+  for (let i = 0; i < RS_TRIALS; i++) { if (simRound(mean, useSd, useBlowup) < line) under++; }
+  return under / RS_TRIALS;
+}
+function impliedProb(price) {
+  const p = parseFloat(price);
+  if (isNaN(p)) return null;
+  return p > 0 ? 100 / (p + 100) : -p / (-p + 100);
+}
+function rsCallFor(edge) {
+  if (edge === null) return { call: '—', cls: 'thin' };
+  const pct = edge * 100;
+  if (pct >= 3) return { call: 'BET', cls: 'edge' };
+  if (pct <= -3) return { call: 'FADE', cls: 'fade' };
+  return { call: 'PASS', cls: 'thin' };
+}
+
+let roundScoreProps = loadLS('rodsModel_roundScoreProps', []);
+
+function populatePlayerDatalist() {
+  const dl = document.getElementById('rsPlayerList');
+  if (!dl) return;
+  dl.innerHTML = P.map(r => `<option value="${r[0]}">`).join('');
+}
+
+function addRoundScoreProp() {
+  const name = document.getElementById('rsPlayer').value.trim();
+  const round = document.getElementById('rsRound').value;
+  const line = parseFloat(document.getElementById('rsLine').value);
+  const underPrice = document.getElementById('rsUnderPrice').value.trim();
+  const overPrice = document.getElementById('rsOverPrice').value.trim();
+  if (!name || isNaN(line)) { alert('Enter a player name and a line.'); return; }
+  const prow = P.find(r => r[0].toLowerCase() === name.toLowerCase());
+  if (!prow) { alert('Player not found in the current field — check the spelling / search list.'); return; }
+  const mean = prow[1];
+  if (mean === null || mean === undefined) { alert('No PROJ score available for this player yet.'); return; }
+  const modelUnder = modelUnderProb(mean, line);
+  const modelOver = 1 - modelUnder;
+  const marketUnder = underPrice ? impliedProb(underPrice) : null;
+  const marketOver = overPrice ? impliedProb(overPrice) : null;
+  roundScoreProps.push({
+    id: Date.now() + Math.random(),
+    name, round, line, underPrice: underPrice || null, overPrice: overPrice || null,
+    modelUnder, modelOver, marketUnder, marketOver,
+  });
+  saveLS('rodsModel_roundScoreProps', roundScoreProps);
+  document.getElementById('rsPlayer').value = '';
+  document.getElementById('rsLine').value = '';
+  document.getElementById('rsUnderPrice').value = '';
+  document.getElementById('rsOverPrice').value = '';
+  renderRoundScore();
+}
+function deleteRoundScoreProp(id) {
+  roundScoreProps = roundScoreProps.filter(p => p.id !== id);
+  saveLS('rodsModel_roundScoreProps', roundScoreProps);
+  renderRoundScore();
+}
+function renderRoundScore() {
+  const body = document.getElementById('rscoreBody');
+  if (!body) return;
+  body.innerHTML = '';
+  roundScoreProps.forEach(p => {
+    const edgeU = (p.marketUnder !== null) ? p.modelUnder - p.marketUnder : null;
+    const edgeO = (p.marketOver !== null) ? p.modelOver - p.marketOver : null;
+    const cu = rsCallFor(edgeU), co = rsCallFor(edgeO);
+    body.innerHTML += `<tr>
+      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}</td>
+      <td class="cell" style="text-align:center">${p.round}</td>
+      <td class="cell"><b>${p.line.toFixed(1)}</b></td>
+      <td class="cell heat" style="background:${heat((p.modelUnder-0.3)/0.4)}">${(p.modelUnder*100).toFixed(1)}%</td>
+      <td class="cell">${p.marketUnder!==null?(p.marketUnder*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell ${edgeU!==null?(edgeU>=0?'val-pos':'val-neg'):''}">${edgeU!==null?(edgeU>=0?'+':'')+(edgeU*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell" style="text-align:center"><span class="pill ${cu.cls}">${cu.call}</span></td>
+      <td class="cell heat" style="background:${heat((p.modelOver-0.3)/0.4)}">${(p.modelOver*100).toFixed(1)}%</td>
+      <td class="cell">${p.marketOver!==null?(p.marketOver*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell ${edgeO!==null?(edgeO>=0?'val-pos':'val-neg'):''}">${edgeO!==null?(edgeO>=0?'+':'')+(edgeO*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell" style="text-align:center"><span class="pill ${co.cls}">${co.call}</span></td>
+      <td class="cell"><button class="delbtn" onclick="deleteRoundScoreProp(${p.id})">✕</button></td>
+    </tr>`;
+  });
+}
+
+// ---------------- tracker: real bets, win/loss, running P&L ----------------
+let betTracker = loadLS('rodsModel_betTracker', []);
+
+function payoutOnWin(price, stake) {
+  const p = parseFloat(price);
+  if (isNaN(p) || isNaN(stake)) return null;
+  return p > 0 ? stake * (p / 100) : stake * (100 / Math.abs(p));
+}
+function addBet() {
+  const date = document.getElementById('trDate').value || new Date().toISOString().slice(0,10);
+  const desc = document.getElementById('trDesc').value.trim();
+  const type = document.getElementById('trType').value;
+  const price = document.getElementById('trPrice').value.trim();
+  const stake = parseFloat(document.getElementById('trStake').value);
+  if (!desc || !price || isNaN(stake) || stake <= 0) { alert('Fill in description, price, and a stake > 0.'); return; }
+  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending' });
+  saveLS('rodsModel_betTracker', betTracker);
+  document.getElementById('trDesc').value = '';
+  document.getElementById('trPrice').value = '';
+  document.getElementById('trStake').value = '';
+  renderTracker();
+}
+function setBetStatus(id, status) {
+  const b = betTracker.find(x => x.id === id);
+  if (b) b.status = status;
+  saveLS('rodsModel_betTracker', betTracker);
+  renderTracker();
+}
+function deleteBet(id) {
+  betTracker = betTracker.filter(b => b.id !== id);
+  saveLS('rodsModel_betTracker', betTracker);
+  renderTracker();
+}
+function betProfit(b) {
+  if (b.status === 'pending') return null;
+  if (b.status === 'push') return 0;
+  const win = payoutOnWin(b.price, b.stake);
+  if (win === null) return null;
+  return b.status === 'win' ? win : -b.stake;
+}
+function renderTracker() {
+  const body = document.getElementById('trackerBody');
+  const summary = document.getElementById('trackerSummary');
+  if (!body || !summary) return;
+  body.innerHTML = '';
+  let totalStaked = 0, totalStakedSettled = 0, totalProfit = 0, wins = 0, losses = 0, pushes = 0, pending = 0;
+  betTracker.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(b => {
+    const profit = betProfit(b);
+    totalStaked += b.stake;
+    if (b.status === 'win') wins++;
+    if (b.status === 'loss') losses++;
+    if (b.status === 'push') pushes++;
+    if (b.status === 'pending') pending++;
+    if (b.status !== 'pending') { totalStakedSettled += b.stake; totalProfit += profit; }
+    const badgeCls = b.status;
+    const profitDisp = profit === null ? '—' : (profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
+    const profitCls = profit === null ? '' : (profit>=0?'val-pos':'val-neg');
+    body.innerHTML += `<tr>
+      <td class="pname">${b.desc}</td>
+      <td class="cell" style="text-align:center;color:var(--text-dim)">${b.date}</td>
+      <td class="cell" style="text-align:center;color:var(--text-dim)">${b.type}</td>
+      <td class="cell">${b.price}</td>
+      <td class="cell">$${b.stake.toFixed(2)}</td>
+      <td class="cell" style="text-align:center">
+        ${b.status==='pending' ? `
+          <button class="statusbtn win" onclick="setBetStatus(${b.id},'win')">WIN</button>
+          <button class="statusbtn loss" onclick="setBetStatus(${b.id},'loss')">LOSS</button>
+          <button class="statusbtn push" onclick="setBetStatus(${b.id},'push')">PUSH</button>
+        ` : `<span class="badge ${badgeCls}">${b.status}</span> <button class="delbtn" style="margin-left:6px" onclick="setBetStatus(${b.id},'pending')">reset</button>`}
+      </td>
+      <td class="cell ${profitCls}">${profitDisp}</td>
+      <td class="cell"><button class="delbtn" onclick="deleteBet(${b.id})">✕</button></td>
+    </tr>`;
+  });
+  const roi = totalStakedSettled > 0 ? (totalProfit/totalStakedSettled*100) : 0;
+  summary.innerHTML = `
+    <div class="sblock"><div class="slbl">Record</div><div class="sval">${wins}-${losses}-${pushes}<span style="color:var(--text-faint);font-size:11px"> (${pending} pending)</span></div></div>
+    <div class="sblock"><div class="slbl">Total Staked</div><div class="sval">$${totalStaked.toFixed(2)}</div></div>
+    <div class="sblock"><div class="slbl">Profit / Loss</div><div class="sval ${totalProfit>=0?'pos':'neg'}">${totalProfit>=0?'+':'-'}$${Math.abs(totalProfit).toFixed(2)}</div></div>
+    <div class="sblock"><div class="slbl">ROI (settled)</div><div class="sval ${roi>=0?'pos':'neg'}">${roi>=0?'+':''}${roi.toFixed(1)}%</div></div>
+  `;
+}
+
+// ---------------- shared: localStorage + CSV export ----------------
+function loadLS(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch (e) { return fallback; }
+}
+function saveLS(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); }
+  catch (e) { console.warn('localStorage save failed', e); }
+}
+function clearAll(kind) {
+  if (!confirm('Clear all saved entries for this tab? This cannot be undone (export CSV first if you want a backup).')) return;
+  if (kind === 'roundscore') { roundScoreProps = []; saveLS('rodsModel_roundScoreProps', roundScoreProps); renderRoundScore(); }
+  if (kind === 'tracker') { betTracker = []; saveLS('rodsModel_betTracker', betTracker); renderTracker(); }
+}
+function exportCSV(kind) {
+  let rows = [], filename = '';
+  if (kind === 'roundscore') {
+    rows = [['Player','Round','Line','ModelUnder%','MarketUnder%','ModelOver%','MarketOver%','UnderPrice','OverPrice']];
+    roundScoreProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
+    filename = 'round_score_props.csv';
+  } else {
+    rows = [['Date','Description','Type','Price','Stake','Status','Profit']];
+    betTracker.forEach(b => rows.push([b.date,b.desc,b.type,b.price,b.stake,b.status,betProfit(b)!==null?betProfit(b).toFixed(2):'']));
+    filename = 'bet_tracker.csv';
+  }
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+}
+
+// default the tracker date field to today
+document.addEventListener('DOMContentLoaded', () => {
+  const d = document.getElementById('trDate');
+  if (d) d.value = new Date().toISOString().slice(0,10);
+  renderRoundScore();
+  renderTracker();
+});
+
 // ---------------- data source: rods_data.json (from pipeline) or fallback ----------------
 let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK;
 
-function renderAll(){ buildProjections(); buildFit(); buildMatch(); }
+function renderAll(){ buildProjections(); buildFit(); buildMatch(); populatePlayerDatalist(); }
 
 function applyMeta(meta){
   if(!meta) return;
