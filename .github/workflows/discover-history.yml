@@ -1,0 +1,21 @@
+name: Discover Open Championship history
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run discovery script
+        env:
+          DG_KEY: ${{ secrets.DG_KEY }}
+        run: python3 discover_open_history.py
