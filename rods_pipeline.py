@@ -43,6 +43,7 @@ import argparse
 import urllib.request
 import urllib.parse
 import urllib.error
+from collections import defaultdict
 
 from sim_engine import run_matchup_sim, run_finish_sim
 
@@ -307,20 +308,34 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
     # standard 2-way market (ties refunded — "ties": "void") and a 3-way market (ties as
     # their own outcome — "ties": "separate bet offered"). Confirmed live: the 3-way variant
     # carries far fewer books and never includes DraftKings, so keeping both just duplicates
-    # every such pairing on the page with a worse, less-actionable price. Dedup down to one
-    # row per (p1,p2), preferring "ties":"void" (the standard head-to-head bet) whenever both
-    # exist for the same pairing.
-    by_pair = {}
+    # every such pairing on the page with a worse, less-actionable price.
+    #
+    # SEPARATE, BIGGER ISSUE (confirmed against Rod's real DraftKings tee-group list): the feed
+    # also contains "alternate 2-ball" pairings between players who are NOT in the same tee
+    # group at all — e.g. "McIlroy vs Schauffele" when their real groups are McIlroy/Bridgeman
+    # and Fox/Schauffele. These alternates only ever appear ONCE, as "ties":"void", with no
+    # "ties":"separate bet offered" sibling for that exact pair. Every genuine tee-group pairing
+    # in Rod's real list appeared TWICE — both tie structures — except one (missing its void
+    # entry entirely on DataGolf's end). So: a pair is a real tee-group matchup if a "separate
+    # bet offered" entry exists for it (use the void entry for the actual price if one exists,
+    # since that's the bettable 2-way market; fall back to the separate-bet entry's price only
+    # if no void version showed up). Pairs with ONLY a void entry and no separate-bet sibling
+    # are alternates and get dropped from this table entirely.
+    by_pair = defaultdict(list)
     for r in raw_rows:
         p1_raw = pick(r, "p1_player_name", "player1", "p1")
         p2_raw = pick(r, "p2_player_name", "player2", "p2")
         if not p1_raw or not p2_raw:
             continue
-        key = (p1_raw, p2_raw)
-        existing = by_pair.get(key)
-        if existing is None or (r.get("ties") == "void" and existing.get("ties") != "void"):
-            by_pair[key] = r
-    rows = list(by_pair.values())
+        by_pair[(p1_raw, p2_raw)].append(r)
+
+    rows = []
+    for key, entries in by_pair.items():
+        tie_types = {e.get("ties") for e in entries}
+        if "separate bet offered" not in tie_types:
+            continue  # alternate/cross-group pairing, not a real tee-group matchup — drop it
+        void_entry = next((e for e in entries if e.get("ties") == "void"), None)
+        rows.append(void_entry if void_entry is not None else entries[0])
 
     pairs = []
     meta = []
