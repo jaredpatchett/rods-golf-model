@@ -396,6 +396,19 @@
       <span id="rsBulkStatus" style="font-size:10px;color:var(--text-dim)"></span>
     </div>
   </div>
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px;border-color:var(--amber)">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase">Live Form Adjustment — PROJ is a static pre-tournament number that doesn't update during the week. Paste the current leaderboard here to blend in real current-week form.</label>
+    <textarea id="rsLeaderboardText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the leaderboard — needs a player name and their current score-to-par on each line (e.g. 'Scottie Scheffler -12', or a full copy-pasted leaderboard with position/rounds mixed in, that's fine too). Round scores without a +/- sign are ignored automatically."></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="field" style="margin:0">
+        <label>Rounds Completed</label>
+        <input class="finput" id="rsRoundsCompleted" type="number" value="3" min="1" max="4" style="min-width:60px">
+      </div>
+      <button class="addbtn" onclick="applyLeaderboardAdjustment()" style="border-color:var(--amber);color:var(--amber)">Apply Form Adjustment</button>
+      <button class="toolbtn" onclick="clearFormAdjustments()">Clear Adjustments</button>
+      <span id="rsLeaderboardStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+  </div>
   <div class="toolrow">
     <button class="toolbtn" onclick="exportCSV('roundscore')">Export CSV</button>
     <button class="toolbtn" onclick="clearAll('roundscore')">Clear All</button>
@@ -928,11 +941,87 @@ function rsCallFor(edge) {
 
 let roundScoreProps = loadLS('rodsModel_roundScoreProps', []);
 let rsFilter = 'all'; // 'all' | 'plays'
+let formAdjustments = loadLS('rodsModel_formAdjustments', {}); // normalized name -> {adjustedProj, staticProj, toPar}
 
 function populatePlayerDatalist() {
   const dl = document.getElementById('rsPlayerList');
   if (!dl) return;
   dl.innerHTML = P.map(r => `<option value="${r[0]}">`).join('');
+}
+
+// ---------------- live form adjustment: PROJ is a static pre-tournament number that never
+// updates during the week (confirmed: Sepp Straka's PROJ was 70.7 in the Round 1 commit and
+// still 70.7 four rounds later, regardless of how he actually played). This blends real
+// current-week form (from a pasted leaderboard) into the number Round Score's sim actually
+// uses. Deliberately a 50/50 blend, not a full replacement — 3 rounds is still a small,
+// noisy sample, so this leans on the pre-tournament number too rather than fully chasing a
+// hot or cold week. A modeling choice, not a precisely calibrated one.
+const FORM_BLEND_K = 0.5;
+const COURSE_PAR = 70;
+
+function parseLeaderboardText(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const entries = [];
+  const toParToken = /^([+-]\d{1,2}|E|EVEN)$/i;
+  for (const line of lines) {
+    const tokens = line.split(/\s+/);
+    let toParIdx = -1, toParVal = null;
+    for (let i = 0; i < tokens.length; i++) {
+      if (toParToken.test(tokens[i])) {
+        toParIdx = i;
+        toParVal = /^E(VEN)?$/i.test(tokens[i]) ? 0 : parseInt(tokens[i], 10);
+        break;
+      }
+    }
+    if (toParIdx === -1) continue;
+    let nameTokens = tokens.slice(0, toParIdx).filter(t => !/^T?\d+$/i.test(t));
+    const name = nameTokens.join(' ').trim();
+    if (!name) continue;
+    entries.push({ name, toPar: toParVal });
+  }
+  return entries;
+}
+
+function applyLeaderboardAdjustment() {
+  const text = document.getElementById('rsLeaderboardText').value;
+  const status = document.getElementById('rsLeaderboardStatus');
+  const roundsCompleted = parseInt(document.getElementById('rsRoundsCompleted').value, 10);
+  if (!text.trim()) { status.textContent = 'Paste the leaderboard first.'; return; }
+  if (isNaN(roundsCompleted) || roundsCompleted < 1) { status.textContent = 'Enter a valid rounds-completed number.'; return; }
+  const parsed = parseLeaderboardText(text);
+  if (!parsed.length) { status.textContent = 'Found 0 players — check the paste includes a name and a +/- score-to-par on each line.'; return; }
+
+  let applied = 0;
+  const notFound = [];
+  parsed.forEach(entry => {
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name));
+    if (!prow || prow[1] === null || prow[1] === undefined) { notFound.push(entry.name); return; }
+    const staticProj = prow[1];
+    const actualAvgPerRound = (COURSE_PAR * roundsCompleted + entry.toPar) / roundsCompleted;
+    const adjustment = actualAvgPerRound - staticProj;
+    const adjustedProj = staticProj + FORM_BLEND_K * adjustment;
+    formAdjustments[normalizeNameForMatch(prow[0])] = {
+      adjustedProj: Math.round(adjustedProj * 100) / 100,
+      staticProj, toPar: entry.toPar, roundsCompleted,
+    };
+    applied++;
+  });
+  saveLS('rodsModel_formAdjustments', formAdjustments);
+  status.textContent = `Applied form adjustment to ${applied} of ${parsed.length} players.` +
+    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '') +
+    ` Add or re-add Round Score lines now to use the adjusted numbers.`;
+}
+
+function clearFormAdjustments() {
+  if (!confirm('Clear all live form adjustments? Existing Round Score lines keep whatever numbers they were computed with — this only affects new lines added after clearing.')) return;
+  formAdjustments = {};
+  saveLS('rodsModel_formAdjustments', formAdjustments);
+  document.getElementById('rsLeaderboardStatus').textContent = 'Cleared.';
+}
+
+function getEffectiveProj(playerName, staticProj) {
+  const adj = formAdjustments[normalizeNameForMatch(playerName)];
+  return adj ? adj.adjustedProj : staticProj;
 }
 
 // ---------------- bulk import: paste DraftKings' round-score slate, parse, add all at once ----------------
@@ -990,7 +1079,7 @@ function bulkImportRoundScore() {
   parsed.forEach((entry, i) => {
     const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
     if (!prow || prow[1] === null || prow[1] === undefined) { notFound.push(entry.player); return; }
-    const meanPerRound = prow[1];
+    const meanPerRound = getEffectiveProj(prow[0], prow[1]);
     const roundsCount = entry.round === 'T72' ? 4 : 1;
     const modelUnder = modelUnderProb(meanPerRound, entry.line, roundsCount);
     const modelOver = 1 - modelUnder;
@@ -998,7 +1087,7 @@ function bulkImportRoundScore() {
       id: Date.now() + Math.random() + i, // += i avoids same-ms id collisions across a big batch
       name: prow[0], round: entry.round, line: entry.line,
       underPrice: entry.underPrice, overPrice: entry.overPrice,
-      modelUnder, modelOver,
+      modelUnder, modelOver, formAdjusted: !!formAdjustments[normalizeNameForMatch(prow[0])],
       marketUnder: impliedProb(entry.underPrice), marketOver: impliedProb(entry.overPrice),
     });
     if (isNew) added++; else updated++;
@@ -1021,8 +1110,8 @@ function addRoundScoreProp() {
   if (!name || isNaN(line)) { alert('Enter a player name and a line.'); return; }
   const prow = P.find(r => r[0].toLowerCase() === name.toLowerCase());
   if (!prow) { alert('Player not found in the current field — check the spelling / search list.'); return; }
-  const meanPerRound = prow[1];
-  if (meanPerRound === null || meanPerRound === undefined) { alert('No PROJ score available for this player yet.'); return; }
+  if (prow[1] === null || prow[1] === undefined) { alert('No PROJ score available for this player yet.'); return; }
+  const meanPerRound = getEffectiveProj(prow[0], prow[1]);
   const modelUnder = modelUnderProb(meanPerRound, line, roundsCount, elevatedRisk);
   const modelOver = 1 - modelUnder;
   const marketUnder = underPrice ? impliedProb(underPrice) : null;
@@ -1031,6 +1120,7 @@ function addRoundScoreProp() {
     id: Date.now() + Math.random(),
     name: prow[0], round, line, underPrice: underPrice || null, overPrice: overPrice || null,
     modelUnder, modelOver, marketUnder, marketOver, elevatedRisk,
+    formAdjusted: !!formAdjustments[normalizeNameForMatch(prow[0])],
   });
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
   document.getElementById('rsElevatedRisk').checked = false;
@@ -1091,7 +1181,7 @@ function renderRoundScore() {
          ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}')">+trk</button>`:''}`
       : `<span class="pill thin">PASS</span>`;
     body.innerHTML += `<tr>
-      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}${p.elevatedRisk?' <span class="badge push" style="font-size:8px" title="Elevated blow-up risk applied — your manual call, not model-inferred">RISK+</span>':''}</td>
+      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}${p.elevatedRisk?' <span class="badge push" style="font-size:8px" title="Elevated blow-up risk applied — your manual call, not model-inferred">RISK+</span>':''}${p.formAdjusted?' <span class="badge win" style="font-size:8px" title="Used a live-form-adjusted PROJ, blending real current-week performance with the static pre-tournament number">FORM-ADJ</span>':''}</td>
       <td class="cell" style="text-align:center">${p.round}</td>
       <td class="cell"><b>${p.line.toFixed(1)}</b></td>
       <td class="cell heat" style="background:${heat((p.modelUnder-0.3)/0.4)}">${(p.modelUnder*100).toFixed(1)}%</td>
