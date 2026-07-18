@@ -2,7 +2,7 @@
  "meta": {
   "event": "The 154th Open \u2014 Royal Birkdale",
   "players": 156,
-  "generated": "2026-07-18 00:55:51",
+  "generated": "2026-07-18 02:13:29",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups]",
   "draw_bias": null
  },
@@ -1827,15 +1827,6 @@
    "-176 (draftkings)"
   ],
   [
-   "Cameron John",
-   "Dan Brown",
-   "?",
-   0.4051,
-   0.3816793893129771,
-   "+162 (fanduel)",
-   "-225 (fanduel)"
-  ],
-  [
    "Tommy Fleetwood",
    "Jon Rahm",
    "?",
@@ -2025,6 +2016,15 @@
    "+125 (bet365)"
   ],
   [
+   "Cameron John",
+   "Dan Brown",
+   "?",
+   0.4051,
+   0.4,
+   "+150 (bovada)",
+   "-180 (bovada)"
+  ],
+  [
    "Rickie Fowler",
    "Max Homa",
    "?",
@@ -2183,8 +2183,8 @@
    "?",
    0.5405,
    0.5454545454545454,
-   "-120 (fanduel)",
-   "-110 (fanduel)"
+   "-120 (bovada)",
+   "+100 (bovada)"
   ],
   [
    "MJ Daffue",
