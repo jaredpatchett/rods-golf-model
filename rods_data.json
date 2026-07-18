@@ -2,7 +2,7 @@
  "meta": {
   "event": "The 154th Open \u2014 Royal Birkdale",
   "players": 156,
-  "generated": "2026-07-18 04:40:18",
+  "generated": "2026-07-18 13:18:31",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups]",
   "draw_bias": null
  },
@@ -1646,10 +1646,10 @@
    "Alex Fitzpatrick",
    "?",
    0.4403,
-   0.3937007874015748,
-   "+154 (betcris)",
-   "-195 (betcris)",
-   0.3732759711501962
+   0.39215686274509803,
+   "+155 (betcris)",
+   "-197 (betcris)",
+   0.3715518859072997
   ],
   [
    "Peter Uihlein",
@@ -1780,6 +1780,16 @@
    "+114 (datagolf)",
    "-114 (datagolf)",
    0.4672897196261682
+  ],
+  [
+   "Kazuki Higa",
+   "Jose Luis Ballester",
+   "?",
+   0.4844,
+   0.47619047619047616,
+   "+110 (fanduel)",
+   "-138 (fanduel)",
+   0.45092838196286467
   ],
   [
    "Si Woo Kim",
@@ -2092,16 +2102,6 @@
    0.5
   ],
   [
-   "Kazuki Higa",
-   "Jose Luis Ballester",
-   "?",
-   0.4844,
-   0.504950495049505,
-   "-102 (draftkings)",
-   "-124 (draftkings)",
-   0.4770335727409387
-  ],
-  [
    "Jordan Smith",
    "Johnny Keefer",
    "?",
@@ -2222,6 +2222,16 @@
    0.5
   ],
   [
+   "Hideki Matsuyama",
+   "Ben Griffin",
+   "?",
+   0.4986,
+   0.5283018867924528,
+   "-112 (draftkings)",
+   "-116 (draftkings)",
+   0.4959002951787471
+  ],
+  [
    "Kristoffer Reitan",
    "Marco Penge",
    "?",
@@ -2260,16 +2270,6 @@
    "-116 (betcris)",
    "-114 (betcris)",
    0.5020223264843877
-  ],
-  [
-   "Justin Thomas",
-   "Patrick Cantlay",
-   "?",
-   0.5046,
-   0.5370370370370371,
-   "-116 (draftkings)",
-   "-112 (draftkings)",
-   0.5040997048212529
   ],
   [
    "Bud Cauley",
@@ -2312,16 +2312,6 @@
    0.5627721335268505
   ],
   [
-   "Hideki Matsuyama",
-   "Ben Griffin",
-   "?",
-   0.4935,
-   0.5283018867924528,
-   "-112 (draftkings)",
-   "-116 (draftkings)",
-   0.4959002951787471
-  ],
-  [
    "Rickie Fowler",
    "Laurie Canter",
    "?",
@@ -2340,6 +2330,16 @@
    "-135 (bet365)",
    "+115 (bet365)",
    0.552594002855783
+  ],
+  [
+   "Justin Thomas",
+   "Patrick Cantlay",
+   "?",
+   0.4988,
+   0.5370370370370371,
+   "-116 (draftkings)",
+   "-112 (draftkings)",
+   0.5040997048212529
   ],
   [
    "Rory McIlroy",
@@ -2432,6 +2432,16 @@
    0.5203045685279188
   ],
   [
+   "Min Woo Lee",
+   "Ryo Hisatsune",
+   "?",
+   0.5491,
+   0.5918367346938775,
+   "-145 (datagolf)",
+   "+145 (datagolf)",
+   0.5918367346938775
+  ],
+  [
    "Alex Noren",
    "Alex Smalley",
    "?",
@@ -2452,16 +2462,6 @@
    0.4873460435296103
   ],
   [
-   "Min Woo Lee",
-   "Ryo Hisatsune",
-   "?",
-   0.5491,
-   0.5934959349593496,
-   "-146 (draftkings)",
-   "+116 (draftkings)",
-   0.5617785378366823
-  ],
-  [
    "Thomas Detry",
    "Bud Cauley",
    "?",
@@ -2470,6 +2470,16 @@
    "-110 (draftkings)",
    "-114 (draftkings)",
    0.495787700084246
+  ],
+  [
+   "Russell Henley",
+   "Jack McDonald",
+   "?",
+   0.6438,
+   0.6894409937888198,
+   "-222 (bet365)",
+   "+240 (bet365)",
+   0.7009658246656761
   ],
   [
    "Max Homa",
@@ -2720,16 +2730,6 @@
    "-197 (betcris)",
    "+155 (betcris)",
    0.6284481140927003
-  ],
-  [
-   "Russell Henley",
-   "Jack McDonald",
-   "?",
-   0.6438,
-   0.7727272727272727,
-   "-340 (draftkings)",
-   "+270 (draftkings)",
-   0.740871613663133
   ],
   [
    "Rory McIlroy",
