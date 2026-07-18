@@ -25,10 +25,10 @@ jobs:
           DG_KEY: ${{ secrets.DG_KEY }}
         run: python3 rods_pipeline.py
 
-      - name: Debug matchup dupes (temporary)
+      - name: Debug all pairs (temporary)
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
-        run: python3 debug_matchup_dupes.py
+        run: python3 debug_all_pairs.py
 
       - name: Deploy to Cloudflare
         env:
@@ -42,8 +42,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add rods_data.json
           if git diff --cached --quiet; then
-            echo "No changes to rods_data.json — skipping commit."
-          else
-            git commit -m "Auto-update rods_data.json"
-            git push
-          fi
+            echo "No changes to rods_data.json
