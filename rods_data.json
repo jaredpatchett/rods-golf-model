@@ -2,7 +2,7 @@
  "meta": {
   "event": "The 154th Open \u2014 Royal Birkdale",
   "players": 156,
-  "generated": "2026-07-18 02:23:28",
+  "generated": "2026-07-18 02:42:53",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups]",
   "draw_bias": null
  },
@@ -1620,15 +1620,6 @@
    "-250 (bet365)"
   ],
   [
-   "Peter Uihlein",
-   "Brooks Koepka",
-   "?",
-   0.4037,
-   0.33783783783783783,
-   "+196 (draftkings)",
-   "-245 (draftkings)"
-  ],
-  [
    "Ryan Fox",
    "Xander Schauffele",
    "?",
@@ -1699,6 +1690,15 @@
    0.3937007874015748,
    "+154 (betcris)",
    "-195 (betcris)"
+  ],
+  [
+   "Peter Uihlein",
+   "Brooks Koepka",
+   "?",
+   0.4037,
+   0.35714285714285715,
+   "+180 (draftkings)",
+   "-245 (draftkings)"
   ],
   [
    "Shane Lowry",
@@ -2412,15 +2412,6 @@
    "-123 (betcris)"
   ],
   [
-   "John Parry",
-   "Sungjae Im",
-   "?",
-   0.5016,
-   0.5260663507109005,
-   "-111 (betcris)",
-   "-119 (betcris)"
-  ],
-  [
    "Rickie Fowler",
    "Max Homa",
    "?",
@@ -2520,6 +2511,15 @@
    "+102 (draftkings)"
   ],
   [
+   "John Parry",
+   "Sungjae Im",
+   "?",
+   0.5016,
+   0.5348837209302325,
+   "-115 (betcris)",
+   "-115 (betcris)"
+  ],
+  [
    "Justin Thomas",
    "Ben Griffin",
    "?",
@@ -2568,7 +2568,7 @@
    "Hideki Matsuyama",
    "Ben Griffin",
    "?",
-   0.4915,
+   0.4926,
    0.5283018867924528,
    "-112 (draftkings)",
    "-116 (draftkings)"
@@ -2637,15 +2637,6 @@
    "-114 (draftkings)"
   ],
   [
-   "Justin Thomas",
-   "Patrick Cantlay",
-   "?",
-   0.4974,
-   0.5370370370370371,
-   "-116 (draftkings)",
-   "-112 (draftkings)"
-  ],
-  [
    "Nick Taylor",
    "Eric Cole",
    "?",
@@ -2662,6 +2653,15 @@
    0.5934959349593496,
    "-146 (draftkings)",
    "+116 (draftkings)"
+  ],
+  [
+   "Justin Thomas",
+   "Patrick Cantlay",
+   "?",
+   0.4965,
+   0.5370370370370371,
+   "-116 (draftkings)",
+   "-112 (draftkings)"
   ],
   [
    "Corey Conners",
