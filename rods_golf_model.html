@@ -394,6 +394,13 @@
     <button class="toolbtn" onclick="exportCSV('roundscore')">Export CSV</button>
     <button class="toolbtn" onclick="clearAll('roundscore')">Clear All</button>
   </div>
+  <div class="toolrow" style="justify-content:flex-start;gap:8px">
+    <button class="fbtn on" id="rsFilterAll">ALL</button>
+    <button class="fbtn" id="rsFilterPlays">PLAYS ONLY</button>
+    <span id="rsCount" style="font-size:10px;color:var(--text-dim);align-self:center"></span>
+    <span style="flex:1"></span>
+    <span style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;align-self:center">sorted by best edge</span>
+  </div>
   <div class="wide">
     <table id="rscoreTable">
       <thead>
@@ -401,14 +408,11 @@
           <th class="player">Player</th>
           <th>Rd</th>
           <th>Line</th>
-          <th>Model Under%</th>
-          <th>Market Under%</th>
-          <th>Edge U</th>
-          <th>Call U</th>
-          <th>Model Over%</th>
-          <th>Market Over%</th>
-          <th>Edge O</th>
-          <th>Call O</th>
+          <th>Model U%</th>
+          <th>Mkt U%</th>
+          <th>Model O%</th>
+          <th>Mkt O%</th>
+          <th>Play</th>
           <th></th>
         </tr>
       </thead>
@@ -828,6 +832,8 @@ document.getElementById('mTop5').addEventListener('click',function(){setOutMarke
 document.getElementById('mTop10').addEventListener('click',function(){setOutMarket('top10',this);});
 document.getElementById('mTop20').addEventListener('click',function(){setOutMarket('top20',this);});
 document.getElementById('trEventFilter').addEventListener('change',function(){trackerEventFilter=this.value;renderTracker();});
+document.getElementById('rsFilterAll').addEventListener('click',function(){rsFilter='all';setActive(this);renderRoundScore();});
+document.getElementById('rsFilterPlays').addEventListener('click',function(){rsFilter='plays';setActive(this);renderRoundScore();});
 
 // ---------------- round score: client-side sim (mirrors sim_engine.py's mixture model) ----------------
 const RS_TOUR_BASELINE_SD = 2.9;
@@ -843,8 +849,15 @@ function gaussSample(mean, sd) {
   return mean + z * sd;
 }
 function simRound(mean, sd, blowupRate) {
-  if (Math.random() < blowupRate) return gaussSample(mean + RS_BLOWUP_SHIFT, sd * 1.4);
-  return gaussSample(mean, sd);
+  // BUG FIX: the naive blow-up mixture has a TRUE mean of mean + blowupRate*RS_BLOWUP_SHIFT,
+  // not `mean` itself — invisible in matchups (bias cancels between two players) but directly
+  // distorts anything compared to an external fixed number (round-score totals against a book
+  // line). Confirmed empirically: this was pushing model% toward "Over" by ~0.3-0.6 strokes
+  // for every player, every line. De-biasing the input mean keeps the right-skew/tail-risk
+  // intentional, just centers the distribution correctly.
+  const adjustedMean = mean - blowupRate * RS_BLOWUP_SHIFT;
+  if (Math.random() < blowupRate) return gaussSample(adjustedMean + RS_BLOWUP_SHIFT, sd * 1.4);
+  return gaussSample(adjustedMean, sd);
 }
 function birkdaleCourseRow() {
   const row = F.find(r => String(r[0]).toLowerCase().includes('birkdale')) || F[0];
@@ -875,6 +888,7 @@ function rsCallFor(edge) {
 }
 
 let roundScoreProps = loadLS('rodsModel_roundScoreProps', []);
+let rsFilter = 'all'; // 'all' | 'plays'
 
 function populatePlayerDatalist() {
   const dl = document.getElementById('rsPlayerList');
@@ -978,30 +992,43 @@ function renderRoundScore() {
   const body = document.getElementById('rscoreBody');
   if (!body) return;
   body.innerHTML = '';
-  roundScoreProps.forEach(p => {
+
+  let rows = roundScoreProps.map(p => {
     const edgeU = (p.marketUnder !== null) ? p.modelUnder - p.marketUnder : null;
     const edgeO = (p.marketOver !== null) ? p.modelOver - p.marketOver : null;
-    const cu = rsCallFor(edgeU), co = rsCallFor(edgeO);
-    const canBetU = cu.call==='BET' && p.underPrice;
-    const canBetO = co.call==='BET' && p.overPrice;
+    // consolidate into a single call: whichever side has the bigger edge, if it clears
+    // the BET threshold, is "the play" — this is what actually gets shown/highlighted,
+    // instead of parsing two separate Call columns to figure out which side (if either) to bet
+    let play = null;
+    const uQualifies = edgeU !== null && edgeU * 100 >= 3;
+    const oQualifies = edgeO !== null && edgeO * 100 >= 3;
+    if (uQualifies && (!oQualifies || edgeU >= edgeO)) play = { side: 'Under', edge: edgeU, price: p.underPrice };
+    else if (oQualifies) play = { side: 'Over', edge: edgeO, price: p.overPrice };
+    const bestEdge = Math.max(edgeU ?? -Infinity, edgeO ?? -Infinity);
+    return { p, edgeU, edgeO, play, bestEdge };
+  });
+
+  if (rsFilter === 'plays') rows = rows.filter(r => r.play !== null);
+  rows.sort((a, b) => b.bestEdge - a.bestEdge); // strongest edge first, PASS rows sink to the bottom
+
+  document.getElementById('rsCount').textContent = `${rows.length} line${rows.length===1?'':'s'}`;
+
+  rows.forEach(({ p, play }) => {
+    const canBet = play && play.price;
+    const playHtml = play
+      ? `<span class="pill edge" style="font-size:11px;padding:5px 10px">BET ${play.side.toUpperCase()} ${p.line.toFixed(1)}</span>
+         <span class="val-pos" style="margin-left:6px;font-size:11px">+${(play.edge*100).toFixed(1)}%</span>
+         ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}')">+trk</button>`:''}`
+      : `<span class="pill thin">PASS</span>`;
     body.innerHTML += `<tr>
       <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}</td>
       <td class="cell" style="text-align:center">${p.round}</td>
       <td class="cell"><b>${p.line.toFixed(1)}</b></td>
       <td class="cell heat" style="background:${heat((p.modelUnder-0.3)/0.4)}">${(p.modelUnder*100).toFixed(1)}%</td>
       <td class="cell">${p.marketUnder!==null?(p.marketUnder*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell ${edgeU!==null?(edgeU>=0?'val-pos':'val-neg'):''}">${edgeU!==null?(edgeU>=0?'+':'')+(edgeU*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell" style="text-align:center">
-        <span class="pill ${cu.cls}">${cu.call}</span>
-        ${canBetU?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'Under','${p.underPrice}')">+trk</button>`:''}
-      </td>
       <td class="cell heat" style="background:${heat((p.modelOver-0.3)/0.4)}">${(p.modelOver*100).toFixed(1)}%</td>
       <td class="cell">${p.marketOver!==null?(p.marketOver*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell ${edgeO!==null?(edgeO>=0?'val-pos':'val-neg'):''}">${edgeO!==null?(edgeO>=0?'+':'')+(edgeO*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell" style="text-align:center">
-        <span class="pill ${co.cls}">${co.call}</span>
-        ${canBetO?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'Over','${p.overPrice}')">+trk</button>`:''}
-      </td>
+      <td class="cell" style="text-align:center;white-space:nowrap">${playHtml}</td>
       <td class="cell"><button class="delbtn" onclick="deleteRoundScoreProp(${p.id})">✕</button></td>
     </tr>`;
   });
