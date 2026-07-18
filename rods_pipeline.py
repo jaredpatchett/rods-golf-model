@@ -239,18 +239,25 @@ def pick_book_price(odds_dict):
     sides are needed (not just p1) so a FADE call — which means betting the
     *other* player — can still show the correct real price rather than
     reusing p1's price for a bet that's actually on p2.
+
+    Also returns book_count — how many books actually posted a price for this
+    matchup at all, not just which one we ended up using. A price backed by
+    one thin book deserves less confidence than one where 7 books agree, even
+    if the number itself looks the same on the page.
     """
     if not isinstance(odds_dict, dict):
-        return None, None, None
+        return None, None, None, 0
+    book_count = sum(1 for entry in odds_dict.values()
+                      if isinstance(entry, dict) and entry.get("p1") is not None)
     for book in BOOK_PREFERENCE:
         entry = odds_dict.get(book)
         if isinstance(entry, dict) and entry.get("p1") is not None:
-            return entry["p1"], entry.get("p2"), book
+            return entry["p1"], entry.get("p2"), book, book_count
     # fall back to whatever book is present, in whatever order the dict gives us
     for book, entry in odds_dict.items():
         if isinstance(entry, dict) and entry.get("p1") is not None:
-            return entry["p1"], entry.get("p2"), book
-    return None, None, None
+            return entry["p1"], entry.get("p2"), book, book_count
+    return None, None, None, book_count
 
 
 def pick_single_book_price(row):
@@ -347,7 +354,7 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         p1 = normalize_name(p1); p2 = normalize_name(p2)
         # book implied — DataGolf nests odds per sportsbook; walk BOOK_PREFERENCE
         market = pick(r, "p1_implied_prob", "market_prob", "p1_book_prob")
-        priceA, priceB, book_used = pick_book_price(r.get("odds"))
+        priceA, priceB, book_used, book_count = pick_book_price(r.get("odds"))
         market_prob = as_prob(market)
         if market_prob is None and priceA is not None:
             market_prob = implied_prob_from_american(priceA)  # derive from the price if DG didn't give a % directly
@@ -366,8 +373,18 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
             impliedB = implied_prob_from_american(priceB)
             if impliedA is not None and impliedB is not None and (impliedA + impliedB) > 0:
                 no_vig = impliedA / (impliedA + impliedB)
+        # skill-gap flag: large PROJ differences are exactly where the flat, shared variance
+        # assumption (same sd for every player) breaks down hardest, and real books tend to
+        # price "obvious" mismatches efficiently — so a big edge on a big skill gap is more
+        # often model error than real value, not less. Flag it rather than hide it; the person
+        # placing the bet should see the reason to double-check, not have it auto-filtered.
+        meanA = proj_by_name.get(p1, {}).get("mean")
+        meanB = proj_by_name.get(p2, {}).get("mean")
+        skill_gap = abs(meanA - meanB) if (meanA is not None and meanB is not None) else None
         meta.append({"a": p1, "b": p2, "wave": wave, "market": market_prob,
-                      "price": priceA_display, "priceB": priceB_display, "noVig": no_vig})
+                      "price": priceA_display, "priceB": priceB_display, "noVig": no_vig,
+                      "skillGap": round(skill_gap, 2) if skill_gap is not None else None,
+                      "bookCount": book_count})
 
     # one batched sim call for every matchup on the slate
     model_probs = run_matchup_sim(proj_by_name, pairs, course_row=course_row, n_rounds=n_rounds)
@@ -625,7 +642,8 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
 
     # convert to the compact array shapes the page's JS already expects
     P = [[r["name"], r["proj"], r["ttg"], r["ott"], r["app"], r["put"], r["arg"], r["fit"]] for r in proj]
-    M = [[m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"], m["priceB"], m["noVig"]] for m in match]
+    M = [[m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"], m["priceB"], m["noVig"],
+          m["skillGap"], m["bookCount"]] for m in match]
 
     data = {
         "meta": {
