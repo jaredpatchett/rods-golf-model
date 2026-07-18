@@ -236,6 +236,7 @@
     <div class="stat"><div class="v">156</div><div class="l">Players</div></div>
     <div class="stat"><div class="v">Par 70</div><div class="l">7,223 yds</div></div>
     <div class="stat"><div class="v">R1</div><div class="l">Jul 16–19</div></div>
+    <div class="stat"><div class="v" id="dataAsOf" style="font-size:11px">—</div><div class="l">Data As Of (UTC)</div></div>
     <div class="live"><div class="dot"></div><span>LIVE</span></div>
   </div>
 </div>
@@ -380,6 +381,14 @@
       <input class="finput" id="rsOverPrice" placeholder="-105" style="min-width:70px">
     </div>
     <button class="addbtn" onclick="addRoundScoreProp()">Add Line</button>
+  </div>
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Bulk Import — paste straight from DraftKings' Round Score page</label>
+    <textarea id="rsBulkText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied slate here — e.g. player names, 'Round Score - Round N O/U' headers, Over/Under lines and prices, exactly as copied. Non-matching lines are ignored automatically."></textarea>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="addbtn" onclick="bulkImportRoundScore()">Parse &amp; Add All</button>
+      <span id="rsBulkStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
   </div>
   <div class="toolrow">
     <button class="toolbtn" onclick="exportCSV('roundscore')">Export CSV</button>
@@ -873,6 +882,65 @@ function populatePlayerDatalist() {
   dl.innerHTML = P.map(r => `<option value="${r[0]}">`).join('');
 }
 
+// ---------------- bulk import: paste DraftKings' round-score slate, parse, add all at once ----------------
+function parseBulkRoundScoreText(text) {
+  // DraftKings uses U+2212 (minus sign) for negative prices, not a plain ASCII hyphen —
+  // confirmed against Rod's actual pasted text, silently breaks parseFloat if not normalized first.
+  const normalized = text.replace(/\u2212/g, '-');
+  const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const entries = [];
+  const headerRe = /^(.+?)\s+Round Score\s*-\s*Round\s*(\d+)\s*O\/U$/i;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(headerRe);
+    if (!m) continue;
+    const player = m[1].trim();
+    const roundNum = m[2];
+    if (i + 6 < lines.length && /^over$/i.test(lines[i+1]) && /^under$/i.test(lines[i+4])) {
+      entries.push({
+        player, round: 'R' + roundNum,
+        line: parseFloat(lines[i+2]), overPrice: lines[i+3],
+        underLine: parseFloat(lines[i+5]), underPrice: lines[i+6],
+      });
+      i += 6; // skip past the 6 lines just consumed
+    }
+  }
+  return entries;
+}
+function normalizeNameForMatch(s) {
+  return s.toLowerCase().replace(/[.\s]+/g, ' ').trim();
+}
+function bulkImportRoundScore() {
+  const text = document.getElementById('rsBulkText').value;
+  const status = document.getElementById('rsBulkStatus');
+  if (!text.trim()) { status.textContent = 'Paste something first.'; return; }
+  const parsed = parseBulkRoundScoreText(text);
+  if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste includes "Round Score - Round N O/U" headers.'; return; }
+
+  let added = 0;
+  const notFound = [];
+  parsed.forEach(entry => {
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
+    if (!prow || prow[1] === null || prow[1] === undefined) { notFound.push(entry.player); return; }
+    const meanPerRound = prow[1];
+    const roundsCount = entry.round === 'T72' ? 4 : 1;
+    const modelUnder = modelUnderProb(meanPerRound, entry.line, roundsCount);
+    const modelOver = 1 - modelUnder;
+    roundScoreProps.push({
+      id: Date.now() + Math.random() + added, // += added avoids same-ms id collisions across a big batch
+      name: prow[0], round: entry.round, line: entry.line,
+      underPrice: entry.underPrice, overPrice: entry.overPrice,
+      modelUnder, modelOver,
+      marketUnder: impliedProb(entry.underPrice), marketOver: impliedProb(entry.overPrice),
+    });
+    added++;
+  });
+  saveLS('rodsModel_roundScoreProps', roundScoreProps);
+  renderRoundScore();
+  document.getElementById('rsBulkText').value = '';
+  status.textContent = `Added ${added} of ${parsed.length}.` +
+    (notFound.length ? ` Not matched (check spelling vs the field): ${notFound.join(', ')}` : '');
+}
+
 function addRoundScoreProp() {
   const name = document.getElementById('rsPlayer').value.trim();
   const round = document.getElementById('rsRound').value;
@@ -1019,7 +1087,7 @@ function renderTracker() {
   // with whichever tournament is currently loaded (a safe assumption — this
   // tracker's only ever seen one event's worth of bets before this feature)
   let migrated = false;
-  betTracker.forEach(b => { if (!b.event) { b.event = currentEvent; migrated = true; } });
+  betTracker.forEach(b => { if (!b.event || b.event === 'Unlabeled Event') { b.event = currentEvent; migrated = true; } });
   if (migrated) saveLS('rodsModel_betTracker', betTracker);
 
   // distinct events, most-recently-added first
@@ -1158,6 +1226,10 @@ function applyMeta(meta){
     if(el){ const v=Number(meta.draw_bias); el.textContent=(v>0?'+':'')+v.toFixed(1)+' AM'; }
   }
   if(meta.event){ currentEvent = meta.event; }
+  if(meta.generated){
+    const el=document.getElementById('dataAsOf');
+    if(el) el.textContent = meta.generated;
+  }
 }
 
 fetch('rods_data.json',{cache:'no-store'})
