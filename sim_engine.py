@@ -54,10 +54,30 @@ N_TRIALS = 20000         # Monte Carlo draws per matchup — raise for tighter C
 
 
 def simulate_round(mean, sd, blowup_rate, rng):
-    """One simulated round score for a player: mean-centered, right-skewed by blowup_rate."""
+    """
+    One simulated round score for a player: mean-centered on `mean` (see below
+    for why that needed a fix), right-skewed by blowup_rate for realistic
+    disaster-round tail risk.
+
+    BUG FIX (confirmed empirically): the naive version of this — draw from
+    Normal(mean, sd) normally, or Normal(mean+BLOWUP_SHIFT, sd*1.4) on a
+    blow-up round — has a TRUE mean of mean + blowup_rate*BLOWUP_SHIFT, not
+    `mean` itself. That's an unwanted systematic bias, not intentional skew.
+    It's invisible in head-to-head matchups (both players get the same
+    additive shift, so it cancels in the comparison) but directly distorts
+    any comparison against an external fixed number — round-score totals,
+    outright win markets, anything compared to a real sportsbook line. There
+    it doesn't cancel; it just pushes the whole field toward "Over" (or
+    "more likely to win/finish well") by a constant amount every time.
+    Subtracting blowup_rate*BLOWUP_SHIFT from the input mean before applying
+    the mixture keeps the intentional right-skew (blow-up rounds still
+    happen, still add tail risk and widen the distribution) while making the
+    distribution's actual mean equal to `mean`, as intended.
+    """
+    adjusted_mean = mean - blowup_rate * BLOWUP_SHIFT
     if rng.random() < blowup_rate:
-        return rng.gauss(mean + BLOWUP_SHIFT, sd * 1.4)
-    return rng.gauss(mean, sd)
+        return rng.gauss(adjusted_mean + BLOWUP_SHIFT, sd * 1.4)
+    return rng.gauss(adjusted_mean, sd)
 
 
 def player_sd(course_sd, var_mult):
