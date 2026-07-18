@@ -764,16 +764,15 @@ const W20_FALLBACK=[
 ["Xander Schauffele",0.52,0.54,"-100 (bet365)"],
 ["Jon Rahm",0.48,0.46,"+105 (bet365)"]
 ];
-function novig(pFor){
-  // crude: assume symmetric market, no-vig ~ pFor (already fair-ish) - here derive from price is skipped for sample
-  return pFor; // placeholder equals market for sample
-}
 let matchFilter='all';
 function buildMatch(search=''){
   const body=document.getElementById('matchBody');body.innerHTML='';
   let rows=M.map(m=>{
-    const [a,b,wave,model,market,priceA,priceB]=m;
-    const nv=market; // sample: treat market as ~no-vig
+    const [a,b,wave,model,market,priceA,priceB,noVig]=m;
+    // real no-vig: computed pipeline-side from BOTH sides' actual prices (impliedA /
+    // (impliedA+impliedB)), removing the book's overround. Falls back to raw market% only
+    // for old cached data from before this fix (noVig undefined) or when priceB was missing.
+    const nv = (noVig !== undefined && noVig !== null) ? noVig : market;
     const edge=model-nv;
     return {a,b,wave,model,market,nv,priceA,priceB,edge};
   });
