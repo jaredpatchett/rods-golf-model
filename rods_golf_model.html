@@ -349,7 +349,7 @@
       <tbody id="matchBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. Sample numbers for layout.</div>
+  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books. Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
 </div>
 
 <!-- ============ TAB 4: ROUND SCORE ============ -->
@@ -379,6 +379,12 @@
     <div class="field">
       <label>Over Price</label>
       <input class="finput" id="rsOverPrice" placeholder="-105" style="min-width:70px">
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer" for="rsElevatedRisk">
+        <input type="checkbox" id="rsElevatedRisk" style="width:13px;height:13px;accent-color:var(--amber);cursor:pointer">
+        Trailing / elevated risk
+      </label>
     </div>
     <button class="addbtn" onclick="addRoundScoreProp()">Add Line</button>
   </div>
@@ -768,13 +774,13 @@ let matchFilter='all';
 function buildMatch(search=''){
   const body=document.getElementById('matchBody');body.innerHTML='';
   let rows=M.map(m=>{
-    const [a,b,wave,model,market,priceA,priceB,noVig]=m;
+    const [a,b,wave,model,market,priceA,priceB,noVig,skillGap,bookCount]=m;
     // real no-vig: computed pipeline-side from BOTH sides' actual prices (impliedA /
     // (impliedA+impliedB)), removing the book's overround. Falls back to raw market% only
     // for old cached data from before this fix (noVig undefined) or when priceB was missing.
     const nv = (noVig !== undefined && noVig !== null) ? noVig : market;
     const edge=model-nv;
-    return {a,b,wave,model,market,nv,priceA,priceB,edge};
+    return {a,b,wave,model,market,nv,priceA,priceB,edge,skillGap,bookCount};
   });
   if(matchFilter==='edge')rows=rows.filter(r=>Math.abs(r.edge)>=0.03);
   if(matchFilter==='same')rows=rows.filter(r=>r.wave==='AM');
@@ -793,6 +799,22 @@ function buildMatch(search=''){
     const betSide = call==='BET' ? r.a : (call==='FADE' ? r.b : null);
     const betPrice = call==='BET' ? r.priceA : (call==='FADE' ? r.priceB : null);
     const canBet = betSide && betPrice && betPrice !== '—';
+    // Warning flags — shown, not auto-filtered, so the judgment stays with the person
+    // placing the bet (same principle as skipping Molinari/Scheffler by hand): a big skill
+    // gap is exactly where the model's flat shared-variance assumption breaks down hardest,
+    // and real books tend to price "obvious" mismatches efficiently — so a huge edge on a
+    // huge gap is more often model error than real value. Thin markets (1-2 books) get less
+    // confidence too, since the price itself is less battle-tested.
+    let warnings = [];
+    if (r.skillGap !== null && r.skillGap !== undefined && r.skillGap >= 1.5) {
+      warnings.push(`⚠ ${r.skillGap.toFixed(1)} stroke PROJ gap — large mismatches are where the model is most likely to overstate edge`);
+    }
+    if (r.bookCount !== null && r.bookCount !== undefined && r.bookCount <= 2) {
+      warnings.push(`⚠ price backed by only ${r.bookCount} book${r.bookCount===1?'':'s'} — less confidence than a deep, multi-book line`);
+    }
+    const warnIcon = warnings.length
+      ? `<span style="color:var(--amber);cursor:help;margin-left:4px;font-size:11px" title="${warnings.join(' | ').replace(/"/g,'&quot;')}">⚠</span>`
+      : '';
     body.innerHTML+=`<tr>
       <td class="pname"><b>${r.a}</b><span class="vs">vs</span><span style="color:var(--text-dim)">${r.b}</span></td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${r.wave}</td>
@@ -802,7 +824,7 @@ function buildMatch(search=''){
       <td class="cell ${edgeCls}">${edgePct>=0?'+':''}${edgePct.toFixed(1)}%<span class="bar-wrap"><span class="bar" style="width:${Math.min(100,Math.abs(edgePct)*8)}%;background:${edgePct>=0?'var(--green)':'#c96a52'}"></span></span></td>
       <td class="cell" style="color:var(--text-dim)">${r.priceA}</td>
       <td class="cell" style="text-align:center">
-        <span class="pill ${cls}">${call}</span>
+        <span class="pill ${cls}">${call}</span>${warnIcon}
         ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}')">+trk</button>`:''}
       </td>
     </tr>`;
@@ -862,13 +884,31 @@ function birkdaleCourseRow() {
   const row = F.find(r => String(r[0]).toLowerCase().includes('birkdale')) || F[0];
   return row ? { sd: row[3], blowup: row[4] } : { sd: RS_TOUR_BASELINE_SD, blowup: RS_DEFAULT_BLOWUP };
 }
-function modelUnderProb(meanPerRound, line, roundsCount = 1) {
+function modelUnderProb(meanPerRound, line, roundsCount = 1, elevatedRisk = false) {
   const { sd, blowup } = birkdaleCourseRow();
-  const useSd = sd || RS_TOUR_BASELINE_SD, useBlowup = (blowup === undefined || blowup === null) ? RS_DEFAULT_BLOWUP : blowup;
+  const useSd = sd || RS_TOUR_BASELINE_SD;
+  let useBlowup = (blowup === undefined || blowup === null) ? RS_DEFAULT_BLOWUP : blowup;
+  let effectiveMean = meanPerRound;
+  // manual override for a specific player you know is trailing/pushing hard (final-round
+  // desperation play) — the course-level blowup rate is one flat number applied to
+  // everyone, with no live leaderboard-position data feeding it, so this doesn't know who's
+  // actually chasing today. This is Rod's own judgment layered on top, not something the
+  // model infers.
+  // Two effects, not one: (1) wider blow-up risk (both a great low round AND a disaster get
+  // more likely), (2) a modest average-score penalty — aggressive pressured play is usually
+  // -EV on average even as it raises the ceiling, which is precisely the trade a trailing
+  // player is choosing to make. First version of this only did (1) and, when tested, barely
+  // moved the numbers — widening variance around a threshold near the mean doesn't shift
+  // probabilities much on its own. This is a real modeling choice, not inferred from data —
+  // reasonable, not precisely calibrated.
+  if (elevatedRisk) {
+    useBlowup = Math.min(useBlowup * 2.0, 0.35);
+    effectiveMean = meanPerRound + 0.3;
+  }
   let under = 0;
   for (let i = 0; i < RS_TRIALS; i++) {
     let total = 0;
-    for (let r = 0; r < roundsCount; r++) total += simRound(meanPerRound, useSd, useBlowup);
+    for (let r = 0; r < roundsCount; r++) total += simRound(effectiveMean, useSd, useBlowup);
     if (total < line) under++;
   }
   return under / RS_TRIALS;
@@ -961,21 +1001,23 @@ function addRoundScoreProp() {
   const line = parseFloat(document.getElementById('rsLine').value);
   const underPrice = document.getElementById('rsUnderPrice').value.trim();
   const overPrice = document.getElementById('rsOverPrice').value.trim();
+  const elevatedRisk = document.getElementById('rsElevatedRisk').checked;
   if (!name || isNaN(line)) { alert('Enter a player name and a line.'); return; }
   const prow = P.find(r => r[0].toLowerCase() === name.toLowerCase());
   if (!prow) { alert('Player not found in the current field — check the spelling / search list.'); return; }
   const meanPerRound = prow[1];
   if (meanPerRound === null || meanPerRound === undefined) { alert('No PROJ score available for this player yet.'); return; }
-  const modelUnder = modelUnderProb(meanPerRound, line, roundsCount);
+  const modelUnder = modelUnderProb(meanPerRound, line, roundsCount, elevatedRisk);
   const modelOver = 1 - modelUnder;
   const marketUnder = underPrice ? impliedProb(underPrice) : null;
   const marketOver = overPrice ? impliedProb(overPrice) : null;
   roundScoreProps.push({
     id: Date.now() + Math.random(),
     name, round, line, underPrice: underPrice || null, overPrice: overPrice || null,
-    modelUnder, modelOver, marketUnder, marketOver,
+    modelUnder, modelOver, marketUnder, marketOver, elevatedRisk,
   });
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
+  document.getElementById('rsElevatedRisk').checked = false;
   document.getElementById('rsPlayer').value = '';
   document.getElementById('rsLine').value = '';
   document.getElementById('rsUnderPrice').value = '';
@@ -1020,7 +1062,7 @@ function renderRoundScore() {
          ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}')">+trk</button>`:''}`
       : `<span class="pill thin">PASS</span>`;
     body.innerHTML += `<tr>
-      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}</td>
+      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}${p.elevatedRisk?' <span class="badge push" style="font-size:8px" title="Elevated blow-up risk applied — your manual call, not model-inferred">RISK+</span>':''}</td>
       <td class="cell" style="text-align:center">${p.round}</td>
       <td class="cell"><b>${p.line.toFixed(1)}</b></td>
       <td class="cell heat" style="background:${heat((p.modelUnder-0.3)/0.4)}">${(p.modelUnder*100).toFixed(1)}%</td>
