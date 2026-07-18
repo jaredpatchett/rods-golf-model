@@ -301,7 +301,27 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
                 return row[n]
         return None
 
-    rows = as_rows(matchup_payload)
+    raw_rows = as_rows(matchup_payload)
+
+    # DataGolf posts the SAME pairing as two separate entries when a book offers both a
+    # standard 2-way market (ties refunded — "ties": "void") and a 3-way market (ties as
+    # their own outcome — "ties": "separate bet offered"). Confirmed live: the 3-way variant
+    # carries far fewer books and never includes DraftKings, so keeping both just duplicates
+    # every such pairing on the page with a worse, less-actionable price. Dedup down to one
+    # row per (p1,p2), preferring "ties":"void" (the standard head-to-head bet) whenever both
+    # exist for the same pairing.
+    by_pair = {}
+    for r in raw_rows:
+        p1_raw = pick(r, "p1_player_name", "player1", "p1")
+        p2_raw = pick(r, "p2_player_name", "player2", "p2")
+        if not p1_raw or not p2_raw:
+            continue
+        key = (p1_raw, p2_raw)
+        existing = by_pair.get(key)
+        if existing is None or (r.get("ties") == "void" and existing.get("ties") != "void"):
+            by_pair[key] = r
+    rows = list(by_pair.values())
+
     pairs = []
     meta = []
     for r in rows:
@@ -321,8 +341,18 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         pairs.append((p1, p2))
         priceA_display = f"{priceA} ({book_used})" if priceA is not None else "—"
         priceB_display = f"{priceB} ({book_used})" if priceB is not None else "—"
+        # real no-vig: normalize both sides' implied probabilities so they sum to exactly
+        # 1.0, removing the book's overround. Previously this column was a placeholder that
+        # just copied market% unchanged — confirmed on the live page (every row showed
+        # No-Vig% == Market%, which should never happen once real vig is actually removed).
+        no_vig = None
+        if priceA is not None and priceB is not None:
+            impliedA = implied_prob_from_american(priceA)
+            impliedB = implied_prob_from_american(priceB)
+            if impliedA is not None and impliedB is not None and (impliedA + impliedB) > 0:
+                no_vig = impliedA / (impliedA + impliedB)
         meta.append({"a": p1, "b": p2, "wave": wave, "market": market_prob,
-                      "price": priceA_display, "priceB": priceB_display})
+                      "price": priceA_display, "priceB": priceB_display, "noVig": no_vig})
 
     # one batched sim call for every matchup on the slate
     model_probs = run_matchup_sim(proj_by_name, pairs, course_row=course_row, n_rounds=n_rounds)
@@ -580,7 +610,7 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
 
     # convert to the compact array shapes the page's JS already expects
     P = [[r["name"], r["proj"], r["ttg"], r["ott"], r["app"], r["put"], r["arg"], r["fit"]] for r in proj]
-    M = [[m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"], m["priceB"]] for m in match]
+    M = [[m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"], m["priceB"], m["noVig"]] for m in match]
 
     data = {
         "meta": {
