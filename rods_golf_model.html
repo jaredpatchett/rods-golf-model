@@ -962,6 +962,22 @@ function parseBulkRoundScoreText(text) {
 function normalizeNameForMatch(s) {
   return s.toLowerCase().replace(/[.\s]+/g, ' ').trim();
 }
+// Same player + round + line = the same prop, re-added (line moved, price moved, or you
+// just pasted the same slate twice). Update the existing entry in place instead of stacking
+// duplicates — this is what was inflating "49 plays" with the same Sepp Straka R4 69.5 line
+// showing up five times with slightly different numbers.
+function upsertRoundScoreProp(entry) {
+  const existingIdx = roundScoreProps.findIndex(p =>
+    normalizeNameForMatch(p.name) === normalizeNameForMatch(entry.name) &&
+    p.round === entry.round && p.line === entry.line);
+  if (existingIdx >= 0) {
+    roundScoreProps[existingIdx] = { ...roundScoreProps[existingIdx], ...entry, id: roundScoreProps[existingIdx].id };
+    return false; // updated, not newly added
+  }
+  roundScoreProps.push(entry);
+  return true; // newly added
+}
+
 function bulkImportRoundScore() {
   const text = document.getElementById('rsBulkText').value;
   const status = document.getElementById('rsBulkStatus');
@@ -969,28 +985,28 @@ function bulkImportRoundScore() {
   const parsed = parseBulkRoundScoreText(text);
   if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste includes "Round Score - Round N O/U" headers.'; return; }
 
-  let added = 0;
+  let added = 0, updated = 0;
   const notFound = [];
-  parsed.forEach(entry => {
+  parsed.forEach((entry, i) => {
     const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
     if (!prow || prow[1] === null || prow[1] === undefined) { notFound.push(entry.player); return; }
     const meanPerRound = prow[1];
     const roundsCount = entry.round === 'T72' ? 4 : 1;
     const modelUnder = modelUnderProb(meanPerRound, entry.line, roundsCount);
     const modelOver = 1 - modelUnder;
-    roundScoreProps.push({
-      id: Date.now() + Math.random() + added, // += added avoids same-ms id collisions across a big batch
+    const isNew = upsertRoundScoreProp({
+      id: Date.now() + Math.random() + i, // += i avoids same-ms id collisions across a big batch
       name: prow[0], round: entry.round, line: entry.line,
       underPrice: entry.underPrice, overPrice: entry.overPrice,
       modelUnder, modelOver,
       marketUnder: impliedProb(entry.underPrice), marketOver: impliedProb(entry.overPrice),
     });
-    added++;
+    if (isNew) added++; else updated++;
   });
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
   document.getElementById('rsBulkText').value = '';
-  status.textContent = `Added ${added} of ${parsed.length}.` +
+  status.textContent = `Added ${added} new, updated ${updated} existing (of ${parsed.length} parsed).` +
     (notFound.length ? ` Not matched (check spelling vs the field): ${notFound.join(', ')}` : '');
 }
 
@@ -1011,9 +1027,9 @@ function addRoundScoreProp() {
   const modelOver = 1 - modelUnder;
   const marketUnder = underPrice ? impliedProb(underPrice) : null;
   const marketOver = overPrice ? impliedProb(overPrice) : null;
-  roundScoreProps.push({
+  upsertRoundScoreProp({
     id: Date.now() + Math.random(),
-    name, round, line, underPrice: underPrice || null, overPrice: overPrice || null,
+    name: prow[0], round, line, underPrice: underPrice || null, overPrice: overPrice || null,
     modelUnder, modelOver, marketUnder, marketOver, elevatedRisk,
   });
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
@@ -1033,6 +1049,19 @@ function renderRoundScore() {
   const body = document.getElementById('rscoreBody');
   if (!body) return;
   body.innerHTML = '';
+
+  // one-time cleanup: collapse any duplicates already sitting in storage from before the
+  // upsert fix existed (same player+round+line entered more than once) — keeps the LAST
+  // occurrence of each, since that's the most recently updated price/model numbers.
+  const seen = new Map();
+  roundScoreProps.forEach(p => {
+    const key = normalizeNameForMatch(p.name) + '|' + p.round + '|' + p.line;
+    seen.set(key, p); // later entries overwrite earlier ones for the same key
+  });
+  if (seen.size !== roundScoreProps.length) {
+    roundScoreProps = Array.from(seen.values());
+    saveLS('rodsModel_roundScoreProps', roundScoreProps);
+  }
 
   let rows = roundScoreProps.map(p => {
     const edgeU = (p.marketUnder !== null) ? p.modelUnder - p.marketUnder : null;
