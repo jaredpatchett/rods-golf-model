@@ -24,6 +24,10 @@ jobs:
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
         run: python3 rods_pipeline.py
+        - name: Debug matchup dupes (temporary)
+        env:
+          DG_KEY: ${{ secrets.DG_KEY }}
+        run: python3 debug_matchup_dupes.py
       - name: Debug outrights (temporary)
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
