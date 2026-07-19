@@ -959,7 +959,10 @@ function populatePlayerDatalist() {
 const FORM_BLEND_K = 0.5;
 const COURSE_PAR = 70;
 
-function parseLeaderboardText(text) {
+function stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+
+// Strategy 1: simple "Name  -12" one-liner (works for manually-typed or simply-copied lists)
+function parseLeaderboardSimple(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const entries = [];
   const toParToken = /^([+-]\d{1,2}|E|EVEN)$/i;
@@ -980,6 +983,72 @@ function parseLeaderboardText(text) {
     entries.push({ name, toPar: toParVal });
   }
   return entries;
+}
+
+// Strategy 2: one field per line (confirmed real format from a live scoring site) —
+// [Pos] [seed#] [blank?] COUNTRY(3 letters) Name [Sponsor?] Total Thru Round R1 R2 R3 R4 ...
+// Anchors on the 3-letter country code, then consumes lines until the first +/-N or E
+// token — that's the Total-to-par. Strips known equipment-sponsor noise words (a name
+// block sometimes has "Titleist" etc. on its own line right after the player's name).
+const SPONSOR_WORDS = new Set(['titleist','nike','callaway','taylormade','ping','adidas','pxg',
+  'under armour','cobra','mizuno','srixon','footjoy','puma','honma','wilson']);
+function parseLeaderboardMultiLine(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const countryRe = /^[A-Z]{3}$/;
+  const toParRe = /^([+-]\d{1,2}|E)$/;
+  const entries = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!countryRe.test(lines[i])) continue;
+    let j = i + 1, nameParts = [];
+    while (j < lines.length && !toParRe.test(lines[j])) {
+      if (!SPONSOR_WORDS.has(lines[j].toLowerCase())) nameParts.push(lines[j]);
+      j++;
+      if (j - i > 5) break; // safety: name blocks shouldn't run this long, bail if malformed
+    }
+    if (j >= lines.length || !toParRe.test(lines[j])) continue;
+    const name = nameParts.join(' ').trim();
+    if (!name) continue;
+    const toPar = lines[j] === 'E' ? 0 : parseInt(lines[j], 10);
+    entries.push({ name, toPar });
+    i = j;
+  }
+  return entries;
+}
+
+// Strategy 3: another real format — full country names (not 3-letter codes; "New Zealand",
+// "South Korea", "Northern Ireland" don't match Strategy 2's country-code anchor at all),
+// score/today/thru/rounds all packed onto one line together. Anchors on that packed line
+// instead — it's distinctive (starts with a to-par token AND has several more tab/space-
+// separated fields after it, unlike a standalone to-par line) — then takes the player name
+// from the line immediately before it.
+function parseLeaderboardPackedLine(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const toParRe = /^([+-]\d{1,2}|E)$/;
+  const entries = [];
+  for (let i = 1; i < lines.length; i++) {
+    const tabTokens = lines[i].split(/\t+|\s{2,}/).map(t => t.trim()).filter(t => t.length);
+    const tokens = tabTokens.length > 1 ? tabTokens : lines[i].split(/\s+/);
+    if (tokens.length < 3) continue; // need at least score + today + one more field
+    if (!toParRe.test(tokens[0])) continue;
+    const name = lines[i - 1];
+    if (!name || toParRe.test(name)) continue; // guard against misfires on adjacent to-par-only lines
+    const toPar = tokens[0] === 'E' ? 0 : parseInt(tokens[0], 10);
+    entries.push({ name, toPar });
+  }
+  return entries;
+}
+
+// Try all three strategies, merge by name (covers whatever format got pasted without you
+// having to know or care which one it is).
+function parseLeaderboardText(text) {
+  const simple = parseLeaderboardSimple(text);
+  const multiLine = parseLeaderboardMultiLine(text);
+  const packed = parseLeaderboardPackedLine(text);
+  const merged = new Map();
+  simple.forEach(e => merged.set(normalizeNameForMatch(e.name), e));
+  multiLine.forEach(e => merged.set(normalizeNameForMatch(e.name), e));
+  packed.forEach(e => merged.set(normalizeNameForMatch(e.name), e)); // most distinctive anchor, wins on overlap
+  return Array.from(merged.values());
 }
 
 function applyLeaderboardAdjustment() {
@@ -1049,7 +1118,7 @@ function parseBulkRoundScoreText(text) {
   return entries;
 }
 function normalizeNameForMatch(s) {
-  return s.toLowerCase().replace(/[.\s]+/g, ' ').trim();
+  return stripAccents(s).toLowerCase().replace(/[.\s]+/g, ' ').trim();
 }
 // Same player + round + line = the same prop, re-added (line moved, price moved, or you
 // just pasted the same slate twice). Update the existing entry in place instead of stacking
