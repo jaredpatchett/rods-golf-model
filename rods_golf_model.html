@@ -1076,9 +1076,27 @@ function applyLeaderboardAdjustment() {
     applied++;
   });
   saveLS('rodsModel_formAdjustments', formAdjustments);
-  status.textContent = `Applied form adjustment to ${applied} of ${parsed.length} players.` +
-    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '') +
-    ` Add or re-add Round Score lines now to use the adjusted numbers.`;
+
+  // retroactively recompute any EXISTING Round Score rows for players who now have an
+  // adjustment — applying the adjustment shouldn't require remembering to re-add every
+  // line by hand. This was a real gap: the first version only affected lines added after
+  // clicking Apply, silently leaving already-added rows on the stale static-PROJ numbers.
+  let recomputed = 0;
+  roundScoreProps.forEach(p => {
+    const adj = formAdjustments[normalizeNameForMatch(p.name)];
+    if (!adj) return;
+    const roundsCount = p.round === 'T72' ? 4 : 1;
+    p.modelUnder = modelUnderProb(adj.adjustedProj, p.line, roundsCount, p.elevatedRisk || false);
+    p.modelOver = 1 - p.modelUnder;
+    p.formAdjusted = true;
+    recomputed++;
+  });
+  if (recomputed > 0) saveLS('rodsModel_roundScoreProps', roundScoreProps);
+  renderRoundScore();
+
+  status.textContent = `Applied form adjustment to ${applied} of ${parsed.length} players` +
+    (recomputed > 0 ? `, recomputed ${recomputed} existing Round Score row${recomputed===1?'':'s'}.` : '. No existing Round Score rows to update.') +
+    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
 }
 
 function clearFormAdjustments() {
