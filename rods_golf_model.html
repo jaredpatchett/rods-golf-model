@@ -963,6 +963,12 @@ function populatePlayerDatalist() {
 // one outlier round as real signal), and how much to trust it is a real judgment call that
 // should be visible and adjustable, not buried in code.
 const COURSE_PAR = 70;
+// Matches BASELINE_ROUND_SCORE in rods_pipeline.py — the guessed constant (par + a rough
+// toughening margin) used to convert DataGolf's raw skill prediction into an absolute
+// stroke number. Confirmed too high by 1.47 strokes against a real Round 3 leaderboard —
+// this is a SHARED bias across the whole field, not a per-player one. See
+// applyLeaderboardAdjustment() for the field-wide correction.
+const BASELINE_ROUND_SCORE_ASSUMED = 71.0;
 
 function stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
@@ -1056,6 +1062,8 @@ function parseLeaderboardText(text) {
   return Array.from(merged.values());
 }
 
+let fieldBaselineCorrection = loadLS('rodsModel_fieldBaselineCorrection', 0); // strokes to subtract from EVERY player's static PROJ
+
 function applyLeaderboardAdjustment() {
   const text = document.getElementById('rsLeaderboardText').value;
   const status = document.getElementById('rsLeaderboardStatus');
@@ -1067,33 +1075,47 @@ function applyLeaderboardAdjustment() {
   const parsed = parseLeaderboardText(text);
   if (!parsed.length) { status.textContent = 'Found 0 players — check the paste includes a name and a +/- score-to-par on each line.'; return; }
 
+  // FIELD-WIDE baseline correction: BASELINE_ROUND_SCORE (the constant used to convert
+  // DataGolf's raw prediction into an absolute stroke number) was a guessed placeholder
+  // (71.0), not measured from real scoring. Confirmed directly from a real leaderboard pull:
+  // the field's actual average round score this week can differ from that guess by well
+  // over a stroke — a SHARED bias applied to every player equally, which per-player form
+  // blending can't fix since it's not a per-player problem. This computes the real field
+  // average from the whole pasted leaderboard (not just players matched into a Round Score
+  // line) and corrects every player's PROJ by the same amount before any individual blend
+  // is layered on top.
+  const fieldAvgToPar = parsed.reduce((sum, e) => sum + e.toPar, 0) / parsed.length;
+  const impliedFieldBaseline = (COURSE_PAR * roundsCompleted + fieldAvgToPar) / roundsCompleted;
+  fieldBaselineCorrection = Math.round((BASELINE_ROUND_SCORE_ASSUMED - impliedFieldBaseline) * 100) / 100;
+  saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
+
   let applied = 0;
   const notFound = [];
   parsed.forEach(entry => {
     const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name));
     if (!prow || prow[1] === null || prow[1] === undefined) { notFound.push(entry.name); return; }
-    const staticProj = prow[1];
+    const staticProj = prow[1] - fieldBaselineCorrection; // baseline-corrected before the individual blend
     const actualAvgPerRound = (COURSE_PAR * roundsCompleted + entry.toPar) / roundsCompleted;
     const adjustment = actualAvgPerRound - staticProj;
     const adjustedProj = staticProj + blendWeight * adjustment;
     formAdjustments[normalizeNameForMatch(prow[0])] = {
       adjustedProj: Math.round(adjustedProj * 100) / 100,
-      staticProj, toPar: entry.toPar, roundsCompleted, blendWeight,
+      staticProj: prow[1], toPar: entry.toPar, roundsCompleted, blendWeight,
     };
     applied++;
   });
   saveLS('rodsModel_formAdjustments', formAdjustments);
 
-  // retroactively recompute any EXISTING Round Score rows for players who now have an
-  // adjustment — applying the adjustment shouldn't require remembering to re-add every
-  // line by hand. This was a real gap: the first version only affected lines added after
-  // clicking Apply, silently leaving already-added rows on the stale static-PROJ numbers.
+  // retroactively recompute EVERY existing Round Score row — not just ones with an
+  // individual player-level adjustment, since the field baseline correction applies to
+  // everyone regardless of whether they were specifically named in the pasted leaderboard.
   let recomputed = 0;
   roundScoreProps.forEach(p => {
-    const adj = formAdjustments[normalizeNameForMatch(p.name)];
-    if (!adj) return;
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
+    if (!prow || prow[1] === null || prow[1] === undefined) return;
+    const effectiveProj = getEffectiveProj(p.name, prow[1]);
     const roundsCount = p.round === 'T72' ? 4 : 1;
-    p.modelUnder = modelUnderProb(adj.adjustedProj, p.line, roundsCount, p.elevatedRisk || false);
+    p.modelUnder = modelUnderProb(effectiveProj, p.line, roundsCount, p.elevatedRisk || false);
     p.modelOver = 1 - p.modelUnder;
     p.formAdjusted = true;
     recomputed++;
@@ -1101,21 +1123,25 @@ function applyLeaderboardAdjustment() {
   if (recomputed > 0) saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
 
-  status.textContent = `Applied form adjustment (blend=${blendWeight}) to ${applied} of ${parsed.length} players` +
+  status.textContent = `Field baseline correction: ${fieldBaselineCorrection>=0?'-':'+'}${Math.abs(fieldBaselineCorrection).toFixed(2)} strokes applied to everyone. ` +
+    `Individual form blend (weight=${blendWeight}) applied to ${applied} of ${parsed.length} matched players` +
     (recomputed > 0 ? `, recomputed ${recomputed} existing Round Score row${recomputed===1?'':'s'}.` : '. No existing Round Score rows to update.') +
     (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
 }
 
 function clearFormAdjustments() {
-  if (!confirm('Clear all live form adjustments? Existing Round Score lines keep whatever numbers they were computed with — this only affects new lines added after clearing.')) return;
+  if (!confirm('Clear all live form adjustments (including the field baseline correction)? Existing Round Score lines keep whatever numbers they were computed with — this only affects new lines added after clearing.')) return;
   formAdjustments = {};
+  fieldBaselineCorrection = 0;
   saveLS('rodsModel_formAdjustments', formAdjustments);
+  saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
   document.getElementById('rsLeaderboardStatus').textContent = 'Cleared.';
 }
 
 function getEffectiveProj(playerName, staticProj) {
+  const baselineCorrected = staticProj - fieldBaselineCorrection;
   const adj = formAdjustments[normalizeNameForMatch(playerName)];
-  return adj ? adj.adjustedProj : staticProj;
+  return adj ? adj.adjustedProj : baselineCorrected;
 }
 
 // ---------------- bulk import: paste DraftKings' round-score slate, parse, add all at once ----------------
