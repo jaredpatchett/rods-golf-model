@@ -2,8 +2,8 @@
  "meta": {
   "event": "The 154th Open \u2014 Royal Birkdale",
   "players": 140,
-  "generated": "2026-07-20 20:09:07",
-  "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups]",
+  "generated": "2026-07-20 21:44:05",
+  "source": "DataGolf projections (Path A) + sim_engine.py for model% [tournament_matchups]",
   "draw_bias": null
  },
  "P": [
@@ -1442,472 +1442,148 @@
  ],
  "M": [
   [
-   "Corey Conners",
-   "Johnny Keefer",
-   "?",
-   0.5173,
-   0.5726495726495726,
-   "-134 (draftkings)",
-   "+106 (draftkings)",
-   0.5412124539251824,
-   0.4,
-   8
-  ],
-  [
-   "Kurt Kitayama",
-   "Michael Brennan",
-   "?",
-   0.5445,
-   0.6,
-   "-150 (draftkings)",
-   "+120 (draftkings)",
-   0.5689655172413793,
-   0.8,
-   8
-  ],
-  [
-   "Keegan Bradley",
-   "Jesper Svensson",
-   "?",
-   null,
-   0.5454545454545454,
-   "-120 (bet365)",
-   "+130 (bet365)",
-   0.5564516129032259,
-   null,
-   2
-  ],
-  [
-   "Laurie Canter",
-   "Matthew Southgate",
-   "?",
-   null,
-   0.5555555555555556,
-   "-125 (bet365)",
-   "+137 (bet365)",
-   0.5683453237410072,
-   null,
-   2
-  ],
-  [
-   "Jack McDonald",
-   "Ben Griffin",
-   "?",
-   null,
-   0.3125,
-   "+220 (bet365)",
-   "-200 (bet365)",
-   0.3191489361702128,
-   null,
-   2
-  ],
-  [
-   "Peter Uihlein",
-   "Kazuki Higa",
-   "?",
-   null,
-   0.5,
-   "+100 (bet365)",
-   "+110 (bet365)",
-   0.5121951219512195,
-   null,
-   2
-  ],
-  [
-   "John Parry",
-   "Sepp Straka",
-   "?",
-   null,
-   0.5073891625615764,
-   "-103 (datagolf)",
-   "+103 (datagolf)",
-   0.5073891625615764,
-   null,
-   2
-  ],
-  [
-   "Andy Sullivan",
-   "Aldrich Potgieter",
-   "?",
-   null,
-   0.5670995670995671,
-   "-131 (betcris)",
-   "+102 (betcris)",
-   0.533917113917921,
-   null,
-   6
-  ],
-  [
-   "Ryo Hisatsune",
-   "Marcus Plunkett",
-   "?",
-   null,
-   0.696969696969697,
-   "-230 (bovada)",
-   "+190 (bovada)",
-   0.6690070210631895,
-   null,
-   5
-  ],
-  [
-   "Tyrrell Hatton",
-   "Min Woo Lee",
-   "?",
-   null,
-   0.5798319327731093,
-   "-138 (draftkings)",
-   "+110 (draftkings)",
-   0.5490716180371353,
-   null,
-   8
-  ],
-  [
-   "Nick Taylor",
-   "MJ Daffue",
-   "?",
-   null,
-   0.6212121212121212,
-   "-164 (draftkings)",
-   "+132 (draftkings)",
-   0.5903674280039722,
-   null,
-   7
-  ],
-  [
-   "Rickie Fowler",
-   "Eugenio Chacarra",
-   "?",
-   null,
-   0.5535714285714286,
-   "-124 (draftkings)",
-   "-102 (draftkings)",
-   0.5229664272590613,
-   null,
-   8
-  ],
-  [
-   "Thomas Detry",
-   "Naoyuki Kataoka",
-   "?",
-   null,
-   0.6774193548387096,
-   "-210 (draftkings)",
-   "+166 (draftkings)",
-   0.6431038452682477,
-   null,
-   7
-  ],
-  [
-   "J.J. Spaun",
-   "Victor Perez",
-   "?",
-   null,
-   0.5726495726495726,
-   "-134 (draftkings)",
-   "+108 (draftkings)",
-   0.5436105476673427,
-   null,
-   8
-  ],
-  [
-   "Patrick Cantlay",
-   "Chris Gotterup",
-   "?",
-   null,
-   0.49019607843137253,
-   "+104 (draftkings)",
-   "-130 (draftkings)",
-   0.4644588045234249,
-   null,
-   8
-  ],
-  [
-   "Bud Cauley",
-   "Brooks Koepka",
-   "?",
-   null,
-   0.4854368932038835,
-   "+106 (draftkings)",
-   "-138 (draftkings)",
-   0.4556942636133875,
-   null,
-   8
-  ],
-  [
-   "Alex Fitzpatrick",
    "Pierceson Coody",
+   "Jackson Koivun",
    "?",
-   null,
-   0.6062992125984252,
-   "-154 (draftkings)",
-   "+122 (draftkings)",
-   0.5737396791300262,
-   null,
-   7
-  ],
-  [
-   "Adam Scott",
-   "Patrick Reed",
-   "?",
-   null,
-   0.49504950495049505,
-   "+102 (draftkings)",
-   "-130 (draftkings)",
-   0.4669102720259846,
-   null,
-   8
-  ],
-  [
-   "Shaun Norris",
-   "Michael Thorbjornsen",
-   "?",
-   null,
-   0.3968253968253968,
-   "+152 (draftkings)",
-   "-192 (draftkings)",
-   0.3763662610847598,
-   null,
-   8
-  ],
-  [
-   "Alex Noren",
-   "Marco Penge",
-   "?",
-   null,
-   0.5726495726495726,
-   "-134 (draftkings)",
-   "+108 (draftkings)",
-   0.5436105476673427,
-   null,
-   8
-  ],
-  [
-   "Russell Henley",
-   "Matt Wallace",
-   "?",
-   null,
-   0.6183206106870229,
-   "-162 (draftkings)",
-   "+130 (draftkings)",
-   0.5871415064607627,
-   null,
-   9
-  ],
-  [
-   "Francesco Molinari",
-   "Collin Morikawa",
-   "?",
-   null,
-   0.373134328358209,
-   "+168 (draftkings)",
-   "-215 (draftkings)",
-   0.3534560143626571,
-   null,
-   8
-  ],
-  [
-   "Rory McIlroy",
-   "Jordan Smith",
-   "?",
-   null,
-   0.7183098591549296,
-   "-255 (draftkings)",
-   "+198 (draftkings)",
-   0.6815857924477531,
-   null,
-   8
-  ],
-  [
-   "Hennie Du Plessis",
-   "Sahith Theegala",
-   "?",
-   null,
-   0.47619047619047616,
-   "+110 (draftkings)",
-   "-138 (draftkings)",
-   0.45092838196286467,
-   null,
-   9
-  ],
-  [
-   "Kristoffer Reitan",
-   "Casey Jarvis",
-   "?",
-   null,
-   0.6031746031746031,
-   "-152 (draftkings)",
-   "+120 (draftkings)",
-   0.5702592087312415,
-   null,
-   9
-  ],
-  [
-   "Robert MacIntyre",
-   "Cameron Young",
-   "?",
-   null,
-   0.5098039215686274,
-   "-104 (draftkings)",
-   "-122 (draftkings)",
-   0.48124062031015497,
-   null,
-   8
-  ],
-  [
-   "Sungjae Im",
-   "Nico Echavarria",
-   "?",
-   null,
-   0.5726495726495726,
-   "-134 (draftkings)",
-   "+106 (draftkings)",
-   0.5412124539251824,
-   null,
-   9
-  ],
-  [
-   "Justin Thomas",
-   "Jacob Bridgeman",
-   "?",
-   null,
-   0.609375,
-   "-156 (draftkings)",
-   "+124 (draftkings)",
-   0.5771670190274841,
-   null,
-   9
-  ],
-  [
-   "Max Homa",
-   "Alex Smalley",
-   "?",
-   null,
-   0.5348837209302325,
-   "-115 (draftkings)",
-   "-110 (draftkings)",
-   0.5052301255230125,
-   null,
-   9
-  ],
-  [
-   "Scottie Scheffler",
-   "Jose Luis Ballester",
-   "?",
-   null,
-   0.8333333333333334,
-   "-500 (draftkings)",
-   "+370 (draftkings)",
-   0.7966101694915254,
-   null,
-   8
-  ],
-  [
-   "Shane Lowry",
-   "Jon Rahm",
-   "?",
-   null,
-   0.43478260869565216,
-   "+130 (draftkings)",
-   "-164 (draftkings)",
-   0.41172800998128506,
-   null,
-   8
-  ],
-  [
-   "Cameron John",
-   "Dan Brown",
-   "?",
-   null,
-   0.40816326530612246,
-   "+145 (bovada)",
-   "-175 (bovada)",
-   0.39076376554174075,
-   null,
-   6
+   0.4825,
+   0.4444444444444444,
+   "+125 (bet365)",
+   "-152 (bet365)",
+   0.4242424242424243,
+   0.2,
+   2
   ],
   [
    "Hideki Matsuyama",
-   "Kazuma Kobori",
+   "Jake Knapp",
    "?",
-   null,
-   0.6621621621621622,
-   "-196 (draftkings)",
-   "+158 (draftkings)",
-   0.6307753717193894,
-   null,
-   7
+   0.5631,
+   0.5555555555555556,
+   "-125 (bet365)",
+   "+105 (bet365)",
+   0.5324675324675325,
+   0.6,
+   2
   ],
   [
-   "Xander Schauffele",
-   "Eric Cole",
+   "Doug Ghim",
+   "Tom Kim",
    "?",
-   null,
-   0.6774193548387096,
-   "-210 (draftkings)",
-   "+168 (draftkings)",
-   0.644821264894592,
-   null,
-   7
+   0.4739,
+   0.47619047619047616,
+   "+110 (bet365)",
+   "-133 (bet365)",
+   0.45481163380831546,
+   0.2,
+   2
   ],
   [
-   "Tommy Fleetwood",
-   "Rasmus Neergaard-Petersen",
+   "Michael Brennan",
+   "Johnny Keefer",
    "?",
-   null,
-   0.7142857142857143,
-   "-250 (draftkings)",
-   "+200 (draftkings)",
-   0.6818181818181818,
-   null,
-   7
+   0.4911,
+   0.5,
+   "+100 (bet365)",
+   "-120 (bet365)",
+   0.4782608695652174,
+   0.1,
+   2
   ],
   [
-   "Bryson DeChambeau",
-   "Jackson Suber",
+   "Keith Mitchell",
+   "Maverick McNealy",
    "?",
-   null,
-   0.6503496503496503,
-   "-186 (draftkings)",
-   "+148 (draftkings)",
-   0.6172786639546087,
-   null,
-   7
+   0.4714,
+   0.5,
+   "+100 (bet365)",
+   "-120 (bet365)",
+   0.4782608695652174,
+   0.3,
+   2
   ],
   [
-   "Lucas Herbert",
-   "Ludvig Aberg",
+   "Tony Finau",
+   "Davis Thompson",
    "?",
-   null,
-   0.3787878787878788,
-   "+164 (draftkings)",
-   "-205 (draftkings)",
-   0.36043488536988894,
-   null,
-   7
+   0.5098,
+   0.5454545454545454,
+   "-120 (bet365)",
+   "+100 (bet365)",
+   0.5217391304347826,
+   0.1,
+   2
   ],
   [
-   "Si Woo Kim",
-   "Ryan Gerard",
+   "Sungjae Im",
+   "Ben James",
    "?",
-   null,
-   0.6124031007751938,
-   "-158 (draftkings)",
-   "+126 (draftkings)",
-   0.5805423684723938,
-   null,
-   8
+   0.5057,
+   0.5555555555555556,
+   "-125 (bet365)",
+   "+105 (bet365)",
+   0.5324675324675325,
+   0.1,
+   2
   ],
   [
-   "Ryan Fox",
-   "Sam Burns",
+   "Jason Day",
+   "Christiaan Bezuidenhout",
    "?",
-   null,
-   0.46296296296296297,
-   "+116 (draftkings)",
-   "-146 (draftkings)",
-   0.43822146216331764,
-   null,
-   8
+   0.4716,
+   0.5238095238095238,
+   "-110 (fanduel)",
+   "-120 (fanduel)",
+   0.48987854251012153,
+   0.3,
+   3
+  ],
+  [
+   "Gary Woodland",
+   "Corey Conners",
+   "?",
+   0.4346,
+   0.4878048780487805,
+   "+105 (bet365)",
+   "-125 (bet365)",
+   0.4675324675324675,
+   0.6,
+   2
+  ],
+  [
+   "Max Greyserman",
+   "Sam Stevens",
+   "?",
+   0.4601,
+   0.5260663507109005,
+   "-111 (bet365)",
+   "-111 (bet365)",
+   0.5,
+   0.4,
+   2
+  ],
+  [
+   "Max Homa",
+   "Mac Meissner",
+   "?",
+   0.4741,
+   0.5454545454545454,
+   "-120 (bet365)",
+   "+100 (bet365)",
+   0.5217391304347826,
+   0.2,
+   2
+  ],
+  [
+   "Scottie Scheffler",
+   "Kurt Kitayama",
+   "?",
+   0.6645,
+   0.8198198198198198,
+   "-455 (bet365)",
+   "+300 (bet365)",
+   0.7663157894736842,
+   1.6,
+   2
   ]
  ],
  "W": [
@@ -1974,14 +1650,14 @@
   [
    "Sungjae Im",
    0.0145,
-   0.018867924528301886,
-   "+5200 (draftkings)"
+   0.019230769230769232,
+   "+5100 (draftkings)"
   ],
   [
    "Mac Meissner",
    0.0141,
-   0.016666666666666666,
-   "+5900 (draftkings)"
+   0.01694915254237288,
+   "+5800 (draftkings)"
   ],
   [
    "Jackson Koivun",
@@ -2070,8 +1746,8 @@
   [
    "Emiliano Grillo",
    0.0104,
-   0.008620689655172414,
-   "+11500 (draftkings)"
+   0.009900990099009901,
+   "+10000 (draftkings)"
   ],
   [
    "Rasmus Neergaard-Petersen",
@@ -2082,8 +1758,8 @@
   [
    "John Parry",
    0.0103,
-   0.009009009009009009,
-   "+11000 (draftkings)"
+   0.009433962264150943,
+   "+10500 (draftkings)"
   ],
   [
    "Jake Knapp",
@@ -2118,14 +1794,14 @@
   [
    "Sudarshan Yellamaraju",
    0.0094,
-   0.012658227848101266,
-   "+7800 (draftkings)"
+   0.012987012987012988,
+   "+7600 (draftkings)"
   ],
   [
    "Max Greyserman",
    0.0092,
-   0.014285714285714285,
-   "+6900 (draftkings)"
+   0.014492753623188406,
+   "+6800 (draftkings)"
   ],
   [
    "Taylor Pendrith",
@@ -2136,8 +1812,8 @@
   [
    "Zac Blair",
    0.009,
-   0.0070921985815602835,
-   "+14000 (draftkings)"
+   0.009009009009009009,
+   "+11000 (draftkings)"
   ],
   [
    "Max McGreevy",
@@ -2166,8 +1842,8 @@
   [
    "Zach Bauchou",
    0.0084,
-   0.007633587786259542,
-   "+13000 (draftkings)"
+   0.008264462809917356,
+   "+12000 (draftkings)"
   ],
   [
    "Gary Woodland",
@@ -2202,8 +1878,8 @@
   [
    "Steven Fisk",
    0.0078,
-   0.010309278350515464,
-   "+9600 (draftkings)"
+   0.010526315789473684,
+   "+9400 (draftkings)"
   ],
   [
    "William Mouw",
@@ -2220,8 +1896,8 @@
   [
    "Matt Kuchar",
    0.0076,
-   0.005376344086021506,
-   "+18500 (draftkings)"
+   0.005681818181818182,
+   "+17500 (draftkings)"
   ],
   [
    "Seamus Power",
@@ -2268,8 +1944,8 @@
   [
    "Lucas Glover",
    0.0064,
-   0.007936507936507936,
-   "+12500 (draftkings)"
+   0.008620689655172414,
+   "+11500 (draftkings)"
   ],
   [
    "Jesper Svensson",
@@ -2298,8 +1974,8 @@
   [
    "Chad Ramey",
    0.0062,
-   0.004739336492890996,
-   "+21000 (draftkings)"
+   0.004975124378109453,
+   "+20000 (draftkings)"
   ],
   [
    "Adam Svensson",
@@ -2322,8 +1998,8 @@
   [
    "Kristoffer Ventura",
    0.0059,
-   0.006622516556291391,
-   "+15000 (draftkings)"
+   0.007352941176470588,
+   "+13500 (draftkings)"
   ],
   [
    "David Lipsky",
@@ -2340,20 +2016,20 @@
   [
    "Zecheng Dou",
    0.0057,
-   0.007352941176470588,
-   "+13500 (draftkings)"
+   0.007936507936507936,
+   "+12500 (draftkings)"
   ],
   [
    "Austin Eckroat",
    0.0057,
-   0.006024096385542169,
-   "+16500 (draftkings)"
+   0.005681818181818182,
+   "+17500 (draftkings)"
   ],
   [
    "Tom Hoge",
    0.0056,
-   0.005376344086021506,
-   "+18500 (draftkings)"
+   0.0055248618784530384,
+   "+18000 (draftkings)"
   ],
   [
    "Brice Garnett",
@@ -2364,8 +2040,8 @@
   [
    "Patrick Rodgers",
    0.0053,
-   0.007352941176470588,
-   "+13500 (draftkings)"
+   0.004975124378109453,
+   "+20000 (draftkings)"
   ],
   [
    "Davis Chatfield",
@@ -2376,14 +2052,14 @@
   [
    "Adrien Dumont De Chassart",
    0.005,
-   0.007633587786259542,
-   "+13000 (draftkings)"
+   0.005847953216374269,
+   "+17000 (draftkings)"
   ],
   [
    "Garrick Higgo",
    0.0048,
-   0.006024096385542169,
-   "+16500 (draftkings)"
+   0.0055248618784530384,
+   "+18000 (draftkings)"
   ],
   [
    "David Skinns",
@@ -2400,14 +2076,14 @@
   [
    "Billy Horschel",
    0.0046,
-   0.005847953216374269,
-   "+17000 (draftkings)"
+   0.005235602094240838,
+   "+19000 (draftkings)"
   ],
   [
    "Karl Vilips",
    0.0046,
-   0.006024096385542169,
-   "+16500 (draftkings)"
+   0.004524886877828055,
+   "+22000 (draftkings)"
   ],
   [
    "Haotong Li",
@@ -2430,8 +2106,8 @@
   [
    "Trace Crowe",
    0.0044,
-   0.0036900369003690036,
-   "+27000 (draftkings)"
+   0.0038314176245210726,
+   "+26000 (draftkings)"
   ],
   [
    "Matthieu Pavon",
@@ -2466,8 +2142,8 @@
   [
    "Erik Van Rooyen",
    0.0041,
-   0.0033222591362126247,
-   "+30000 (draftkings)"
+   0.003436426116838488,
+   "+29000 (draftkings)"
   ],
   [
    "Aaron Wise",
@@ -2496,8 +2172,8 @@
   [
    "Chandler Blanchet",
    0.0038,
-   0.0024937655860349127,
-   "+40000 (draftkings)"
+   0.002770083102493075,
+   "+36000 (draftkings)"
   ],
   [
    "Ben Silverman",
@@ -2508,8 +2184,8 @@
   [
    "Joe Highsmith",
    0.0037,
-   0.002849002849002849,
-   "+35000 (draftkings)"
+   0.002932551319648094,
+   "+34000 (draftkings)"
   ],
   [
    "Nick Hardy",
@@ -2526,8 +2202,8 @@
   [
    "Jeffrey Kang",
    0.0035,
-   0.001597444089456869,
-   "+62500 (draftkings)"
+   0.0016638935108153079,
+   "+60000 (draftkings)"
   ],
   [
    "Luke Clanton",
@@ -2562,20 +2238,20 @@
   [
    "Kevin Streelman",
    0.003,
-   0.0022172949002217295,
-   "+45000 (draftkings)"
+   0.0022675736961451248,
+   "+44000 (draftkings)"
   ],
   [
    "John VanDerLaan",
    0.003,
-   0.0024330900243309003,
-   "+41000 (draftkings)"
+   0.0021691973969631237,
+   "+46000 (draftkings)"
   ],
   [
    "Stefano Mazzoli",
    0.003,
-   0.005376344086021506,
-   "+18500 (draftkings)"
+   0.0026246719160104987,
+   "+38000 (draftkings)"
   ],
   [
    "Mark Hubbard",
@@ -2676,14 +2352,14 @@
   [
    "Adam Schenk",
    0.0018,
-   0.0010799136069114472,
-   "+92500 (draftkings)"
+   0.0011098779134295228,
+   "+90000 (draftkings)"
   ],
   [
    "Alejandro Tosti",
    0.0017,
-   0.002079002079002079,
-   "+48000 (draftkings)"
+   0.0021008403361344537,
+   "+47500 (draftkings)"
   ],
   [
    "Gordon Sargent",
@@ -2876,8 +2552,8 @@
   [
    "Brian Harman",
    0.0552,
-   0.07547169811320754,
-   "+1225 (draftkings)"
+   0.07692307692307693,
+   "+1200 (draftkings)"
   ],
   [
    "Jake Knapp",
@@ -2888,8 +2564,8 @@
   [
    "Zac Blair",
    0.052,
-   0.0425531914893617,
-   "+2250 (draftkings)"
+   0.05128205128205128,
+   "+1850 (draftkings)"
   ],
   [
    "Jason Day",
@@ -2936,8 +2612,8 @@
   [
    "Michael Kim",
    0.0482,
-   0.06557377049180328,
-   "+1425 (draftkings)"
+   0.06666666666666667,
+   "+1400 (draftkings)"
   ],
   [
    "Beau Hossler",
@@ -2984,14 +2660,14 @@
   [
    "Zach Bauchou",
    0.0454,
-   0.043478260869565216,
-   "+2200 (draftkings)"
+   0.046511627906976744,
+   "+2050 (draftkings)"
   ],
   [
    "Emiliano Grillo",
    0.045,
-   0.046511627906976744,
-   "+2050 (draftkings)"
+   0.05263157894736842,
+   "+1800 (draftkings)"
   ],
   [
    "Davis Thompson",
@@ -3032,8 +2708,8 @@
   [
    "Lee Hodges",
    0.0419,
-   0.05,
-   "+1900 (draftkings)"
+   0.05128205128205128,
+   "+1850 (draftkings)"
   ],
   [
    "Rico Hoey",
@@ -3050,32 +2726,32 @@
   [
    "Kevin Roy",
    0.0404,
-   0.0425531914893617,
-   "+2250 (draftkings)"
+   0.043478260869565216,
+   "+2200 (draftkings)"
   ],
   [
    "Takumi Kanaya",
    0.0391,
-   0.030303030303030304,
-   "+3200 (draftkings)"
+   0.03125,
+   "+3100 (draftkings)"
   ],
   [
    "Seamus Power",
    0.0391,
-   0.0425531914893617,
-   "+2250 (draftkings)"
+   0.043478260869565216,
+   "+2200 (draftkings)"
   ],
   [
    "Matt Kuchar",
    0.039,
-   0.034482758620689655,
-   "+2800 (draftkings)"
+   0.03571428571428571,
+   "+2700 (draftkings)"
   ],
   [
    "Lucas Glover",
    0.0384,
-   0.045454545454545456,
-   "+2100 (draftkings)"
+   0.04878048780487805,
+   "+1950 (draftkings)"
   ],
   [
    "Brandt Snedeker",
@@ -3104,8 +2780,8 @@
   [
    "Zecheng Dou",
    0.0354,
-   0.041666666666666664,
-   "+2300 (draftkings)"
+   0.044444444444444446,
+   "+2150 (draftkings)"
   ],
   [
    "Aldrich Potgieter",
@@ -3116,8 +2792,8 @@
   [
    "Kristoffer Ventura",
    0.035,
-   0.038461538461538464,
-   "+2500 (draftkings)"
+   0.041666666666666664,
+   "+2300 (draftkings)"
   ],
   [
    "Jesper Svensson",
@@ -3140,8 +2816,8 @@
   [
    "Austin Eckroat",
    0.0334,
-   0.034482758620689655,
-   "+2800 (draftkings)"
+   0.03333333333333333,
+   "+2900 (draftkings)"
   ],
   [
    "Paul Peterson",
@@ -3176,8 +2852,8 @@
   [
    "Thorbjorn Olesen",
    0.0311,
-   0.04,
-   "+2400 (draftkings)"
+   0.04081632653061224,
+   "+2350 (draftkings)"
   ],
   [
    "David Lipsky",
@@ -3206,14 +2882,14 @@
   [
    "Brice Garnett",
    0.0296,
-   0.01694915254237288,
-   "+5800 (draftkings)"
+   0.017241379310344827,
+   "+5700 (draftkings)"
   ],
   [
    "Chad Ramey",
    0.0292,
-   0.029411764705882353,
-   "+3300 (draftkings)"
+   0.030303030303030304,
+   "+3200 (draftkings)"
   ],
   [
    "David Skinns",
@@ -3224,14 +2900,14 @@
   [
    "Billy Horschel",
    0.0284,
-   0.034482758620689655,
-   "+2800 (draftkings)"
+   0.03125,
+   "+3100 (draftkings)"
   ],
   [
    "Garrick Higgo",
    0.0281,
-   0.03571428571428571,
-   "+2700 (draftkings)"
+   0.03333333333333333,
+   "+2900 (draftkings)"
   ],
   [
    "Adam Svensson",
@@ -3254,20 +2930,20 @@
   [
    "Karl Vilips",
    0.0269,
-   0.034482758620689655,
-   "+2800 (draftkings)"
+   0.027777777777777776,
+   "+3500 (draftkings)"
   ],
   [
    "Patrick Rodgers",
    0.0265,
-   0.04081632653061224,
-   "+2350 (draftkings)"
+   0.030303030303030304,
+   "+3200 (draftkings)"
   ],
   [
    "Adrien Dumont De Chassart",
    0.0263,
-   0.041666666666666664,
-   "+2300 (draftkings)"
+   0.034482758620689655,
+   "+2800 (draftkings)"
   ],
   [
    "Joe Highsmith",
@@ -3314,8 +2990,8 @@
   [
    "Chandler Blanchet",
    0.0236,
-   0.017241379310344827,
-   "+5700 (draftkings)"
+   0.018867924528301886,
+   "+5200 (draftkings)"
   ],
   [
    "Neal Shipley",
@@ -3332,8 +3008,8 @@
   [
    "Tyler Duncan",
    0.023,
-   0.014492753623188406,
-   "+6800 (draftkings)"
+   0.014705882352941176,
+   "+6700 (draftkings)"
   ],
   [
    "Vince Whaley",
@@ -3374,14 +3050,14 @@
   [
    "Pontus Nyholm",
    0.0204,
-   0.017543859649122806,
-   "+5600 (draftkings)"
+   0.017857142857142856,
+   "+5500 (draftkings)"
   ],
   [
    "Kensei Hirata",
    0.0203,
-   0.0136986301369863,
-   "+7200 (draftkings)"
+   0.014084507042253521,
+   "+7000 (draftkings)"
   ],
   [
    "Ryder Cowan",
@@ -3392,8 +3068,8 @@
   [
    "Kevin Streelman",
    0.0201,
-   0.015873015873015872,
-   "+6200 (draftkings)"
+   0.016129032258064516,
+   "+6100 (draftkings)"
   ],
   [
    "Luke Clanton",
@@ -3410,8 +3086,8 @@
   [
    "John VanDerLaan",
    0.0194,
-   0.016666666666666666,
-   "+5900 (draftkings)"
+   0.015384615384615385,
+   "+6400 (draftkings)"
   ],
   [
    "Harry Higgs",
@@ -3422,8 +3098,8 @@
   [
    "Stefano Mazzoli",
    0.0188,
-   0.03225806451612903,
-   "+3000 (draftkings)"
+   0.017543859649122806,
+   "+5600 (draftkings)"
   ],
   [
    "Jeffrey Kang",
@@ -3434,20 +3110,20 @@
   [
    "Cam Davis",
    0.0174,
-   0.017241379310344827,
-   "+5700 (draftkings)"
+   0.017543859649122806,
+   "+5600 (draftkings)"
   ],
   [
    "Nick Hardy",
    0.0169,
-   0.014084507042253521,
-   "+7000 (draftkings)"
+   0.014285714285714285,
+   "+6900 (draftkings)"
   ],
   [
    "Luke List",
    0.0166,
-   0.016129032258064516,
-   "+6100 (draftkings)"
+   0.01639344262295082,
+   "+6000 (draftkings)"
   ],
   [
    "Brian Campbell",
@@ -3470,8 +3146,8 @@
   [
    "Ben Martin",
    0.0155,
-   0.006211180124223602,
-   "+16000 (draftkings)"
+   0.00641025641025641,
+   "+15500 (draftkings)"
   ],
   [
    "Peter Malnati",
@@ -3512,8 +3188,8 @@
   [
    "Adam Schenk",
    0.0131,
-   0.008264462809917356,
-   "+12000 (draftkings)"
+   0.008620689655172414,
+   "+11500 (draftkings)"
   ],
   [
    "Camilo Villegas",
@@ -3524,8 +3200,8 @@
   [
    "Marcelo Rozo",
    0.0122,
-   0.004329004329004329,
-   "+23000 (draftkings)"
+   0.004424778761061947,
+   "+22500 (draftkings)"
   ],
   [
    "Rafael Campos",
@@ -3554,14 +3230,14 @@
   [
    "Jeremy Paul",
    0.0092,
-   0.00510204081632653,
-   "+19500 (draftkings)"
+   0.005235602094240838,
+   "+19000 (draftkings)"
   ],
   [
    "Nicholas Lindheim",
    0.0065,
-   0.00641025641025641,
-   "+15500 (draftkings)"
+   0.006622516556291391,
+   "+15000 (draftkings)"
   ],
   [
    "Christo Lamprecht",
@@ -3700,8 +3376,8 @@
   [
    "Casey Jarvis",
    0.1083,
-   0.14285714285714285,
-   "+600 (draftkings)"
+   0.14492753623188406,
+   "+590 (draftkings)"
   ],
   [
    "Ben James",
@@ -3742,8 +3418,8 @@
   [
    "Beau Hossler",
    0.1005,
-   0.14084507042253522,
-   "+610 (draftkings)"
+   0.14285714285714285,
+   "+600 (draftkings)"
   ],
   [
    "Max McGreevy",
@@ -3760,8 +3436,8 @@
   [
    "Denny McCarthy",
    0.0999,
-   0.12195121951219512,
-   "+720 (draftkings)"
+   0.12345679012345678,
+   "+710 (draftkings)"
   ],
   [
    "Michael Brennan",
@@ -3778,8 +3454,8 @@
   [
    "Zac Blair",
    0.0981,
-   0.09523809523809523,
-   "+950 (draftkings)"
+   0.1111111111111111,
+   "+800 (draftkings)"
   ],
   [
    "Rasmus Neergaard-Petersen",
@@ -3826,8 +3502,8 @@
   [
    "Zach Bauchou",
    0.0909,
-   0.09615384615384616,
-   "+940 (draftkings)"
+   0.10204081632653061,
+   "+880 (draftkings)"
   ],
   [
    "Ricky Castillo",
@@ -3838,8 +3514,8 @@
   [
    "Gary Woodland",
    0.0905,
-   0.15151515151515152,
-   "+560 (draftkings)"
+   0.15384615384615385,
+   "+550 (draftkings)"
   ],
   [
    "Sudarshan Yellamaraju",
@@ -3856,8 +3532,8 @@
   [
    "Rico Hoey",
    0.0879,
-   0.11904761904761904,
-   "+740 (draftkings)"
+   0.12048192771084337,
+   "+730 (draftkings)"
   ],
   [
    "Lee Hodges",
@@ -3868,8 +3544,8 @@
   [
    "Emiliano Grillo",
    0.0855,
-   0.10204081632653061,
-   "+880 (draftkings)"
+   0.11363636363636363,
+   "+780 (draftkings)"
   ],
   [
    "Steven Fisk",
@@ -3898,44 +3574,44 @@
   [
    "Matt Kuchar",
    0.0777,
-   0.08,
-   "+1150 (draftkings)"
+   0.08333333333333333,
+   "+1100 (draftkings)"
   ],
   [
    "Takumi Kanaya",
    0.0774,
-   0.07272727272727272,
-   "+1275 (draftkings)"
+   0.07407407407407407,
+   "+1250 (draftkings)"
   ],
   [
    "Seamus Power",
    0.0764,
-   0.09523809523809523,
-   "+950 (draftkings)"
+   0.09615384615384616,
+   "+940 (draftkings)"
   ],
   [
    "Taylor Moore",
    0.0764,
-   0.10526315789473684,
-   "+850 (draftkings)"
+   0.10638297872340426,
+   "+840 (draftkings)"
   ],
   [
    "Zecheng Dou",
    0.0763,
-   0.09345794392523364,
-   "+970 (draftkings)"
+   0.0970873786407767,
+   "+930 (draftkings)"
   ],
   [
    "Austin Smotherman",
    0.0763,
-   0.08695652173913043,
-   "+1050 (draftkings)"
+   0.08888888888888889,
+   "+1025 (draftkings)"
   ],
   [
    "Lucas Glover",
    0.0762,
-   0.10101010101010101,
-   "+890 (draftkings)"
+   0.10638297872340426,
+   "+840 (draftkings)"
   ],
   [
    "Brandt Snedeker",
@@ -3970,20 +3646,20 @@
   [
    "Kristoffer Ventura",
    0.0688,
-   0.0851063829787234,
-   "+1075 (draftkings)"
+   0.09259259259259259,
+   "+980 (draftkings)"
   ],
   [
    "Jesper Svensson",
    0.0684,
-   0.10638297872340426,
-   "+840 (draftkings)"
+   0.10752688172043011,
+   "+830 (draftkings)"
   ],
   [
    "Paul Peterson",
    0.068,
-   0.05,
-   "+1900 (draftkings)"
+   0.05128205128205128,
+   "+1850 (draftkings)"
   ],
   [
    "Davis Chatfield",
@@ -4000,8 +3676,8 @@
   [
    "David Lipsky",
    0.0664,
-   0.06349206349206349,
-   "+1475 (draftkings)"
+   0.06451612903225806,
+   "+1450 (draftkings)"
   ],
   [
    "Chris Kirk",
@@ -4030,14 +3706,14 @@
   [
    "Austin Eckroat",
    0.0649,
-   0.08,
-   "+1150 (draftkings)"
+   0.07692307692307693,
+   "+1200 (draftkings)"
   ],
   [
    "Patrick Fishburn",
    0.0648,
-   0.06779661016949153,
-   "+1375 (draftkings)"
+   0.06896551724137931,
+   "+1350 (draftkings)"
   ],
   [
    "Brice Garnett",
@@ -4054,8 +3730,8 @@
   [
    "Patrick Rodgers",
    0.0638,
-   0.09090909090909091,
-   "+1000 (draftkings)"
+   0.07017543859649122,
+   "+1325 (draftkings)"
   ],
   [
    "Chad Ramey",
@@ -4066,8 +3742,8 @@
   [
    "Billy Horschel",
    0.061,
-   0.07692307692307693,
-   "+1200 (draftkings)"
+   0.07272727272727272,
+   "+1275 (draftkings)"
   ],
   [
    "Haotong Li",
@@ -4078,8 +3754,8 @@
   [
    "Garrick Higgo",
    0.0581,
-   0.08163265306122448,
-   "+1125 (draftkings)"
+   0.07547169811320754,
+   "+1225 (draftkings)"
   ],
   [
    "Trace Crowe",
@@ -4090,8 +3766,8 @@
   [
    "Adrien Dumont De Chassart",
    0.057,
-   0.09259259259259259,
-   "+980 (draftkings)"
+   0.0784313725490196,
+   "+1175 (draftkings)"
   ],
   [
    "David Skinns",
@@ -4102,8 +3778,8 @@
   [
    "Karl Vilips",
    0.0558,
-   0.0784313725490196,
-   "+1175 (draftkings)"
+   0.06557377049180328,
+   "+1425 (draftkings)"
   ],
   [
    "Chandler Phillips",
@@ -4114,8 +3790,8 @@
   [
    "Adam Svensson",
    0.055,
-   0.046511627906976744,
-   "+2050 (draftkings)"
+   0.047619047619047616,
+   "+2000 (draftkings)"
   ],
   [
    "Matthieu Pavon",
@@ -4138,8 +3814,8 @@
   [
    "Mark Hubbard",
    0.0529,
-   0.05405405405405406,
-   "+1750 (draftkings)"
+   0.05555555555555555,
+   "+1700 (draftkings)"
   ],
   [
    "Joe Highsmith",
@@ -4168,14 +3844,14 @@
   [
    "Neal Shipley",
    0.0507,
-   0.0625,
-   "+1500 (draftkings)"
+   0.06349206349206349,
+   "+1475 (draftkings)"
   ],
   [
    "Chandler Blanchet",
    0.0501,
-   0.044444444444444446,
-   "+2150 (draftkings)"
+   0.047619047619047616,
+   "+2000 (draftkings)"
   ],
   [
    "Nick Dunlap",
@@ -4186,20 +3862,20 @@
   [
    "Ben Silverman",
    0.0498,
-   0.047619047619047616,
-   "+2000 (draftkings)"
+   0.04878048780487805,
+   "+1950 (draftkings)"
   ],
   [
    "Vince Whaley",
    0.0488,
-   0.038461538461538464,
-   "+2500 (draftkings)"
+   0.0392156862745098,
+   "+2450 (draftkings)"
   ],
   [
    "Tyler Duncan",
    0.0483,
-   0.038461538461538464,
-   "+2500 (draftkings)"
+   0.0392156862745098,
+   "+2450 (draftkings)"
   ],
   [
    "Dylan Wu",
@@ -4240,14 +3916,14 @@
   [
    "Ryder Cowan",
    0.0436,
-   0.05555555555555555,
-   "+1700 (draftkings)"
+   0.05714285714285714,
+   "+1650 (draftkings)"
   ],
   [
    "John VanDerLaan",
    0.0436,
-   0.0425531914893617,
-   "+2250 (draftkings)"
+   0.04,
+   "+2400 (draftkings)"
   ],
   [
    "Harry Higgs",
@@ -4258,8 +3934,8 @@
   [
    "Stefano Mazzoli",
    0.0426,
-   0.07272727272727272,
-   "+1275 (draftkings)"
+   0.044444444444444446,
+   "+2150 (draftkings)"
   ],
   [
    "Nick Hardy",
@@ -4288,14 +3964,14 @@
   [
    "Brian Campbell",
    0.0391,
-   0.02857142857142857,
-   "+3400 (draftkings)"
+   0.029411764705882353,
+   "+3300 (draftkings)"
   ],
   [
    "Cam Davis",
    0.0389,
-   0.043478260869565216,
-   "+2200 (draftkings)"
+   0.044444444444444446,
+   "+2150 (draftkings)"
   ],
   [
    "Alejandro Tosti",
@@ -4342,14 +4018,14 @@
   [
    "Camilo Villegas",
    0.0327,
-   0.02702702702702703,
-   "+3600 (draftkings)"
+   0.027777777777777776,
+   "+3500 (draftkings)"
   ],
   [
    "Ben Martin",
    0.0322,
-   0.01818181818181818,
-   "+5400 (draftkings)"
+   0.018518518518518517,
+   "+5300 (draftkings)"
   ],
   [
    "Davis Riley",
@@ -4360,8 +4036,8 @@
   [
    "Patton Kizzire",
    0.03,
-   0.01694915254237288,
-   "+5800 (draftkings)"
+   0.017241379310344827,
+   "+5700 (draftkings)"
   ],
   [
    "Adam Schenk",
@@ -4378,8 +4054,8 @@
   [
    "Rafael Campos",
    0.0265,
-   0.017241379310344827,
-   "+5700 (draftkings)"
+   0.017543859649122806,
+   "+5600 (draftkings)"
   ],
   [
    "Danny Walker",
@@ -4408,14 +4084,14 @@
   [
    "Nicholas Lindheim",
    0.0144,
-   0.018867924528301886,
-   "+5200 (draftkings)"
+   0.019230769230769232,
+   "+5100 (draftkings)"
   ],
   [
    "Ryan Brehm",
    0.0102,
-   0.00641025641025641,
-   "+15500 (draftkings)"
+   0.006622516556291391,
+   "+15000 (draftkings)"
   ],
   [
    "Sihan Sandhu",
@@ -4440,38 +4116,38 @@
   [
    "Scottie Scheffler",
    0.5082,
-   0.8461538461538461,
-   "-550 (draftkings)"
+   0.84,
+   "-525 (draftkings)"
   ],
   [
    "Maverick McNealy",
    0.2815,
-   0.45045045045045046,
-   "+122 (draftkings)"
+   0.4444444444444444,
+   "+125 (draftkings)"
   ],
   [
    "Kurt Kitayama",
    0.2772,
-   0.46296296296296297,
-   "+116 (draftkings)"
+   0.45871559633027525,
+   "+118 (draftkings)"
   ],
   [
    "Hideki Matsuyama",
    0.2703,
-   0.42016806722689076,
-   "+138 (draftkings)"
+   0.4166666666666667,
+   "+140 (draftkings)"
   ],
   [
    "Tom Kim",
    0.266,
-   0.42016806722689076,
-   "+138 (draftkings)"
+   0.4166666666666667,
+   "+140 (draftkings)"
   ],
   [
    "Keith Mitchell",
    0.2387,
-   0.4,
-   "+150 (draftkings)"
+   0.3968253968253968,
+   "+152 (draftkings)"
   ],
   [
    "Doug Ghim",
@@ -4488,8 +4164,8 @@
   [
    "Jordan Smith",
    0.2355,
-   0.3225806451612903,
-   "+210 (draftkings)"
+   0.31746031746031744,
+   "+215 (draftkings)"
   ],
   [
    "Mac Meissner",
@@ -4500,8 +4176,8 @@
   [
    "Jackson Koivun",
    0.2241,
-   0.37593984962406013,
-   "+166 (draftkings)"
+   0.373134328358209,
+   "+168 (draftkings)"
   ],
   [
    "Sam Stevens",
@@ -4530,8 +4206,8 @@
   [
    "Pierceson Coody",
    0.2119,
-   0.3448275862068966,
-   "+190 (draftkings)"
+   0.3424657534246575,
+   "+192 (draftkings)"
   ],
   [
    "Ben James",
@@ -4554,20 +4230,20 @@
   [
    "Jackson Suber",
    0.2055,
-   0.33783783783783783,
-   "+196 (draftkings)"
+   0.33557046979865773,
+   "+198 (draftkings)"
   ],
   [
    "Casey Jarvis",
    0.205,
-   0.2777777777777778,
-   "+260 (draftkings)"
+   0.273972602739726,
+   "+265 (draftkings)"
   ],
   [
    "Jake Knapp",
    0.1983,
-   0.373134328358209,
-   "+168 (draftkings)"
+   0.37037037037037035,
+   "+170 (draftkings)"
   ],
   [
    "Johnny Keefer",
@@ -4584,8 +4260,8 @@
   [
    "Jason Day",
    0.1915,
-   0.2777777777777778,
-   "+260 (draftkings)"
+   0.28169014084507044,
+   "+255 (draftkings)"
   ],
   [
    "Denny McCarthy",
@@ -4596,8 +4272,8 @@
   [
    "Zac Blair",
    0.1898,
-   0.20408163265306123,
-   "+390 (draftkings)"
+   0.23255813953488372,
+   "+330 (draftkings)"
   ],
   [
    "John Parry",
@@ -4638,14 +4314,14 @@
   [
    "Andrew Putnam",
    0.187,
-   0.20833333333333334,
-   "+380 (draftkings)"
+   0.21052631578947367,
+   "+375 (draftkings)"
   ],
   [
    "Max Greyserman",
    0.184,
-   0.273972602739726,
-   "+265 (draftkings)"
+   0.2702702702702703,
+   "+270 (draftkings)"
   ],
   [
    "Mackenzie Hughes",
@@ -4674,8 +4350,8 @@
   [
    "Gary Woodland",
    0.1758,
-   0.2898550724637681,
-   "+245 (draftkings)"
+   0.2857142857142857,
+   "+250 (draftkings)"
   ],
   [
    "Steven Fisk",
@@ -4692,8 +4368,8 @@
   [
    "Zach Bauchou",
    0.175,
-   0.20202020202020202,
-   "+395 (draftkings)"
+   0.2127659574468085,
+   "+370 (draftkings)"
   ],
   [
    "Taylor Pendrith",
@@ -4704,20 +4380,20 @@
   [
    "Lee Hodges",
    0.1716,
-   0.2222222222222222,
-   "+350 (draftkings)"
+   0.2247191011235955,
+   "+345 (draftkings)"
   ],
   [
    "Rico Hoey",
    0.1706,
-   0.23809523809523808,
-   "+320 (draftkings)"
+   0.24096385542168675,
+   "+315 (draftkings)"
   ],
   [
    "Emiliano Grillo",
    0.1704,
-   0.21052631578947367,
-   "+375 (draftkings)"
+   0.22988505747126436,
+   "+335 (draftkings)"
   ],
   [
    "William Mouw",
@@ -4746,26 +4422,26 @@
   [
    "Matt Kuchar",
    0.159,
-   0.17699115044247787,
-   "+465 (draftkings)"
+   0.1834862385321101,
+   "+445 (draftkings)"
   ],
   [
    "Lucas Glover",
    0.158,
-   0.2127659574468085,
-   "+370 (draftkings)"
+   0.2222222222222222,
+   "+350 (draftkings)"
   ],
   [
    "Brandt Snedeker",
    0.1553,
-   0.16393442622950818,
-   "+510 (draftkings)"
+   0.16666666666666666,
+   "+500 (draftkings)"
   ],
   [
    "Seamus Power",
    0.1552,
-   0.20202020202020202,
-   "+395 (draftkings)"
+   0.20408163265306123,
+   "+390 (draftkings)"
   ],
   [
    "Taylor Moore",
@@ -4776,20 +4452,20 @@
   [
    "Zecheng Dou",
    0.1525,
-   0.19801980198019803,
-   "+405 (draftkings)"
+   0.20408163265306123,
+   "+390 (draftkings)"
   ],
   [
    "Austin Smotherman",
    0.1518,
-   0.18691588785046728,
-   "+435 (draftkings)"
+   0.18867924528301888,
+   "+430 (draftkings)"
   ],
   [
    "Aldrich Potgieter",
    0.1503,
-   0.21505376344086022,
-   "+365 (draftkings)"
+   0.2127659574468085,
+   "+370 (draftkings)"
   ],
   [
    "Matti Schmid",
@@ -4806,8 +4482,8 @@
   [
    "A.J. Ewart",
    0.1432,
-   0.17857142857142858,
-   "+460 (draftkings)"
+   0.18018018018018017,
+   "+455 (draftkings)"
   ],
   [
    "Stephan Jaeger",
@@ -4824,14 +4500,14 @@
   [
    "Kristoffer Ventura",
    0.1425,
-   0.18181818181818182,
-   "+450 (draftkings)"
+   0.19607843137254902,
+   "+410 (draftkings)"
   ],
   [
    "Davis Chatfield",
    0.1421,
-   0.12048192771084337,
-   "+730 (draftkings)"
+   0.12345679012345678,
+   "+710 (draftkings)"
   ],
   [
    "Chris Kirk",
@@ -4842,14 +4518,14 @@
   [
    "Austin Eckroat",
    0.1387,
-   0.1724137931034483,
-   "+480 (draftkings)"
+   0.16806722689075632,
+   "+495 (draftkings)"
   ],
   [
    "Paul Peterson",
    0.1384,
-   0.12195121951219512,
-   "+720 (draftkings)"
+   0.125,
+   "+700 (draftkings)"
   ],
   [
    "Thorbjorn Olesen",
@@ -4860,8 +4536,8 @@
   [
    "Tom Hoge",
    0.1358,
-   0.16393442622950818,
-   "+510 (draftkings)"
+   0.16666666666666666,
+   "+500 (draftkings)"
   ],
   [
    "Preston Stout",
@@ -4878,140 +4554,140 @@
   [
    "Rasmus Hojgaard",
    0.1343,
-   0.21978021978021978,
-   "+355 (draftkings)"
+   0.21739130434782608,
+   "+360 (draftkings)"
   ],
   [
    "Haotong Li",
    0.1314,
-   0.22727272727272727,
-   "+340 (draftkings)"
+   0.2247191011235955,
+   "+345 (draftkings)"
   ],
   [
    "Brice Garnett",
    0.1312,
-   0.10989010989010989,
-   "+810 (draftkings)"
+   0.11235955056179775,
+   "+790 (draftkings)"
   ],
   [
    "Chad Ramey",
    0.1304,
-   0.15625,
-   "+540 (draftkings)"
+   0.15873015873015872,
+   "+530 (draftkings)"
   ],
   [
    "Patrick Rodgers",
    0.1298,
-   0.19047619047619047,
-   "+425 (draftkings)"
+   0.15625,
+   "+540 (draftkings)"
   ],
   [
    "Billy Horschel",
    0.1297,
-   0.16806722689075632,
-   "+495 (draftkings)"
+   0.16129032258064516,
+   "+520 (draftkings)"
   ],
   [
    "David Lipsky",
    0.1297,
-   0.14705882352941177,
-   "+580 (draftkings)"
+   0.14925373134328357,
+   "+570 (draftkings)"
   ],
   [
    "Chandler Phillips",
    0.1245,
-   0.13157894736842105,
-   "+660 (draftkings)"
+   0.13333333333333333,
+   "+650 (draftkings)"
   ],
   [
    "Garrick Higgo",
    0.123,
-   0.17543859649122806,
-   "+470 (draftkings)"
+   0.16666666666666666,
+   "+500 (draftkings)"
   ],
   [
    "Matthieu Pavon",
    0.1215,
-   0.14705882352941177,
-   "+580 (draftkings)"
+   0.14925373134328357,
+   "+570 (draftkings)"
   ],
   [
    "Trace Crowe",
    0.1206,
-   0.1282051282051282,
-   "+680 (draftkings)"
+   0.12987012987012986,
+   "+670 (draftkings)"
   ],
   [
    "David Skinns",
    0.1201,
-   0.13157894736842105,
-   "+660 (draftkings)"
+   0.13333333333333333,
+   "+650 (draftkings)"
   ],
   [
    "Adrien Dumont De Chassart",
    0.1197,
-   0.19607843137254902,
-   "+410 (draftkings)"
-  ],
-  [
-   "Karl Vilips",
-   0.1195,
    0.17094017094017094,
    "+485 (draftkings)"
   ],
   [
+   "Karl Vilips",
+   0.1195,
+   0.14705882352941177,
+   "+580 (draftkings)"
+  ],
+  [
    "Lanto Griffin",
    0.1166,
-   0.12195121951219512,
-   "+720 (draftkings)"
-  ],
-  [
-   "Mark Hubbard",
-   0.116,
-   0.1282051282051282,
-   "+680 (draftkings)"
-  ],
-  [
-   "Adam Svensson",
-   0.115,
-   0.11494252873563218,
-   "+770 (draftkings)"
-  ],
-  [
-   "Fabian Gomez",
-   0.1133,
-   0.09090909090909091,
-   "+1000 (draftkings)"
-  ],
-  [
-   "Chandler Blanchet",
-   0.1129,
-   0.10869565217391304,
-   "+820 (draftkings)"
-  ],
-  [
-   "Erik Van Rooyen",
-   0.1126,
    0.12345679012345678,
    "+710 (draftkings)"
   ],
   [
+   "Mark Hubbard",
+   0.116,
+   0.12987012987012986,
+   "+670 (draftkings)"
+  ],
+  [
+   "Adam Svensson",
+   0.115,
+   0.11627906976744186,
+   "+760 (draftkings)"
+  ],
+  [
+   "Fabian Gomez",
+   0.1133,
+   0.09345794392523364,
+   "+970 (draftkings)"
+  ],
+  [
+   "Chandler Blanchet",
+   0.1129,
+   0.11627906976744186,
+   "+760 (draftkings)"
+  ],
+  [
+   "Erik Van Rooyen",
+   0.1126,
+   0.125,
+   "+700 (draftkings)"
+  ],
+  [
    "Neal Shipley",
    0.1122,
-   0.14285714285714285,
-   "+600 (draftkings)"
+   0.14492753623188406,
+   "+590 (draftkings)"
   ],
   [
    "Adam Hadwin",
    0.1121,
-   0.12658227848101267,
-   "+690 (draftkings)"
+   0.1282051282051282,
+   "+680 (draftkings)"
   ],
   [
    "Nick Dunlap",
    0.1106,
-   0.12195121951219512,
-   "+720 (draftkings)"
+   0.12345679012345678,
+   "+710 (draftkings)"
   ],
   [
    "Aaron Wise",
@@ -5022,50 +4698,50 @@
   [
    "Vince Whaley",
    0.1084,
-   0.09615384615384616,
-   "+940 (draftkings)"
+   0.0970873786407767,
+   "+930 (draftkings)"
   ],
   [
    "Hank Lebioda",
    0.1079,
-   0.09433962264150944,
-   "+960 (draftkings)"
+   0.09523809523809523,
+   "+950 (draftkings)"
   ],
   [
    "Dylan Wu",
    0.1078,
-   0.09174311926605505,
-   "+990 (draftkings)"
-  ],
-  [
-   "Ben Silverman",
-   0.1065,
-   0.11627906976744186,
-   "+760 (draftkings)"
-  ],
-  [
-   "Joe Highsmith",
-   0.1063,
-   0.11235955056179775,
-   "+790 (draftkings)"
-  ],
-  [
-   "Luke Clanton",
-   0.1018,
-   0.14705882352941177,
-   "+580 (draftkings)"
-  ],
-  [
-   "Kensei Hirata",
-   0.1009,
    0.09345794392523364,
    "+970 (draftkings)"
   ],
   [
+   "Ben Silverman",
+   0.1065,
+   0.11904761904761904,
+   "+740 (draftkings)"
+  ],
+  [
+   "Joe Highsmith",
+   0.1063,
+   0.11363636363636363,
+   "+780 (draftkings)"
+  ],
+  [
+   "Luke Clanton",
+   0.1018,
+   0.14925373134328357,
+   "+570 (draftkings)"
+  ],
+  [
+   "Kensei Hirata",
+   0.1009,
+   0.09523809523809523,
+   "+950 (draftkings)"
+  ],
+  [
    "Tyler Duncan",
    0.0998,
-   0.09803921568627451,
-   "+920 (draftkings)"
+   0.1,
+   "+900 (draftkings)"
   ],
   [
    "Hayden Springer",
@@ -5082,38 +4758,38 @@
   [
    "Nick Hardy",
    0.097,
-   0.09259259259259259,
-   "+980 (draftkings)"
+   0.09345794392523364,
+   "+970 (draftkings)"
   ],
   [
    "Kevin Streelman",
    0.0968,
-   0.10416666666666667,
-   "+860 (draftkings)"
-  ],
-  [
-   "Harry Higgs",
-   0.0962,
-   0.0970873786407767,
-   "+930 (draftkings)"
-  ],
-  [
-   "Justin Lower",
-   0.0956,
-   0.09900990099009901,
-   "+910 (draftkings)"
-  ],
-  [
-   "John VanDerLaan",
-   0.0942,
    0.10526315789473684,
    "+850 (draftkings)"
   ],
   [
+   "Harry Higgs",
+   0.0962,
+   0.09803921568627451,
+   "+920 (draftkings)"
+  ],
+  [
+   "Justin Lower",
+   0.0956,
+   0.10101010101010101,
+   "+890 (draftkings)"
+  ],
+  [
+   "John VanDerLaan",
+   0.0942,
+   0.1,
+   "+900 (draftkings)"
+  ],
+  [
    "Stefano Mazzoli",
    0.0915,
-   0.15873015873015872,
-   "+530 (draftkings)"
+   0.10752688172043011,
+   "+830 (draftkings)"
   ],
   [
    "Jeffrey Kang",
@@ -5124,26 +4800,26 @@
   [
    "Pontus Nyholm",
    0.0902,
-   0.10526315789473684,
-   "+850 (draftkings)"
-  ],
-  [
-   "Brian Campbell",
-   0.089,
-   0.07547169811320754,
-   "+1225 (draftkings)"
-  ],
-  [
-   "Cam Davis",
-   0.0867,
    0.10638297872340426,
    "+840 (draftkings)"
   ],
   [
+   "Brian Campbell",
+   0.089,
+   0.07692307692307693,
+   "+1200 (draftkings)"
+  ],
+  [
+   "Cam Davis",
+   0.0867,
+   0.10752688172043011,
+   "+830 (draftkings)"
+  ],
+  [
    "Jimmy Stanger",
    0.0837,
-   0.09523809523809523,
-   "+950 (draftkings)"
+   0.09615384615384616,
+   "+940 (draftkings)"
   ],
   [
    "Alejandro Tosti",
@@ -5154,8 +4830,8 @@
   [
    "Luke List",
    0.0831,
-   0.10101010101010101,
-   "+890 (draftkings)"
+   0.10204081632653061,
+   "+880 (draftkings)"
   ],
   [
    "Peter Malnati",
@@ -5166,8 +4842,8 @@
   [
    "Will Gordon",
    0.0797,
-   0.08,
-   "+1150 (draftkings)"
+   0.08163265306122448,
+   "+1125 (draftkings)"
   ],
   [
    "Cameron Champ",
@@ -5178,50 +4854,50 @@
   [
    "Camilo Villegas",
    0.0775,
-   0.07272727272727272,
-   "+1275 (draftkings)"
+   0.07407407407407407,
+   "+1250 (draftkings)"
   ],
   [
    "Troy Merritt",
    0.0767,
-   0.0784313725490196,
-   "+1175 (draftkings)"
+   0.08,
+   "+1150 (draftkings)"
   ],
   [
    "Marcelo Rozo",
    0.0749,
-   0.04,
-   "+2400 (draftkings)"
+   0.04081632653061224,
+   "+2350 (draftkings)"
   ],
   [
    "Davis Riley",
    0.073,
-   0.08163265306122448,
-   "+1125 (draftkings)"
+   0.08333333333333333,
+   "+1100 (draftkings)"
   ],
   [
    "Ben Martin",
    0.0728,
-   0.05128205128205128,
-   "+1850 (draftkings)"
+   0.05263157894736842,
+   "+1800 (draftkings)"
   ],
   [
    "Adam Schenk",
    0.0712,
-   0.0625,
-   "+1500 (draftkings)"
+   0.06349206349206349,
+   "+1475 (draftkings)"
   ],
   [
    "Patton Kizzire",
    0.0684,
-   0.04878048780487805,
-   "+1950 (draftkings)"
+   0.05,
+   "+1900 (draftkings)"
   ],
   [
    "Rafael Campos",
    0.0626,
-   0.05,
-   "+1900 (draftkings)"
+   0.05128205128205128,
+   "+1850 (draftkings)"
   ],
   [
    "Gordon Sargent",
@@ -5232,20 +4908,20 @@
   [
    "Danny Walker",
    0.06,
-   0.06896551724137931,
-   "+1350 (draftkings)"
+   0.07017543859649122,
+   "+1325 (draftkings)"
   ],
   [
    "Jeremy Paul",
    0.0543,
-   0.043478260869565216,
-   "+2200 (draftkings)"
+   0.044444444444444446,
+   "+2150 (draftkings)"
   ],
   [
    "Nicholas Lindheim",
    0.0426,
-   0.05405405405405406,
-   "+1750 (draftkings)"
+   0.05555555555555555,
+   "+1700 (draftkings)"
   ],
   [
    "Christo Lamprecht",
@@ -5256,26 +4932,26 @@
   [
    "Ryan Brehm",
    0.0277,
-   0.020833333333333332,
-   "+4700 (draftkings)"
+   0.021739130434782608,
+   "+4500 (draftkings)"
   ],
   [
    "Sihan Sandhu",
    0.0204,
-   0.012345679012345678,
-   "+8000 (draftkings)"
+   0.012987012987012988,
+   "+7600 (draftkings)"
   ],
   [
    "Thomas Campbell",
    0.0131,
-   0.030303030303030304,
-   "+3200 (draftkings)"
+   0.03125,
+   "+3100 (draftkings)"
   ],
   [
    "Muzzy Donohue",
    0.0002,
-   0.012658227848101266,
-   "+7800 (draftkings)"
+   0.012987012987012988,
+   "+7600 (draftkings)"
   ]
  ]
 }
