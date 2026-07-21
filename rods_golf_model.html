@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rod's Model — The Open · Royal Birkdale</title>
+<title>Rod's Model — 3M Open · TPC Twin Cities</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700;1,800&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -190,17 +190,17 @@
       <span class="badge">PitchEdge AI</span>
       <span class="sp"></span>
       <div class="stat"><div class="v" id="stPlayers">156</div><div class="l">Field</div></div>
-      <div class="stat"><div class="v">70</div><div class="l">Par</div></div>
+      <div class="stat"><div class="v">71</div><div class="l">Par</div></div>
       <div class="stat"><div class="v">R1</div><div class="l">Round</div></div>
       <div class="stat"><div class="v" id="stData">—</div><div class="l">Data As Of</div></div>
     </div>
   </div>
 
   <div class="cond">
-    <div class="c"><span class="k">Event</span><span class="val">The 154th Open · Royal Birkdale</span></div>
+    <div class="c"><span class="k">Event</span><span class="val">3M Open · TPC Twin Cities · Blaine, MN</span></div>
     <div class="c"><span class="k">Draw Bias</span><span class="val accent" id="drawBias">—</span><span class="sub">AM v PM</span></div>
     <div class="c"><span class="k">R1 Wind</span><span class="val">— mph</span><span class="sub">gust —</span></div>
-    <div class="c"><span class="k">Conditions</span><span class="val">Firm / fast links</span><span class="sub">high variance</span></div>
+    <div class="c"><span class="k">Conditions</span><span class="val">Soft parkland · scorable</span><span class="sub">water on 15 holes</span></div>
   </div>
 
   <div class="content">
@@ -218,7 +218,7 @@
         <div class="legend"><span class="lb">Worse</span><div class="ramp"></div><span class="lb">Better</span></div>
       </div>
       <div class="grid3" id="projGrid"></div>
-      <div class="note"><b>PROJ</b> is the fit-adjusted projected score (par 70). SG components are green positive / orange negative. <b>FIT</b> uses the blue heat-bar — Royal Birkdale's links reweighting, where ground-game and wind-control players rate higher. Sample data for layout; wire to your DataGolf pull.</div>
+      <div class="note"><b>PROJ</b> is the fit-adjusted projected score (par 71). SG components are green positive / orange negative. <b>FIT</b> uses the blue heat-bar — TPC Twin Cities' parkland reweighting, where distance, approach precision, and putting rate higher on a low-scoring track. Projections load from your DataGolf pull (blank = pending).</div>
     </div>
 
     <!-- ---------- COURSE FIT ---------- -->
@@ -470,16 +470,16 @@ function openCard(r,rank){
     <div class="dh"><button class="close" onclick="closeCard()">×</button>
       <div class="rk">RANK #${rank}</div>
       <h2>${r[0]}</h2>
-      <div class="proj">Projected <b>${r[1]==null?'—':r[1].toFixed(1)}</b> · par 70</div>
+      <div class="proj">Projected <b>${r[1]==null?'—':r[1].toFixed(1)}</b> · par 71</div>
     </div>
     <div class="db">
       <div class="dsub">Strokes Gained — skill profile</div>
       ${sg}
-      <div class="dsub">Course Fit — Royal Birkdale</div>
+      <div class="dsub">Course Fit — TPC Twin Cities</div>
       <div class="sgrow"><span class="k">FIT</span>
         <div class="track"><div class="mid"></div><div class="fill" style="left:50%;width:${fit==null?0:Math.min(50,fit/2.5*50)}%;background:var(--accent)"></div></div>
         <span class="v" style="color:var(--accent)">${sgFmt(fit)}</span></div>
-      <div class="note" style="margin-top:18px">Fit combines the player's ground game, wind control, and driving accuracy against Royal Birkdale's links profile. Higher = better suited to the venue.</div>
+      <div class="note" style="margin-top:18px">Fit combines the player's distance, approach precision, and putting against TPC Twin Cities' scorable parkland profile. Higher = better suited to the venue.</div>
     </div>`;
   d.classList.add('open');document.getElementById('scrim').classList.add('open');
 }
