@@ -45,7 +45,7 @@ import urllib.parse
 import urllib.error
 from collections import defaultdict
 
-from sim_engine import run_matchup_sim, run_finish_sim
+from sim_engine import run_matchup_sim, run_finish_sim, TOUR_BASELINE_SD, DEFAULT_BLOWUP
 
 BASE = "https://feeds.datagolf.com"
 OUT  = "rods_data.json"
@@ -542,23 +542,37 @@ def course_fit_placeholder():
     ]
 
 
-def load_course_fit(target_course_name_hint="Royal Birkdale"):
+def load_course_fit(target_course_name):
     """
     Returns (F, target_row) where F is the page-ready course-fit table and
     target_row is a {'scoreSD':, 'blowup':} dict for whichever row matches
-    target_course_name_hint (used to seed the sim's course-level variance) —
-    falling back to the first row, or a bare tour-average pair, if no match.
+    target_course_name (the REAL current event's course, from DataGolf's own
+    event payload — see build()) — used to seed the sim's course-level variance.
+
+    Falls back to TOUR-WIDE baseline defaults (not to whatever row happens to
+    be first in the table) when no course-specific data exists for the current
+    event. This matters: the hardcoded reference rows below are Royal Birkdale
+    (an extreme, high-variance links course) and Bay Hill — silently defaulting
+    a brand-new tournament at a different course to Birkdale's atypical numbers
+    would distort every model probability, not just look slightly off.
     """
+    def neutral_fallback():
+        return {"scoreSD": TOUR_BASELINE_SD, "blowup": DEFAULT_BLOWUP}
+
     if os.path.exists(COURSE_FIT_TABLE):
         with open(COURSE_FIT_TABLE) as f:
             data = json.load(f)
         F = data.get("F") or []
         if F:
-            target = next((row for row in F if target_course_name_hint.lower() in str(row[0]).lower()), F[0])
-            return F, {"scoreSD": target[3], "blowup": target[4]}
+            target = next((row for row in F if target_course_name.lower() in str(row[0]).lower()), None)
+            if target:
+                return F, {"scoreSD": target[3], "blowup": target[4]}
+            return F, neutral_fallback()
     F = course_fit_placeholder()
-    target = next((row for row in F if target_course_name_hint.lower() in str(row[0]).lower()), F[0])
-    return F, {"scoreSD": target[3], "blowup": target[4]}
+    target = next((row for row in F if target_course_name.lower() in str(row[0]).lower()), None)
+    if target:
+        return F, {"scoreSD": target[3], "blowup": target[4]}
+    return F, neutral_fallback()
 
 
 def fetch_matchups_with_fallback(key, tour):
@@ -624,7 +638,15 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
     proj = build_projections(decomp, skill_by_id, skill_by_name)
     waves = build_waves(field)
 
-    F, target_course_row = load_course_fit()
+    # Confirmed live (decompositions payload top-level keys): DataGolf's own response already
+    # carries the real event_name and course_name — no reason to hardcode a specific
+    # tournament's name here, which would silently mislabel every future event (and, worse,
+    # mistag Tracker bets under the wrong tournament and feed the wrong course's variance
+    # into the sim). Falls back to generic labels only if DataGolf's payload is missing them.
+    event_name = decomp.get("event_name") or "Unknown Event"
+    course_name = decomp.get("course_name") or event_name
+
+    F, target_course_row = load_course_fit(course_name)
     proj_by_name = {r["name"]: {"mean": r["proj"], "sd": None} for r in proj}
     # NOTE: n_rounds sums that many simulated rounds per player in the sim, matched
     # automatically to whichever market actually had data (4 for tournament_matchups,
@@ -647,7 +669,8 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
 
     data = {
         "meta": {
-            "event": "The 154th Open — Royal Birkdale",
+            "event": event_name,
+            "course": course_name,
             "players": len(P),
             "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
             "source": f"DataGolf projections (Path A) + sim_engine.py for model% [{market_used}]",
@@ -657,7 +680,7 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
     }
     with open(OUT, "w") as f:
         json.dump(data, f, indent=1)
-    print(f"\nWrote {OUT}: {len(P)} players, {len(M)} matchups, "
+    print(f"\nWrote {OUT}: event='{event_name}' course='{course_name}' — {len(P)} players, {len(M)} matchups, "
           f"{len(W)}/{len(W5)}/{len(W10)}/{len(W20)} win/top5/top10/top20 rows.")
     return data
 
