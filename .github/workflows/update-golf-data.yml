@@ -23,12 +23,7 @@ jobs:
       - name: Run pipeline
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
-        run: python3 rods_pipeline.py
-
-      - name: Debug tournament matchups (temporary)
-        env:
-          DG_KEY: ${{ secrets.DG_KEY }}
-        run: python3 debug_tournament_matchups.py
+        run: python3 rods_pipeline.py --baseline-score 71
 
       - name: Deploy to Cloudflare
         env:
