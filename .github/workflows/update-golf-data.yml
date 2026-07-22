@@ -23,7 +23,7 @@ jobs:
       - name: Run pipeline
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
-        run: python3 rods_pipeline.py --baseline-score 71
+        run: python3 rods_pipeline.py --baseline-score 69.5
 
       - name: Deploy to Cloudflare
         env:
