@@ -2,2101 +2,324 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rod's Model — The Open · Royal Birkdale</title>
+<title>Rod's Model — Broadcast Leaderboard Direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0a0e0b;
-    --panel:#0e140f;
-    --panel-2:#111a13;
-    --line:#1c2a1f;
-    --line-2:#243528;
-    --grid:#16211a;
-    --text:#c9e8cf;
-    --text-dim:#6f8f77;
-    --text-faint:#4a5f50;
-    --green:#39d353;
-    --green-bright:#4dffff;
-    --amber:#d9a441;
-    /* heat ramp worst -> best */
-    --h0:#7a2418;  /* worst  */
-    --h1:#9c3b1e;
-    --h2:#b5701f;
-    --h3:#7d7a20;
-    --h4:#3f6b24;
-    --h5:#1f7a34;  /* best   */
-    --mono:'SF Mono',ui-monospace,'JetBrains Mono','Roboto Mono',Menlo,Consolas,monospace;
+    --bg-deep:#0B2818;
+    --bg-panel:#123625;
+    --bg-panel-alt:#0F2F1F;
+    --bg-header:#0A2214;
+    --gold:#C9A227;
+    --gold-bright:#E2C24C;
+    --cream:#F0EAD6;
+    --sage:#8FA894;
+    --sage-dim:#5E7566;
+    --green-signal:#5CBE7E;
+    --red-signal:#DC7A6C;
+    --line:#1E4530;
+    --font-display:'Playfair Display',Georgia,serif;
+    --font-body:'Archivo',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{-webkit-text-size-adjust:100%}
   body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:var(--mono);
-    font-size:12px;
-    line-height:1.3;
-    letter-spacing:.02em;
-    padding:14px 16px 60px;
-    background-image:
-      radial-gradient(circle at 20% -10%, rgba(57,211,83,.05), transparent 40%),
-      radial-gradient(circle at 90% 0%, rgba(57,211,83,.03), transparent 35%);
+    background:var(--bg-deep);
+    color:var(--cream);
+    font-family:var(--font-body);
+    padding:32px;
     min-height:100vh;
   }
+  .canvas{max-width:1180px;margin:0 auto}
 
-  /* ---------- top bar ---------- */
-  .topbar{display:flex;align-items:center;gap:20px;margin-bottom:14px;flex-wrap:wrap}
-  .brand{display:flex;align-items:center;gap:11px}
-  .logo{
-    width:34px;height:34px;border:1.5px solid var(--green);border-radius:6px;
-    display:grid;place-items:center;position:relative;flex:none;
-    box-shadow:0 0 12px rgba(57,211,83,.25),inset 0 0 8px rgba(57,211,83,.1);
+  /* ---------- header ---------- */
+  .header{
+    background:var(--bg-header);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:22px;
   }
-  .logo svg{width:20px;height:20px}
-  .brand h1{font-size:17px;font-weight:700;color:var(--green);letter-spacing:.08em;line-height:1}
-  .brand .sub{font-size:9px;color:var(--text-faint);letter-spacing:.22em;margin-top:3px;text-transform:uppercase}
-  .topbar .spacer{flex:1}
-  .meta{display:flex;gap:22px;align-items:center}
-  .meta .stat{text-align:right}
-  .meta .stat .v{font-size:15px;font-weight:700;color:var(--green);line-height:1}
-  .meta .stat .l{font-size:8px;color:var(--text-faint);letter-spacing:.2em;text-transform:uppercase;margin-top:3px}
-  .live{display:flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:4px;padding:5px 9px}
-  .live .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
-  .live span{font-size:9px;letter-spacing:.18em;color:var(--text-dim)}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .brand{display:flex;align-items:center;gap:16px}
+  .mark{
+    width:46px;height:46px;
+    border:1.5px solid var(--gold);
+    border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:20px;
+    color:var(--gold);
+  }
+  .wordmark h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:.01em;
+    color:var(--cream);
+  }
+  .wordmark p{
+    font-size:11px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--sage);
+    margin-top:3px;
+  }
+  .event-info{text-align:right}
+  .event-info .event{
+    font-family:var(--font-display);
+    font-style:italic;
+    font-weight:600;
+    font-size:16px;
+    color:var(--gold-bright);
+  }
+  .event-info .course{
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--sage);
+    margin-top:3px;
+  }
 
   /* ---------- tabs ---------- */
-  .tabs{display:flex;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tabs{
+    display:flex;
+    gap:2px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:20px;
+  }
   .tab{
-    background:none;border:none;color:var(--text-faint);font-family:var(--mono);
-    font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:9px 16px;cursor:pointer;
-    position:relative;transition:color .15s;
+    padding:11px 20px;
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    font-weight:600;
+    color:var(--sage-dim);
+    border-bottom:2px solid transparent;
+    cursor:pointer;
   }
-  .tab:hover{color:var(--text-dim)}
-  .tab.active{color:var(--green)}
-  .tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--green);box-shadow:0 0 8px var(--green)}
+  .tab.active{color:var(--gold-bright);border-bottom-color:var(--gold)}
 
-  /* ---------- wind / draw strip (links-specific) ---------- */
-  .windstrip{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
-  .wblock{flex:1;padding:9px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
-  .wblock:last-child{border-right:none}
-  .wlbl{font-size:8px;letter-spacing:.2em;color:var(--text-faint);text-transform:uppercase}
-  .wval{font-size:14px;color:var(--green);font-weight:700;line-height:1.1}
-  .wnote{font-size:8.5px;color:var(--text-faint);letter-spacing:.03em}
-
-  /* ---------- controls ---------- */
-  .controls{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-  .search{
-    background:var(--panel);border:1px solid var(--line-2);border-radius:5px;
-    padding:7px 11px 7px 30px;color:var(--text);font-family:var(--mono);font-size:11px;
-    width:240px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%234a5f50' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:10px center;
+  /* ---------- table panel ---------- */
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
+    margin-bottom:20px;
   }
-  .search:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 1px rgba(57,211,83,.2)}
-  .search::placeholder{color:var(--text-faint)}
-  .filters{display:flex;gap:3px}
-  .fbtn{
-    background:var(--panel);border:1px solid var(--line-2);color:var(--text-dim);
-    font-family:var(--mono);font-size:10px;letter-spacing:.1em;padding:6px 11px;border-radius:4px;cursor:pointer;transition:all .12s;
-  }
-  .fbtn:hover{border-color:var(--line-2);color:var(--text)}
-  .fbtn.on{border-color:var(--green);color:var(--green);background:rgba(57,211,83,.06)}
-  .count{font-size:10px;color:var(--text-faint);letter-spacing:.08em}
-  .legend{display:flex;align-items:center;gap:8px;margin-left:auto}
-  .legend .lbl{font-size:8px;color:var(--text-faint);letter-spacing:.18em}
-  .ramp{width:120px;height:8px;border-radius:2px;background:linear-gradient(90deg,var(--h0),var(--h1),var(--h2),var(--h3),var(--h4),var(--h5))}
-
-  /* ---------- sections grid ---------- */
-  .sections{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-  .section{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-  .section-hd{font-size:9px;letter-spacing:.24em;color:var(--text-faint);padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel-2)}
-
-  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse}
   thead th{
-    font-size:8.5px;letter-spacing:.1em;color:var(--text-faint);font-weight:600;text-align:right;
-    padding:6px 6px;border-bottom:1px solid var(--line-2);text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap;
+    text-align:left;
+    font-size:10px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--sage);
+    font-weight:600;
+    padding:12px 14px;
+    border-bottom:1px solid var(--line);
   }
-  thead th.player,thead th.rank{text-align:left}
-  thead th:hover{color:var(--text-dim)}
-  thead th .arrow{opacity:0;font-size:7px}
-  thead th.sorted .arrow{opacity:1;color:var(--green)}
-  tbody td{padding:0;border-bottom:1px solid var(--grid);font-size:11px}
-  tbody tr:hover{background:rgba(57,211,83,.035)}
-  .rank{color:var(--text-faint);text-align:left;padding:5px 6px;width:26px;font-size:10px}
-  .pname{text-align:left;padding:5px 8px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
-  .pinit{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--line-2);color:var(--text-dim);font-size:7px;margin-right:7px;vertical-align:middle}
-  .cell{text-align:right;padding:5px 6px;position:relative;color:var(--text)}
-  .cell.proj{font-weight:600;color:var(--text)}
-  .cell.heat{border-radius:2px}
-  .nan{color:var(--text-faint)}
+  thead th.num{text-align:right}
+  tbody tr{border-bottom:1px solid var(--line)}
+  tbody tr:nth-child(even){background:var(--bg-panel-alt)}
+  tbody tr:hover{background:rgba(201,162,39,0.06)}
+  td{padding:11px 14px;font-size:13px}
+  td.num{text-align:right;font-family:var(--font-mono);color:var(--cream)}
 
-  /* ---------- single wide table (course fit + matchups) ---------- */
-  .wide{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:auto}
-  .wide table{min-width:100%}
-  .wide thead th{padding:9px 10px;font-size:9px}
-  .wide tbody td{padding:7px 10px;font-size:11px}
-  .wide .pname{max-width:none}
-  .tier-tag{font-size:7px;letter-spacing:.12em;padding:1px 5px;border-radius:3px;text-transform:uppercase}
-  .t1{background:rgba(57,211,83,.12);color:var(--green)}
-  .t2{background:rgba(93,169,255,.12);color:#7fb2f0}
-  .t3{background:rgba(217,164,65,.14);color:var(--amber)}
-
-  .val-pos{color:var(--green);font-weight:600}
-  .val-neg{color:#c96a52}
-  .pill{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600}
-  .pill.edge{background:rgba(57,211,83,.14);color:var(--green)}
-  .pill.thin{background:var(--line-2);color:var(--text-dim)}
-  .pill.fade{background:rgba(201,106,82,.14);color:#c96a52}
-  .vs{color:var(--text-faint);font-size:9px;padding:0 6px}
-  .bar-wrap{display:inline-block;width:60px;height:6px;background:var(--line-2);border-radius:3px;overflow:hidden;vertical-align:middle;margin-left:8px}
-  .bar{height:100%;background:var(--green);border-radius:3px}
-
-  /* ---------- forms (round score / tracker) ---------- */
-  .form-panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
-  .field{display:flex;flex-direction:column;gap:4px}
-  .field label{font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase}
-  .finput,.fselect{
-    background:var(--bg);border:1px solid var(--line-2);border-radius:5px;color:var(--text);
-    font-family:var(--mono);font-size:11px;padding:7px 9px;min-width:90px;
+  .pos-chip{
+    display:inline-flex;
+    align-items:center;justify-content:center;
+    width:26px;height:26px;
+    border:1px solid var(--gold);
+    border-radius:50%;
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:600;
+    color:var(--gold-bright);
+    margin-right:12px;
   }
-  .finput:focus,.fselect:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 1px rgba(57,211,83,.2)}
-  .finput::placeholder{color:var(--text-faint)}
-  .field.wide-field .finput{min-width:220px}
-  .addbtn{
-    background:rgba(57,211,83,.12);border:1px solid var(--green);color:var(--green);
-    font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-    padding:8px 16px;border-radius:5px;cursor:pointer;transition:all .12s;
-  }
-  .addbtn:hover{background:rgba(57,211,83,.22)}
-  .delbtn{
-    background:none;border:1px solid var(--line-2);color:var(--text-faint);
-    font-size:10px;padding:3px 7px;border-radius:4px;cursor:pointer;transition:all .12s;
-  }
-  .delbtn:hover{border-color:#c96a52;color:#c96a52}
-  .statusbtn{
-    background:var(--panel-2);border:1px solid var(--line-2);color:var(--text-dim);
-    font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:4px 8px;border-radius:4px;
-    cursor:pointer;margin-right:4px;transition:all .12s;
-  }
-  .statusbtn:hover{color:var(--text)}
-  .statusbtn.win{border-color:var(--green);color:var(--green);background:rgba(57,211,83,.1)}
-  .statusbtn.loss{border-color:#c96a52;color:#c96a52;background:rgba(201,106,82,.1)}
-  .statusbtn.push{border-color:var(--amber);color:var(--amber);background:rgba(217,164,65,.1)}
-  .badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  .badge.pending{background:var(--line-2);color:var(--text-dim)}
-  .badge.win{background:rgba(57,211,83,.16);color:var(--green)}
-  .badge.loss{background:rgba(201,106,82,.16);color:#c96a52}
-  .badge.push{background:rgba(217,164,65,.16);color:var(--amber)}
+  .player-cell{display:flex;align-items:center}
+  .player-name{font-weight:600;color:var(--cream);font-size:13.5px}
+  .player-sub{font-size:10.5px;color:var(--sage-dim);margin-top:1px}
 
-  /* ---------- summary strip (tracker) ---------- */
-  .summary{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
-  .sblock{flex:1;padding:10px 16px;border-right:1px solid var(--line)}
-  .sblock:last-child{border-right:none}
-  .slbl{font-size:8px;letter-spacing:.18em;color:var(--text-faint);text-transform:uppercase;margin-bottom:3px}
-  .sval{font-size:16px;font-weight:700;color:var(--text)}
-  .sval.pos{color:var(--green)}
-  .sval.neg{color:#c96a52}
+  .win-pct{font-family:var(--font-mono);font-weight:600;color:var(--gold-bright)}
 
-  .toolrow{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}
-  .toolbtn{
-    background:none;border:1px solid var(--line-2);color:var(--text-dim);
-    font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:5px 10px;border-radius:4px;cursor:pointer;
+  .edge-pos{color:var(--green-signal);font-family:var(--font-mono);font-weight:500}
+  .edge-neg{color:var(--red-signal);font-family:var(--font-mono);font-weight:500}
+
+  .pill{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:3px;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.06em;
+    font-family:var(--font-body);
   }
-  .toolbtn:hover{color:var(--text);border-color:var(--text-dim)}
+  .pill-bet{background:rgba(92,190,126,0.15);color:var(--green-signal);border:1px solid rgba(92,190,126,0.35)}
+  .pill-pass{background:rgba(220,122,108,0.12);color:var(--red-signal);border:1px solid rgba(220,122,108,0.32)}
+  .pill-fade{background:rgba(220,122,108,0.15);color:var(--red-signal);border:1px solid rgba(220,122,108,0.35)}
 
-  .tabpane{display:none}
-  .tabpane.active{display:block}
-  .note{font-size:9px;color:var(--text-faint);margin-top:12px;letter-spacing:.04em;line-height:1.6}
-  .note b{color:var(--text-dim);font-weight:600}
-
-  @media(max-width:1050px){.sections{grid-template-columns:1fr 1fr}}
-  @media(max-width:720px){
-    .sections{grid-template-columns:1fr}
-    .search{width:100%}
-    .legend{margin-left:0;width:100%;justify-content:flex-end}
-    body{font-size:12px}
+  .note{
+    font-size:11px;
+    color:var(--sage-dim);
+    line-height:1.6;
+    padding:0 4px;
   }
+  .note b{color:var(--sage)}
 </style>
 </head>
 <body>
+<div class="canvas">
 
-<div class="topbar">
-  <div class="brand">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#39d353" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 21V3"/><path d="M6 4h11l-2.5 3L17 10H6"/><path d="M4 21h6"/>
-      </svg>
-    </div>
-    <div>
-      <h1>ROD'S MODEL</h1>
-      <div class="sub" id="eventSub">Golf Betting Analytics</div>
-    </div>
-  </div>
-  <div class="spacer"></div>
-  <div class="meta">
-    <div class="stat"><div class="v">156</div><div class="l">Players</div></div>
-    <div class="stat"><div class="v" id="courseName" style="font-size:13px">—</div><div class="l">Course</div></div>
-    <div class="stat"><div class="v" id="dataAsOf" style="font-size:11px">—</div><div class="l">Data As Of (UTC)</div></div>
-    <div class="live"><div class="dot"></div><span>LIVE</span></div>
-  </div>
-</div>
-
-<div class="tabs">
-  <button class="tab active" data-tab="proj">Projections</button>
-  <button class="tab" data-tab="fit">Course Fit</button>
-  <button class="tab" data-tab="match">2-Ball Matchups</button>
-  <button class="tab" data-tab="rscore">Round Score</button>
-  <button class="tab" data-tab="outrights">Outrights</button>
-  <button class="tab" data-tab="tracker">Tracker</button>
-</div>
-
-<div class="windstrip">
-  <div class="wblock">
-    <span class="wlbl">DRAW BIAS</span>
-    <span class="wval" id="drawBias">—</span>
-    <span class="wnote">AM vs PM wave scoring gap (placeholder — feed from forecast)</span>
-  </div>
-  <div class="wblock">
-    <span class="wlbl">R1 WIND</span>
-    <span class="wval">— mph</span>
-    <span class="wnote">gust —</span>
-  </div>
-  <div class="wblock">
-    <span class="wlbl">CONDITIONS</span>
-    <span class="wval">Firm / fast links</span>
-    <span class="wnote">coastal · high variance regime</span>
-  </div>
-</div>
-
-<!-- ============ TAB 1: PROJECTIONS ============ -->
-<div class="tabpane active" id="tab-proj">
-  <div class="controls">
-    <input class="search" id="projSearch" placeholder="Search player...">
-    <div class="filters">
-      <button class="fbtn on">PROJ</button>
-      <button class="fbtn">TTG</button>
-      <button class="fbtn">OTT</button>
-      <button class="fbtn">APP</button>
-      <button class="fbtn">PUT</button>
-      <button class="fbtn">ARG</button>
-      <button class="fbtn">FIT</button>
-    </div>
-    <span class="count" id="projCount">Showing 156 players</span>
-    <div class="legend"><span class="lbl">WORST</span><div class="ramp"></div><span class="lbl">BEST</span></div>
-  </div>
-  <div class="sections" id="projSections"></div>
-  <div class="note"><b>Sample data — layout only, not model output.</b> <b>PROJ</b> is the fit-adjusted projected score (par 70). <b>TTG / OTT / APP / PUT / ARG</b> are strokes-gained skill components (higher = better); <b>FIT</b> is Royal Birkdale's links reweighting applied to the player — expect ground-game and wind-control players to fit better here than at a parkland course. <b>Win Mdl</b> is a full-field Monte Carlo (every player simmed together, ranked each trial) run server-side in the pipeline; <b>Win Mkt</b> is DataGolf's real tournament-winner book odds. <b>+trk</b> one-click adds a BET call straight to the Tracker tab. Wire to your DataGolf field pull for the real 156-player field.</div>
-</div>
-
-<!-- ============ TAB 2: COURSE FIT ============ -->
-<div class="tabpane" id="tab-fit">
-  <div class="controls">
-    <input class="search" id="fitSearch" placeholder="Search course...">
-    <span class="count" id="fitCount">7 courses</span>
-    <div class="legend">
-      <span class="tier-tag t1">Tier 1 pull</span>
-      <span class="tier-tag t2">Tier 2 infer</span>
-      <span class="tier-tag t3">Tier 3 manual</span>
-    </div>
-  </div>
-  <div class="wide">
-    <table id="fitTable">
-      <thead>
-        <tr>
-          <th class="player">Course</th>
-          <th>Renewals</th>
-          <th>Scoring Adj <span class="t2 tier-tag" style="font-size:6px">T2</span></th>
-          <th>Score SD <span class="t2 tier-tag" style="font-size:6px">T2</span></th>
-          <th>Blowup% <span class="t2 tier-tag" style="font-size:6px">T2</span></th>
-          <th>w_OTT</th><th>w_APP</th><th>w_ARG</th><th>w_PUT</th>
-          <th>Dist Prem</th><th>Recovery Pen</th>
-          <th>Cut vs Par <span class="t2 tier-tag" style="font-size:6px">T2</span></th>
-          <th>Green Grass <span class="t1 tier-tag" style="font-size:6px">T1</span></th>
-        </tr>
-      </thead>
-      <tbody id="fitBody"></tbody>
-    </table>
-  </div>
-  <div class="note"><b>Placeholder values — structure only.</b> Links tuning vs a parkland course (Bay Hill shown for reference): ARG weighted up (ground game into firm run-off greens), OTT leans to accuracy over distance so <b>Dist Prem goes negative</b>, and <b>Score SD runs well above parkland</b> — links + wind is golf's highest-variance regime, which is why Royal Birkdale's variance multiplier is the largest input to matchup uncertainty. Replace every number with DataGolf-cluster-derived values (see spec §1).</div>
-</div>
-
-<!-- ============ TAB 3: MATCHUPS ============ -->
-<div class="tabpane" id="tab-match">
-  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
-    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Load DraftKings Odds — paste straight from DraftKings' 2-Ball Matchups page, so the price/market% shown is always your real book, not whichever book DataGolf's feed happened to have</label>
-    <textarea id="dkMatchText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied 2-ball slate here — player names, 'Tomorrow H:MM AM' times, '2 Ball - Round N' headers, and the two prices, exactly as copied. Everything else is ignored automatically."></textarea>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <button class="addbtn" onclick="loadDKMatchups()">Load DraftKings Matchups</button>
-      <button class="toolbtn" onclick="clearDKMatchups()">Revert to Auto (Pipeline)</button>
-      <span id="dkMatchStatus" style="font-size:10px;color:var(--text-dim)"></span>
-    </div>
-  </div>
-  <div class="controls">
-    <input class="search" id="matchSearch" placeholder="Search matchup...">
-    <div class="filters">
-      <button class="fbtn on" id="fAll">ALL</button>
-      <button class="fbtn" id="fEdge">EDGE ≥ 3%</button>
-      <button class="fbtn" id="fSame">SAME WAVE</button>
-    </div>
-    <span class="count" id="matchCount"></span>
-    <span id="matchSourceTag" style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase"></span>
-    <div class="legend"><span class="lbl">MODEL % vs MARKET %</span></div>
-  </div>
-  <div class="wide">
-    <table id="matchTable">
-      <thead>
-        <tr>
-          <th class="player">Matchup</th>
-          <th>Wave</th>
-          <th>Model %</th>
-          <th>Market %</th>
-          <th>No-Vig %</th>
-          <th>Edge</th>
-          <th>Price</th>
-          <th>Call</th>
-        </tr>
-      </thead>
-      <tbody id="matchBody"></tbody>
-    </table>
-  </div>
-  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books (only shown for auto/pipeline data — DraftKings-loaded matchups always show your real book). Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
-
-  <div class="section-hd" style="margin-top:22px">3-BALL MATCHUPS</div>
-  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
-    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Load DraftKings 3-Ball Odds — paste straight from DraftKings' 3-Ball Matchups page</label>
-    <textarea id="dk3BallText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied 3-ball slate here — player names, 'Tomorrow H:MM AM' times, '3 Ball - Round N' headers, and the three prices, exactly as copied. Everything else is ignored automatically."></textarea>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <button class="addbtn" onclick="loadDK3Ball()">Load 3-Ball Matchups</button>
-      <button class="toolbtn" onclick="clearDK3Ball()">Clear</button>
-      <span id="dk3BallStatus" style="font-size:10px;color:var(--text-dim)"></span>
-    </div>
-  </div>
-  <div class="controls">
-    <input class="search" id="threeBallSearch" placeholder="Search player...">
-    <div class="filters">
-      <button class="fbtn on" id="f3All">ALL</button>
-      <button class="fbtn" id="f3Edge">EDGE ≥ 3%</button>
-    </div>
-    <span class="count" id="threeBallCount"></span>
-  </div>
-  <div class="wide">
-    <table id="threeBallTable">
-      <thead>
-        <tr>
-          <th class="player">Player</th>
-          <th>Group</th>
-          <th>Rd</th>
-          <th>Model %</th>
-          <th>Market %</th>
-          <th>No-Vig %</th>
-          <th>Edge</th>
-          <th>Price</th>
-          <th>Call</th>
-        </tr>
-      </thead>
-      <tbody id="threeBallBody"></tbody>
-    </table>
-  </div>
-  <div class="note">Same math as the 2-ball table, extended to three players: model% comes from the same simulation (now tracking who has the lowest 1-round total among all three), no-vig removes the vig across all three real DraftKings prices at once instead of two. One row per player per trio — "Group" shows the other two players so you can see the full trio at a glance.</div>
-</div>
-
-<!-- ============ TAB 4: ROUND SCORE ============ -->
-<div class="tabpane" id="tab-rscore">
-  <div class="form-panel">
-    <div class="field wide-field">
-      <label>Player</label>
-      <input class="finput" id="rsPlayer" list="rsPlayerList" placeholder="Start typing a name...">
-      <datalist id="rsPlayerList"></datalist>
-    </div>
-    <div class="field">
-      <label>Round</label>
-      <select class="fselect" id="rsRound">
-        <option value="R1">R1</option><option value="R2">R2</option>
-        <option value="R3">R3</option><option value="R4">R4</option>
-        <option value="T72">Tournament (72)</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Line</label>
-      <input class="finput" id="rsLine" type="number" step="0.5" placeholder="69.5" style="min-width:70px">
-    </div>
-    <div class="field">
-      <label>Under Price</label>
-      <input class="finput" id="rsUnderPrice" placeholder="-115" style="min-width:70px">
-    </div>
-    <div class="field">
-      <label>Over Price</label>
-      <input class="finput" id="rsOverPrice" placeholder="-105" style="min-width:70px">
-    </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:5px;cursor:pointer" for="rsElevatedRisk">
-        <input type="checkbox" id="rsElevatedRisk" style="width:13px;height:13px;accent-color:var(--amber);cursor:pointer">
-        Trailing / elevated risk
-      </label>
-    </div>
-    <button class="addbtn" onclick="addRoundScoreProp()">Add Line</button>
-  </div>
-  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
-    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Bulk Import — paste straight from DraftKings' Round Score page</label>
-    <textarea id="rsBulkText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied slate here — e.g. player names, 'Round Score - Round N O/U' headers, Over/Under lines and prices, exactly as copied. Non-matching lines are ignored automatically."></textarea>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="addbtn" onclick="bulkImportRoundScore()">Parse &amp; Add All</button>
-      <span id="rsBulkStatus" style="font-size:10px;color:var(--text-dim)"></span>
-    </div>
-  </div>
-  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px;border-color:var(--amber)">
-    <label style="font-size:8px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase">Live Form Adjustment — PROJ is a static pre-tournament number that doesn't update during the week. Paste the current leaderboard here to blend in real current-week form.</label>
-    <textarea id="rsLeaderboardText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the leaderboard — needs a player name and their current score-to-par on each line (e.g. 'Scottie Scheffler -12', or a full copy-pasted leaderboard with position/rounds mixed in, that's fine too). Round scores without a +/- sign are ignored automatically."></textarea>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <div class="field" style="margin:0">
-        <label>Rounds Completed</label>
-        <input class="finput" id="rsRoundsCompleted" type="number" value="3" min="1" max="4" style="min-width:60px">
+  <div class="header">
+    <div class="brand">
+      <div class="mark">R</div>
+      <div class="wordmark">
+        <h1>Rod's Model</h1>
+        <p>Golf Betting Analytics</p>
       </div>
-      <div class="field" style="margin:0">
-        <label title="How much weight to give actual current-week performance vs. the static pre-tournament PROJ. Default 0.10 — a real 2025 empirical Bayes study (Brill &amp; Wyner, UPenn/Wharton, arXiv:2506.21822) found even a FULL SEASON of putting data is 'nearly indistinguishable from noise' for most golfers. 3 rounds of overall score is a much smaller, noisier sample than that — the shrinkage-formula estimate (using this course's own scoring variance) lands near 0.09, consistent with that finding. A real tournament-specific backtest would need DataGolf's historical raw data, which isn't accessible on the current plan.">Blend Weight (0-1)</label>
-        <input class="finput" id="rsBlendWeight" type="number" value="0.10" min="0" max="1" step="0.05" style="min-width:60px">
-      </div>
-      <button class="addbtn" onclick="applyLeaderboardAdjustment()" style="border-color:var(--amber);color:var(--amber)">Apply Form Adjustment</button>
-      <button class="toolbtn" onclick="clearFormAdjustments()">Clear Adjustments</button>
-      <span id="rsLeaderboardStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+    <div class="event-info">
+      <div class="event">3M Open</div>
+      <div class="course">TPC Twin Cities · Round 1</div>
     </div>
   </div>
-  <div class="toolrow">
-    <button class="toolbtn" onclick="exportCSV('roundscore')">Export CSV</button>
-    <button class="toolbtn" onclick="clearAll('roundscore')">Clear All</button>
-  </div>
-  <div class="toolrow" style="justify-content:flex-start;gap:8px">
-    <button class="fbtn on" id="rsFilterAll">ALL</button>
-    <button class="fbtn" id="rsFilterPlays">PLAYS ONLY</button>
-    <span id="rsCount" style="font-size:10px;color:var(--text-dim);align-self:center"></span>
-    <span style="flex:1"></span>
-    <span style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;align-self:center">sorted by best edge</span>
-  </div>
-  <div class="wide">
-    <table id="rscoreTable">
-      <thead>
-        <tr>
-          <th class="player">Player</th>
-          <th>Rd</th>
-          <th>Line</th>
-          <th>Model U%</th>
-          <th>Mkt U%</th>
-          <th>Model O%</th>
-          <th>Mkt O%</th>
-          <th>Play</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="rscoreBody"></tbody>
-    </table>
-  </div>
-  <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. Pick <b>Tournament (72)</b> in the Round dropdown for a 72-hole total-strokes line instead of a single round — it sums 4 simulated rounds per trial rather than 1. There's no DataGolf feed for either round-score or tournament-total O/U (confirmed — their live betting tools only cover Outright and Match-Up/3-Ball markets), so market% only appears once you type in the price from your sportsbook. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
-</div>
 
-<!-- ============ TAB 5: OUTRIGHTS ============ -->
-<div class="tabpane" id="tab-outrights">
-  <div class="controls">
-    <input class="search" id="outSearch" placeholder="Search player...">
-    <div class="filters">
-      <button class="fbtn on" id="mWin">WIN</button>
-      <button class="fbtn" id="mTop5">TOP 5</button>
-      <button class="fbtn" id="mTop10">TOP 10</button>
-      <button class="fbtn" id="mTop20">TOP 20</button>
-    </div>
-    <span class="count" id="outCount"></span>
-    <div class="legend"><span class="lbl">MODEL % vs MARKET %</span></div>
+  <div class="tabs">
+    <div class="tab active">Projections</div>
+    <div class="tab">Course Fit</div>
+    <div class="tab">2-Ball Matchups</div>
+    <div class="tab">3-Ball Matchups</div>
+    <div class="tab">Round Score</div>
+    <div class="tab">Outrights</div>
+    <div class="tab">Tracker</div>
   </div>
-  <div class="wide">
-    <table id="outTable">
+
+  <div class="panel">
+    <table>
       <thead>
         <tr>
-          <th class="player">Player</th>
-          <th>Model %</th>
-          <th>Market %</th>
-          <th>Edge</th>
-          <th>Price</th>
+          <th>Player</th>
+          <th class="num">Proj</th>
+          <th class="num">TTG</th>
+          <th class="num">OTT</th>
+          <th class="num">APP</th>
+          <th class="num">PUT</th>
+          <th class="num">Win %</th>
+          <th class="num">Edge</th>
           <th>Call</th>
         </tr>
       </thead>
-      <tbody id="outBody"></tbody>
-    </table>
-  </div>
-  <div class="note"><b>Model %</b> comes from the same full-field Monte Carlo as the Win column on Projections — every player simmed together, ranked each trial, tallied for whichever finish threshold you've selected above. <b>Market %</b> is DataGolf's real book odds for that specific market. Switch markets with the buttons above; edge and the BET/FADE call recompute automatically. <b>+trk</b> one-click adds a BET call to the Tracker.</div>
-</div>
-
-<!-- ============ TAB 6: TRACKER ============ -->
-<div class="tabpane" id="tab-tracker">
-  <div class="toolrow" style="justify-content:space-between;align-items:center">
-    <div class="field" style="margin:0">
-      <label>Viewing</label>
-      <select class="fselect" id="trEventFilter" style="min-width:220px"></select>
-    </div>
-  </div>
-  <div class="summary" id="trackerSummary"></div>
-  <div id="trackerByEvent"></div>
-  <div id="trackerCalibration"></div>
-  <div class="form-panel" style="margin-top:14px">
-    <div class="field">
-      <label>Date</label>
-      <input class="finput" id="trDate" type="date" style="min-width:130px">
-    </div>
-    <div class="field wide-field">
-      <label>Description</label>
-      <input class="finput" id="trDesc" placeholder="e.g. Fleetwood ML vs Schauffele">
-    </div>
-    <div class="field">
-      <label>Type</label>
-      <select class="fselect" id="trType">
-        <option>Matchup</option><option>Round Score</option><option>Outright</option><option>Other</option>
-      </select>
-    </div>
-    <div class="field">
-      <label>Price</label>
-      <input class="finput" id="trPrice" placeholder="-110" style="min-width:70px">
-    </div>
-    <div class="field">
-      <label>Stake ($)</label>
-      <input class="finput" id="trStake" type="number" step="1" placeholder="50" style="min-width:70px">
-    </div>
-    <div class="field">
-      <label title="Optional — the model's stated probability when you placed this bet, if known. Needed for calibration tracking (see below); leave blank if you don't have it handy.">Model % (optional)</label>
-      <input class="finput" id="trModelProb" type="number" step="0.1" min="0" max="100" placeholder="62.5" style="min-width:70px">
-    </div>
-    <div class="field">
-      <label style="display:flex;align-items:center;gap:5px;cursor:pointer" for="trWagered" title="Uncheck for a play you're tracking purely for model calibration, not an actual bet — keeps it out of Total Staked / Profit / ROI while still counting it for calibration.">
-        <input type="checkbox" id="trWagered" checked style="width:13px;height:13px;accent-color:var(--green);cursor:pointer">
-        Real wager
-      </label>
-    </div>
-    <button class="addbtn" onclick="addBet()">Add Bet</button>
-  </div>
-  <div class="toolrow">
-    <button class="toolbtn" onclick="document.getElementById('trackerImportFile').click()">Import CSV</button>
-    <input type="file" id="trackerImportFile" accept=".csv" style="display:none" onchange="importTrackerCSV(event)">
-    <button class="toolbtn" onclick="exportCSV('tracker')">Export CSV</button>
-    <button class="toolbtn" onclick="clearAll('tracker')">Clear All</button>
-    <span id="trackerImportStatus" style="font-size:10px;color:var(--text-dim);align-self:center"></span>
-  </div>
-  <div class="wide">
-    <table id="trackerTable">
-      <thead>
+      <tbody>
         <tr>
-          <th class="player">Description</th>
-          <th>Date</th>
-          <th>Type</th>
-          <th>Price</th>
-          <th>Stake</th>
-          <th>Status</th>
-          <th>Profit</th>
-          <th></th>
+          <td>
+            <div class="player-cell">
+              <div class="pos-chip">1</div>
+              <div>
+                <div class="player-name">Scottie Scheffler</div>
+                <div class="player-sub">−134 draftkings</div>
+              </div>
+            </div>
+          </td>
+          <td class="num">66.7</td>
+          <td class="num">0.8</td>
+          <td class="num">1.1</td>
+          <td class="num">0.5</td>
+          <td class="num">0.4</td>
+          <td class="num win-pct">27.8%</td>
+          <td class="num edge-pos">+2.8%</td>
+          <td><span class="pill pill-bet">Bet</span></td>
         </tr>
-      </thead>
-      <tbody id="trackerBody"></tbody>
+        <tr>
+          <td>
+            <div class="player-cell">
+              <div class="pos-chip">2</div>
+              <div>
+                <div class="player-name">Maverick McNealy</div>
+                <div class="player-sub">+260 draftkings</div>
+              </div>
+            </div>
+          </td>
+          <td class="num">68.3</td>
+          <td class="num">0.2</td>
+          <td class="num">0.2</td>
+          <td class="num">0.5</td>
+          <td class="num">0.3</td>
+          <td class="num win-pct">4.1%</td>
+          <td class="num edge-neg">−1.2%</td>
+          <td><span class="pill pill-pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="player-cell">
+              <div class="pos-chip">3</div>
+              <div>
+                <div class="player-name">Kurt Kitayama</div>
+                <div class="player-sub">+245 draftkings</div>
+              </div>
+            </div>
+          </td>
+          <td class="num">68.3</td>
+          <td class="num">0.4</td>
+          <td class="num">0.6</td>
+          <td class="num">−0.0</td>
+          <td class="num">0.1</td>
+          <td class="num win-pct">3.9%</td>
+          <td class="num edge-pos">+3.4%</td>
+          <td><span class="pill pill-bet">Bet</span></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="player-cell">
+              <div class="pos-chip">4</div>
+              <div>
+                <div class="player-name">Hideki Matsuyama</div>
+                <div class="player-sub">+295 draftkings</div>
+              </div>
+            </div>
+          </td>
+          <td class="num">68.4</td>
+          <td class="num">0.0</td>
+          <td class="num">0.5</td>
+          <td class="num">0.2</td>
+          <td class="num">0.3</td>
+          <td class="num win-pct">3.2%</td>
+          <td class="num edge-neg">−0.6%</td>
+          <td><span class="pill pill-pass">Pass</span></td>
+        </tr>
+        <tr>
+          <td>
+            <div class="player-cell">
+              <div class="pos-chip">5</div>
+              <div>
+                <div class="player-name">Tom Kim</div>
+                <div class="player-sub">+300 draftkings</div>
+              </div>
+            </div>
+          </td>
+          <td class="num">68.4</td>
+          <td class="num">0.0</td>
+          <td class="num">0.7</td>
+          <td class="num">0.1</td>
+          <td class="num">0.2</td>
+          <td class="num win-pct">3.0%</td>
+          <td class="num edge-pos">+4.1%</td>
+          <td><span class="pill pill-bet">Bet</span></td>
+        </tr>
+      </tbody>
     </table>
   </div>
-  <div class="note"><b>Real bets only.</b> Add a bet when you place it (status: Pending), then mark Win / Loss / Push once it settles — profit and the running totals above update automatically. New bets are auto-tagged with whichever tournament's data is currently loaded — switch <b>Viewing</b> above to drill into one event, or leave it on "All Events" for the cumulative record across everything you've tracked. Saved to this browser's localStorage; use Export CSV as a backup.</div>
+
+  <div class="note">
+    <b>Signature element:</b> the gold position chip is a real leaderboard convention, not decoration — it turns the field's projected rank into something you scan instead of read. Deep pine green replaces near-black (avoids the generic dark-terminal default); brass gold replaces neon green as the single accent; edge/call color-coding stays green/red since that's a real financial convention you already read fast under time pressure — no reason to relearn it just to be different.
+  </div>
+
 </div>
-
-<script>
-// ---------------- heat coloring ----------------
-const RAMP = ['#7a2418','#9c3b1e','#b5701f','#7d7a20','#3f6b24','#1f7a34'];
-function lerp(a,b,t){return a+(b-a)*t;}
-function hex2rgb(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
-function heat(t){ // t in 0..1  -> css rgba
-  t=Math.max(0,Math.min(1,t));
-  const seg=t*(RAMP.length-1);const i=Math.floor(seg);const f=seg-i;
-  const c0=hex2rgb(RAMP[i]);const c1=hex2rgb(RAMP[Math.min(i+1,RAMP.length-1)]);
-  const r=Math.round(lerp(c0[0],c1[0],f)),g=Math.round(lerp(c0[1],c1[1],f)),b=Math.round(lerp(c0[2],c1[2],f));
-  return `rgba(${r},${g},${b},.55)`;
-}
-
-// ---------------- sample projection data ----------------
-// PLACEHOLDER projections at par-70 scale for real 2026 Open field names.
-// Numbers are illustrative for layout ONLY - replace with DataGolf-fed engine output.
-// [name, proj, ttg, ott, app, put, arg, fit]
-const P_FALLBACK = [
-["Scottie Scheffler",68.4,2.6,0.9,1.2,0.8,0.4,2.2],["Rory McIlroy",68.7,2.2,1.1,0.9,0.3,0.3,2.0],
-["Jon Rahm",68.9,2.0,0.8,1.0,0.2,0.5,1.9],["Tommy Fleetwood",69.0,1.7,0.6,0.8,0.4,0.5,2.4],
-["Xander Schauffele",69.1,1.8,0.7,0.9,0.3,0.2,1.8],["Chris Gotterup",69.3,1.5,0.8,0.6,0.2,0.3,1.9],
-["Ludvig Aberg",69.3,1.9,0.9,0.9,-0.1,0.2,1.5],["Matt Fitzpatrick",69.4,1.4,0.3,1.1,0.3,0.4,1.7],
-["Viktor Hovland",69.5,1.6,0.4,1.1,0.1,0.2,1.3],["Collin Morikawa",69.5,1.7,0.5,1.2,-0.2,0.3,1.6],
-["Shane Lowry",69.6,1.2,0.4,0.6,0.3,0.5,2.1],["Bryson DeChambeau",69.6,1.8,1.2,0.5,0.1,-0.1,1.0],
-["Justin Thomas",69.7,1.3,0.3,0.7,0.4,0.4,1.4],["Robert MacIntyre",69.7,1.1,0.5,0.5,0.2,0.4,1.9],
-["Tyrrell Hatton",69.8,1.2,0.4,0.7,0.1,0.3,1.7],["Hideki Matsuyama",69.8,1.4,0.3,0.9,-0.1,0.4,1.3],
-["Jordan Spieth",69.9,0.9,0.2,0.5,0.4,0.5,1.8],["Sepp Straka",69.9,1.0,0.3,0.7,0.2,0.2,1.4],
-["Patrick Cantlay",70.0,1.2,0.4,0.6,0.2,0.3,1.2],["Joaquin Niemann",70.0,1.3,0.6,0.6,0.0,0.2,1.1],
-["Keegan Bradley",70.1,0.9,0.3,0.4,0.2,0.4,1.3],["Corey Conners",70.1,1.0,0.4,0.8,-0.3,0.0,1.0],
-["Russell Henley",70.2,0.8,0.1,0.6,0.3,0.3,1.2],["Sam Burns",70.2,0.7,0.2,0.4,0.5,0.2,1.0],
-["Akshay Bhatia",70.2,1.0,0.5,0.5,0.1,0.1,0.9],["Sungjae Im",70.3,0.6,0.2,0.4,0.3,0.3,1.1],
-["Aaron Rai",70.3,0.9,0.1,0.7,-0.2,0.3,1.4],["Harris English",70.3,0.7,0.3,0.5,0.1,0.2,1.0],
-["Justin Rose",70.4,0.8,0.2,0.6,0.1,0.3,1.5],["Cameron Young",70.4,1.1,0.6,0.5,-0.2,0.1,0.8],
-["Nicolai Hojgaard",70.5,0.8,0.4,0.5,0.0,0.0,0.9],["Daniel Berger",70.5,0.6,0.3,0.5,0.2,0.1,0.8],
-["Brian Harman",70.5,0.4,0.0,0.4,0.4,0.4,1.6],["Si Woo Kim",70.6,0.5,0.3,0.4,0.0,0.2,0.9],
-["Ryan Fox",70.6,0.5,0.4,0.2,0.1,0.2,1.0],["Jason Day",70.6,0.6,0.1,0.4,0.2,0.3,1.1],
-["Adam Scott",70.7,0.7,0.4,0.5,-0.2,0.1,0.9],["Min Woo Lee",70.7,0.6,0.4,0.3,0.0,0.1,0.8],
-["Thomas Detry",70.7,0.5,0.2,0.5,-0.1,0.1,0.7],["Kurt Kitayama",70.8,0.4,0.3,0.2,0.0,0.1,0.6],
-["Maverick McNealy",70.8,0.5,0.2,0.3,0.1,0.2,0.7],["Nick Taylor",70.8,0.3,0.1,0.3,0.2,0.2,0.6],
-["Michael Kim",70.9,0.3,-0.1,0.5,0.2,0.1,0.5],["J.J. Spaun",70.9,0.6,0.3,0.5,-0.2,0.1,0.5],
-["Wyndham Clark",70.9,0.6,0.3,0.4,-0.3,0.2,0.4],["Jacob Bridgeman",71.0,0.3,0.2,0.4,0.0,0.1,0.5],
-["Denny McCarty",71.0,0.1,-0.1,0.2,0.5,0.0,0.4],["Sahith Theegala",71.0,0.5,-0.1,0.4,0.0,0.3,0.6],
-["Ben Griffin",71.1,0.4,0.0,0.3,0.3,0.2,0.5],["Taylor Pendrith",71.1,0.5,0.4,0.1,0.0,0.1,0.4],
-["Rickie Fowler",71.2,0.2,0.1,0.2,0.1,0.2,0.6],["Lucas Glover",71.2,0.4,0.0,0.4,-0.3,0.1,0.3],
-["Tom Hoge",71.3,0.2,-0.1,0.4,0.0,0.0,0.3],["Matt Wallace",71.3,0.3,0.1,0.2,0.0,0.1,0.4],
-["Marco Penge",71.4,0.5,0.6,0.0,-0.3,-0.2,0.3],["Thorbjorn Olesen",71.4,0.4,0.2,0.4,-0.2,0.0,0.5],
-["Victor Perez",71.5,0.2,0.1,0.2,-0.1,0.1,0.4],["Michael Thorbjornsen",71.6,0.3,0.4,-0.1,-0.1,-0.1,0.2],
-["Johnny Keefer",71.7,0.2,0.3,0.2,-0.3,-0.2,0.2],["Joe Dean",72.4,-0.4,-0.2,-0.3,-0.1,0.0,-0.3]
-];
-
-// min/max per column for heat scaling (skip nulls). idx into row: 1..7
-const cols=[1,2,3,4,5,6,7];
-const ranges={};
-cols.forEach(ci=>{
-  const vals=P_FALLBACK.map(r=>r[ci]).filter(v=>v!==null);
-  ranges[ci]=[Math.min(...vals),Math.max(...vals)];
-});
-// PROJ: lower is better, so invert
-function norm(ci,v){
-  if(v===null)return null;
-  let [mn,mx]=ranges[ci];
-  let t=(v-mn)/(mx-mn||1);
-  if(ci===1)t=1-t; // proj lower=better
-  return t;
-}
-function fmt(v){return v===null?'nan':(v>0&&![1].includes(arguments[1])?'':'')+v.toFixed(1);}
-function initials(name){const p=name.split(' ');return (p[0][0]+(p[p.length-1][0]||'')).toUpperCase();}
-
-function winCallFor(edge) {
-  if (edge === null) return { call: '—', cls: 'thin' };
-  const pct = edge * 100;
-  if (pct >= 1.5) return { call: 'BET', cls: 'edge' };   // tighter threshold than matchups —
-  if (pct <= -1.5) return { call: 'FADE', cls: 'fade' }; // outright win% swings are small in absolute terms
-  return { call: 'PASS', cls: 'thin' };
-}
-
-// ---------------- outrights tab: win / top5 / top10 / top20, switchable ----------------
-let outMarket = 'win'; // 'win' | 'top5' | 'top10' | 'top20'
-function outDataFor(marketKey) {
-  return { win: W, top5: W5, top10: W10, top20: W20 }[marketKey] || [];
-}
-function buildOutrights(search='') {
-  const body = document.getElementById('outBody');
-  if (!body) return;
-  body.innerHTML = '';
-  const data = outDataFor(outMarket);
-  let rows = data.filter(r => r[0].toLowerCase().includes(search.toLowerCase()));
-  document.getElementById('outCount').textContent = `${rows.length} players`;
-  rows = rows.map(r => {
-    const [name, model, market, price] = r;
-    const edge = market !== null ? model - market : null;
-    return { name, model, market, price, edge };
-  });
-  rows.sort((a,b) => (b.edge ?? -999) - (a.edge ?? -999));
-  rows.forEach(r => {
-    const wc = winCallFor(r.edge);
-    body.innerHTML += `<tr>
-      <td class="pname"><span class="pinit">${initials(r.name)}</span>${r.name}</td>
-      <td class="cell heat" style="background:${heat(r.model/(outMarket==='win'?0.15:1))}">${(r.model*100).toFixed(1)}%</td>
-      <td class="cell">${r.market!==null?(r.market*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell ${r.edge!==null?(r.edge>=0?'val-pos':'val-neg'):''}">${r.edge!==null?(r.edge>=0?'+':'')+(r.edge*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell" style="color:var(--text-dim)">${r.price}</td>
-      <td class="cell" style="text-align:center">
-        <span class="pill ${wc.cls}">${wc.call}</span>
-        ${wc.call==='BET'&&r.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r.name.replace(/'/g,"\\'")} (${outMarket})','${r.price.replace(/'/g,"\\'")}',${r.model})">+trk</button>`:''}
-      </td>
-    </tr>`;
-  });
-}
-function setOutMarket(key, btn) {
-  outMarket = key;
-  document.querySelectorAll('#tab-outrights .fbtn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  buildOutrights(document.getElementById('outSearch').value);
-}
-function buildProjections(filter=''){
-  const container=document.getElementById('projSections');
-  container.innerHTML='';
-  const winByName = {};
-  W.forEach(w => { winByName[w[0]] = { model: w[1], market: w[2], price: w[3] }; });
-  const rows=P.map((r,i)=>({r,rank:i+1})).filter(o=>o.r[0].toLowerCase().includes(filter.toLowerCase()));
-  document.getElementById('projCount').textContent=`Showing ${rows.length} players`;
-  const perSec=Math.ceil(rows.length/3);
-  const secNames=['SECTION A','SECTION B','SECTION C'];
-  for(let s=0;s<3;s++){
-    const slice=rows.slice(s*perSec,(s+1)*perSec);
-    if(!slice.length)continue;
-    const sec=document.createElement('div');sec.className='section';
-    let html=`<div class="section-hd">${secNames[s]}</div><table><thead><tr>
-      <th class="rank">#</th><th class="player">Player</th>
-      <th>PROJ</th><th>TTG</th><th>OTT</th><th>APP</th><th>PUT</th><th>ARG</th><th>FIT</th>
-      <th>Win Mdl</th><th>Win Mkt</th><th>Call</th>
-      </tr></thead><tbody>`;
-    slice.forEach(o=>{
-      const r=o.r;
-      html+=`<tr><td class="rank">${o.rank}</td>
-        <td class="pname"><span class="pinit">${initials(r[0])}</span>${r[0]}</td>`;
-      cols.forEach(ci=>{
-        const v=r[ci];const t=norm(ci,v);
-        const bg=t===null?'':`background:${heat(t)}`;
-        const cls='cell heat'+(ci===1?' proj':'')+(v===null?' nan':'');
-        const txt=v===null?'nan':v.toFixed(1);
-        html+=`<td class="${cls}" style="${bg}">${txt}</td>`;
-      });
-      const win = winByName[r[0]];
-      if (win) {
-        const edge = win.market !== null ? win.model - win.market : null;
-        const wc = winCallFor(edge);
-        html += `<td class="cell heat" style="background:${heat(win.model/0.15)}">${(win.model*100).toFixed(1)}%</td>
-          <td class="cell">${win.market!==null?(win.market*100).toFixed(1)+'%':'—'}</td>
-          <td class="cell" style="text-align:center">
-            <span class="pill ${wc.cls}">${wc.call}</span>
-            ${wc.call==='BET'&&win.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r[0].replace(/'/g,"\\'")}','${win.price.replace(/'/g,"\\'")}',${win.model})">+trk</button>`:''}
-          </td>`;
-      } else {
-        html += `<td class="cell nan">nan</td><td class="cell nan">nan</td><td class="cell">—</td>`;
-      }
-      html+='</tr>';
-    });
-    html+='</tbody></table>';
-    sec.innerHTML=html;container.appendChild(sec);
-  }
-}
-
-// ---------------- course fit data ----------------
-// PLACEHOLDER links-tuned values - structure only, replace with DataGolf-derived numbers.
-// [course, renewals, scoreAdj, scoreSD, blowup, wOTT,wAPP,wARG,wPUT, distPrem, recovPen, cutParar, grass]
-// Note on links tuning: ARG up, OTT weighted toward accuracy, dist_premium DOWN, scoreSD well above 1.0.
-const F_FALLBACK=[
-["Royal Birkdale (2026)",10,2.4,3.8,0.13,1.10,1.15,1.30,1.00,-0.10,0.30,4.0,"fescue/bent"],
-["Royal Liverpool",6,2.1,3.7,0.12,1.08,1.12,1.28,1.00,-0.08,0.28,5.0,"fescue"],
-["Royal Troon",7,2.6,3.9,0.14,1.12,1.10,1.30,0.98,-0.05,0.32,6.0,"fescue"],
-["Royal Portrush",4,1.9,3.6,0.11,1.10,1.15,1.25,1.00,-0.10,0.26,3.0,"fescue"],
-["St Andrews (Old)",12,0.4,3.3,0.09,1.05,1.08,1.20,1.05,0.00,0.18,-2.0,"fescue"],
-["Carnoustie",8,3.1,4.0,0.15,1.15,1.10,1.28,0.95,0.00,0.34,7.0,"fescue"],
-["Bay Hill (ref: parkland)",15,1.8,3.1,0.08,1.15,1.20,1.05,0.85,0.30,0.22,2.0,"bermuda"]
-];
-// heat helpers for fit numeric weights around 1.0
-function weightHeat(v){ // 0.8..1.25 -> 0..1
-  const t=(v-0.82)/(1.25-0.82);return heat(t);
-}
-function buildFit(filter=''){
-  const body=document.getElementById('fitBody');body.innerHTML='';
-  const rows=F.filter(r=>r[0].toLowerCase().includes(filter.toLowerCase()));
-  document.getElementById('fitCount').textContent=`${rows.length} courses`;
-  rows.forEach(r=>{
-    const [name,ren,sadj,sd,blow,wo,wa,war,wp,dp,rp,cut,grass]=r;
-    body.innerHTML+=`<tr>
-      <td class="pname"><span class="pinit">${initials(name)}</span>${name}</td>
-      <td class="cell">${ren}</td>
-      <td class="cell">${sadj>0?'+':''}${sadj.toFixed(1)}</td>
-      <td class="cell heat" style="background:${heat((sd-3.0)/(4.2-3.0))}"><b>${sd.toFixed(1)}</b></td>
-      <td class="cell">${(blow*100).toFixed(0)}%</td>
-      <td class="cell heat" style="background:${weightHeat(wo)}">${wo.toFixed(2)}</td>
-      <td class="cell heat" style="background:${weightHeat(wa)}">${wa.toFixed(2)}</td>
-      <td class="cell heat" style="background:${weightHeat(war)}">${war.toFixed(2)}</td>
-      <td class="cell heat" style="background:${weightHeat(wp)}">${wp.toFixed(2)}</td>
-      <td class="cell">${dp>0?'+':''}${dp.toFixed(2)}</td>
-      <td class="cell">${rp.toFixed(2)}</td>
-      <td class="cell">${cut>0?'+':''}${cut.toFixed(0)}</td>
-      <td class="cell" style="text-align:left;color:var(--text-dim)">${grass}</td>
-    </tr>`;
-  });
-}
-
-// ---------------- matchup data ----------------
-// PLACEHOLDER - structure only. Replace Model% with sim output, Market%/price with real book odds.
-// [playerA, playerB, wave, modelPct, marketPct, priceA, priceB]
-const M_FALLBACK=[
-["Tommy Fleetwood","Xander Schauffele","AM",0.552,0.505,"-115 (bet365)","-105 (bet365)"],
-["Rory McIlroy","Jon Rahm","PM",0.531,0.500,"-110 (bet365)","-110 (bet365)"],
-["Chris Gotterup","Ludvig Aberg","AM",0.548,0.510,"-118 (bet365)","-102 (bet365)"],
-["Shane Lowry","Justin Rose","PM",0.564,0.520,"-125 (bet365)","+105 (bet365)"],
-["Robert MacIntyre","Tyrrell Hatton","AM",0.539,0.500,"-110 (bet365)","-110 (bet365)"],
-["Matt Fitzpatrick","Collin Morikawa","PM",0.508,0.495,"+100 (bet365)","-120 (bet365)"],
-["Viktor Hovland","Hideki Matsuyama","AM",0.517,0.510,"-105 (bet365)","-115 (bet365)"],
-["Jordan Spieth","Patrick Cantlay","PM",0.526,0.500,"-108 (bet365)","-112 (bet365)"],
-["Bryson DeChambeau","Joaquin Niemann","AM",0.494,0.505,"+102 (bet365)","-122 (bet365)"],
-["Brian Harman","Aaron Rai","PM",0.571,0.515,"-130 (bet365)","+110 (bet365)"],
-["Sepp Straka","Sam Burns","AM",0.512,0.500,"-105 (bet365)","-115 (bet365)"],
-["Min Woo Lee","Cameron Young","PM",0.483,0.490,"+108 (bet365)","-128 (bet365)"]
-];
-// ---------------- outright win-market data ----------------
-// PLACEHOLDER - structure only. [name, modelWinPct, marketWinPct, price]
-const W_FALLBACK=[
-["Scottie Scheffler",0.132,0.10,"+900 (bet365)"],
-["Rory McIlroy",0.081,0.075,"+1200 (bet365)"],
-["Tommy Fleetwood",0.052,0.045,"+2000 (bet365)"],
-["Xander Schauffele",0.048,0.05,"+1900 (bet365)"],
-["Jon Rahm",0.041,0.04,"+2400 (bet365)"]
-];
-const W5_FALLBACK=[
-["Scottie Scheffler",0.42,0.38,"-160 (bet365)"],
-["Rory McIlroy",0.31,0.30,"+120 (bet365)"],
-["Tommy Fleetwood",0.24,0.22,"+220 (bet365)"],
-["Xander Schauffele",0.22,0.24,"+200 (bet365)"],
-["Jon Rahm",0.19,0.18,"+280 (bet365)"]
-];
-const W10_FALLBACK=[
-["Scottie Scheffler",0.58,0.55,"-250 (bet365)"],
-["Rory McIlroy",0.46,0.44,"-105 (bet365)"],
-["Tommy Fleetwood",0.38,0.35,"+140 (bet365)"],
-["Xander Schauffele",0.35,0.37,"+130 (bet365)"],
-["Jon Rahm",0.31,0.30,"+165 (bet365)"]
-];
-const W20_FALLBACK=[
-["Scottie Scheffler",0.74,0.70,"-450 (bet365)"],
-["Rory McIlroy",0.63,0.60,"-180 (bet365)"],
-["Tommy Fleetwood",0.55,0.52,"-105 (bet365)"],
-["Xander Schauffele",0.52,0.54,"-100 (bet365)"],
-["Jon Rahm",0.48,0.46,"+105 (bet365)"]
-];
-// ---------------- Load DraftKings 2-ball matchup odds directly, bypassing the pipeline's
-// book-preference fallback entirely — the price/market% shown is always your real book. ----------------
-let dkMatchupOverride = loadLS('rodsModel_dkMatchupOverride', null); // null = showing auto/pipeline data
-
-function parseDKMatchups(text) {
-  // Confirmed real DraftKings page format — the market label varies by event: "2 Ball -
-  // Round N" for The Open, "Matchup - Round N" for the 3M Open. Both confirmed live, so
-  // this matches either:
-  //   {Name1}vs{Name2}  OR  {Name1} / VS / {Name2}   <- header line(s), format also varies
-  //   Tomorrow H:MM AM/PM
-  //   2 Ball - Round N  |  Matchup - Round N
-  //   {Name1}
-  //   {price1}                  <- U+2212 minus sign, same DraftKings quirk as Round Score
-  //   {Name2}
-  //   {price2}
-  const normalized = text.replace(/\u2212/g, '-');
-  const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const headerRe = /^(2\s*Ball|Matchup)\s*-\s*Round\s*(\d+)$/i;
-  const priceRe = /^[+-]\d{2,4}$/;
-  const entries = [];
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(headerRe);
-    if (!m) continue;
-    const round = 'R' + m[2];
-    if (i + 4 < lines.length &&
-        !priceRe.test(lines[i+1]) && priceRe.test(lines[i+2]) &&
-        !priceRe.test(lines[i+3]) && priceRe.test(lines[i+4])) {
-      entries.push({ round, name1: lines[i+1], price1: lines[i+2], name2: lines[i+3], price2: lines[i+4] });
-      i += 4;
-    }
-  }
-  return entries;
-}
-
-function matchupModelProb(meanA, meanB, sd, blowup, roundsCount, trials) {
-  // Mirrors sim_engine.py's matchup_prob exactly — same mixture-model simRound() already
-  // tested for Round Score, just comparing two players' totals against each other instead
-  // of one player's total against a fixed line.
-  let winsA = 0, decided = 0;
-  for (let i = 0; i < trials; i++) {
-    let totalA = 0, totalB = 0;
-    for (let r = 0; r < roundsCount; r++) {
-      totalA += simRound(meanA, sd, blowup);
-      totalB += simRound(meanB, sd, blowup);
-    }
-    if (totalA < totalB) { winsA++; decided++; }
-    else if (totalB < totalA) { decided++; }
-  }
-  return decided > 0 ? winsA / decided : 0.5;
-}
-
-function loadDKMatchups() {
-  const text = document.getElementById('dkMatchText').value;
-  const status = document.getElementById('dkMatchStatus');
-  if (!text.trim()) { status.textContent = 'Paste the DraftKings matchup slate first.'; return; }
-  const parsed = parseDKMatchups(text);
-  if (!parsed.length) { status.textContent = 'Found 0 matchups — check the paste includes "2 Ball - Round N" headers.'; return; }
-
-  const { sd, blowup } = getCourseRow();
-  const rows = [];
-  const notFound = [];
-  parsed.forEach(entry => {
-    const prowA = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name1));
-    const prowB = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name2));
-    if (!prowA || prowA[1] === null || prowA[1] === undefined) { notFound.push(entry.name1); return; }
-    if (!prowB || prowB[1] === null || prowB[1] === undefined) { notFound.push(entry.name2); return; }
-    // DraftKings' "2 Ball - Round N" is explicitly a single-round market
-    const model = matchupModelProb(prowA[1], prowB[1], sd, blowup, 1, 8000);
-    const impliedA = impliedProb(entry.price1);
-    const impliedB = impliedProb(entry.price2);
-    let noVig = null;
-    if (impliedA !== null && impliedB !== null && (impliedA + impliedB) > 0) noVig = impliedA / (impliedA + impliedB);
-    rows.push({
-      a: prowA[0], b: prowB[0], wave: '?', model,
-      market: impliedA, nv: noVig !== null ? noVig : impliedA,
-      priceA: `${entry.price1} (draftkings)`, priceB: `${entry.price2} (draftkings)`,
-      edge: model - (noVig !== null ? noVig : (impliedA !== null ? impliedA : model)),
-    });
-  });
-  if (!rows.length) { status.textContent = 'None of the pasted players matched the current field — check names.'; return; }
-
-  dkMatchupOverride = rows;
-  saveLS('rodsModel_dkMatchupOverride', dkMatchupOverride);
-  buildMatch(document.getElementById('matchSearch').value);
-  status.textContent = `Loaded ${rows.length} of ${parsed.length} matchups from DraftKings.` +
-    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
-}
-
-function clearDKMatchups() {
-  dkMatchupOverride = null;
-  saveLS('rodsModel_dkMatchupOverride', null);
-  document.getElementById('dkMatchStatus').textContent = 'Reverted to auto (pipeline) data.';
-  buildMatch(document.getElementById('matchSearch').value);
-}
-
-// ---------------- 3-Ball Matchups: same idea as the 2-ball loader, extended to three
-// players. DraftKings' page format confirmed real and distinct from 2-ball's — different
-// market label ("3 Ball - Round N"), three names/prices per group instead of two. ----------------
-let dk3BallData = loadLS('rodsModel_dk3BallData', null); // array of {round, players:[{name,price}x3]}
-let threeBallFilter = 'all';
-
-function parseDK3BallMatchups(text) {
-  const normalized = text.replace(/\u2212/g, '-');
-  const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const headerRe = /^3\s*Ball\s*-\s*Round\s*(\d+)$/i;
-  const priceRe = /^[+-]\d{2,4}$/;
-  const entries = [];
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(headerRe);
-    if (!m) continue;
-    const round = 'R' + m[1];
-    if (i + 6 < lines.length &&
-        !priceRe.test(lines[i+1]) && priceRe.test(lines[i+2]) &&
-        !priceRe.test(lines[i+3]) && priceRe.test(lines[i+4]) &&
-        !priceRe.test(lines[i+5]) && priceRe.test(lines[i+6])) {
-      entries.push({
-        round,
-        name1: lines[i+1], price1: lines[i+2],
-        name2: lines[i+3], price2: lines[i+4],
-        name3: lines[i+5], price3: lines[i+6],
-      });
-      i += 6;
-    }
-  }
-  return entries;
-}
-
-function threeBallModelProb(meanA, meanB, meanC, sd, blowup, roundsCount, trials) {
-  // Same mixture-model simRound() as everywhere else — simulate all three, track who has
-  // the lowest total (wins the 3-ball), same principle as the 2-player matchupModelProb.
-  let winsA = 0, winsB = 0, winsC = 0, decided = 0;
-  for (let i = 0; i < trials; i++) {
-    let totalA = 0, totalB = 0, totalC = 0;
-    for (let r = 0; r < roundsCount; r++) {
-      totalA += simRound(meanA, sd, blowup);
-      totalB += simRound(meanB, sd, blowup);
-      totalC += simRound(meanC, sd, blowup);
-    }
-    const lowest = Math.min(totalA, totalB, totalC);
-    const winnersCount = [totalA, totalB, totalC].filter(t => t === lowest).length;
-    if (winnersCount === 1) { // guards against an exact-tie edge case with continuous distributions
-      decided++;
-      if (totalA === lowest) winsA++;
-      else if (totalB === lowest) winsB++;
-      else winsC++;
-    }
-  }
-  return decided > 0 ? [winsA/decided, winsB/decided, winsC/decided] : [1/3, 1/3, 1/3];
-}
-
-function loadDK3Ball() {
-  const text = document.getElementById('dk3BallText').value;
-  const status = document.getElementById('dk3BallStatus');
-  if (!text.trim()) { status.textContent = 'Paste the DraftKings 3-ball slate first.'; return; }
-  const parsed = parseDK3BallMatchups(text);
-  if (!parsed.length) { status.textContent = 'Found 0 trios — check the paste includes "3 Ball - Round N" headers.'; return; }
-
-  const { sd, blowup } = getCourseRow();
-  const groups = [];
-  const notFound = [];
-  parsed.forEach(entry => {
-    const prowA = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name1));
-    const prowB = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name2));
-    const prowC = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name3));
-    const missing = [[prowA,entry.name1],[prowB,entry.name2],[prowC,entry.name3]].filter(([r])=>!r||r[1]===null||r[1]===undefined);
-    if (missing.length) { missing.forEach(([,n]) => notFound.push(n)); return; }
-
-    const roundsCount = 1; // DraftKings' "3 Ball - Round N" is explicitly single-round
-    const [modelA, modelB, modelC] = threeBallModelProb(prowA[1], prowB[1], prowC[1], sd, blowup, roundsCount, 6000);
-    const impliedA = impliedProb(entry.price1), impliedB = impliedProb(entry.price2), impliedC = impliedProb(entry.price3);
-    let noVigA = null, noVigB = null, noVigC = null;
-    if (impliedA !== null && impliedB !== null && impliedC !== null) {
-      const total = impliedA + impliedB + impliedC;
-      if (total > 0) { noVigA = impliedA/total; noVigB = impliedB/total; noVigC = impliedC/total; }
-    }
-    groups.push({
-      round: entry.round,
-      players: [
-        { name: prowA[0], model: modelA, market: impliedA, nv: noVigA ?? modelA, price: entry.price1 },
-        { name: prowB[0], model: modelB, market: impliedB, nv: noVigB ?? modelB, price: entry.price2 },
-        { name: prowC[0], model: modelC, market: impliedC, nv: noVigC ?? modelC, price: entry.price3 },
-      ],
-    });
-  });
-  if (!groups.length) { status.textContent = 'None of the pasted trios matched the current field — check names.'; return; }
-
-  dk3BallData = groups;
-  saveLS('rodsModel_dk3BallData', dk3BallData);
-  buildThreeBall(document.getElementById('threeBallSearch').value);
-  status.textContent = `Loaded ${groups.length} of ${parsed.length} trios from DraftKings.` +
-    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
-}
-
-function clearDK3Ball() {
-  dk3BallData = null;
-  saveLS('rodsModel_dk3BallData', null);
-  document.getElementById('dk3BallStatus').textContent = 'Cleared.';
-  buildThreeBall('');
-}
-
-function buildThreeBall(search='') {
-  const body = document.getElementById('threeBallBody');
-  if (!body) return;
-  body.innerHTML = '';
-  let rows = [];
-  (dk3BallData || []).forEach(group => {
-    group.players.forEach((p, i) => {
-      const others = group.players.filter((_, j) => j !== i).map(o => o.name).join(' / ');
-      const edge = p.model - p.nv;
-      rows.push({ name: p.name, others, round: group.round, model: p.model, market: p.market, nv: p.nv, edge, price: p.price });
-    });
-  });
-  if (threeBallFilter === 'edge') rows = rows.filter(r => Math.abs(r.edge) >= 0.03);
-  if (search) rows = rows.filter(r => (r.name + ' ' + r.others).toLowerCase().includes(search.toLowerCase()));
-  const countEl = document.getElementById('threeBallCount');
-  if (countEl) countEl.textContent = `${rows.length} rows`;
-  rows.sort((a, b) => b.edge - a.edge);
-  rows.forEach(r => {
-    const edgePct = r.edge * 100;
-    const call = edgePct >= 3 ? 'BET' : 'PASS'; // FADE doesn't cleanly apply to a 3-way market — "the other two combined" isn't one bettable side
-    const cls = edgePct >= 3 ? 'edge' : 'thin';
-    const edgeCls = edgePct >= 0 ? 'val-pos' : 'val-neg';
-    const canBet = call === 'BET' && r.price;
-    body.innerHTML += `<tr>
-      <td class="pname"><b>${r.name}</b></td>
-      <td class="cell" style="color:var(--text-dim);font-size:11px">${r.others}</td>
-      <td class="cell" style="text-align:center">${r.round}</td>
-      <td class="cell heat" style="background:${heat((r.model-0.2)/0.4)}">${(r.model*100).toFixed(1)}%</td>
-      <td class="cell">${r.market!==null?(r.market*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell">${(r.nv*100).toFixed(1)}%</td>
-      <td class="cell ${edgeCls}">${edgePct>=0?'+':''}${edgePct.toFixed(1)}%</td>
-      <td class="cell" style="color:var(--text-dim)">${r.price} (draftkings)</td>
-      <td class="cell" style="text-align:center">
-        <span class="pill ${cls}">${call}</span>
-        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="quickAddToTracker('${r.name.replace(/'/g,"\\'")} 3-Ball (${r.round})','Matchup','${r.price} (draftkings)',${r.model})">+trk</button>`:''}
-      </td>
-    </tr>`;
-  });
-}
-
-let matchFilter='all';
-function buildMatch(search=''){
-  const body=document.getElementById('matchBody');body.innerHTML='';
-  const sourceTag = document.getElementById('matchSourceTag');
-  let rows;
-  if (dkMatchupOverride && dkMatchupOverride.length) {
-    if (sourceTag) sourceTag.textContent = 'SOURCE: DRAFTKINGS (LOADED)';
-    rows = dkMatchupOverride.map(r => ({ ...r, skillGap: null, bookCount: null }));
-  } else {
-    if (sourceTag) sourceTag.textContent = 'SOURCE: AUTO (PIPELINE)';
-    rows=M.map(m=>{
-      const [a,b,wave,model,market,priceA,priceB,noVig,skillGap,bookCount]=m;
-      // real no-vig: computed pipeline-side from BOTH sides' actual prices (impliedA /
-      // (impliedA+impliedB)), removing the book's overround. Falls back to raw market% only
-      // for old cached data from before this fix (noVig undefined) or when priceB was missing.
-      const nv = (noVig !== undefined && noVig !== null) ? noVig : market;
-      const edge=model-nv;
-      return {a,b,wave,model,market,nv,priceA,priceB,edge,skillGap,bookCount};
-    });
-  }
-  if(matchFilter==='edge')rows=rows.filter(r=>Math.abs(r.edge)>=0.03);
-  if(matchFilter==='same')rows=rows.filter(r=>r.wave==='AM');
-  if(search)rows=rows.filter(r=>(r.a+' '+r.b).toLowerCase().includes(search.toLowerCase()));
-  document.getElementById('matchCount').textContent=`${rows.length} matchups`;
-  rows.sort((x,y)=>y.edge-x.edge);
-  rows.forEach(r=>{
-    const edgePct=(r.edge*100);
-    let call,cls;
-    if(edgePct>=3){call='BET';cls='edge';}
-    else if(edgePct<=-3){call='FADE';cls='fade';}
-    else{call='PASS';cls='thin';}
-    const edgeCls=edgePct>=0?'val-pos':'val-neg';
-    // FADE means the value is on player B, not A — use B's own price, not A's, so the
-    // one-click tracker link reflects the bet you'd actually place.
-    const betSide = call==='BET' ? r.a : (call==='FADE' ? r.b : null);
-    const betPrice = call==='BET' ? r.priceA : (call==='FADE' ? r.priceB : null);
-    const canBet = betSide && betPrice && betPrice !== '—';
-    // Warning flags — shown, not auto-filtered, so the judgment stays with the person
-    // placing the bet (same principle as skipping Molinari/Scheffler by hand): a big skill
-    // gap is exactly where the model's flat shared-variance assumption breaks down hardest,
-    // and real books tend to price "obvious" mismatches efficiently — so a huge edge on a
-    // huge gap is more often model error than real value. Thin markets (1-2 books) get less
-    // confidence too, since the price itself is less battle-tested.
-    let warnings = [];
-    if (r.skillGap !== null && r.skillGap !== undefined && r.skillGap >= 1.5) {
-      warnings.push(`⚠ ${r.skillGap.toFixed(1)} stroke PROJ gap — large mismatches are where the model is most likely to overstate edge`);
-    }
-    if (r.bookCount !== null && r.bookCount !== undefined && r.bookCount <= 2) {
-      warnings.push(`⚠ price backed by only ${r.bookCount} book${r.bookCount===1?'':'s'} — less confidence than a deep, multi-book line`);
-    }
-    const warnIcon = warnings.length
-      ? `<span style="color:var(--amber);cursor:help;margin-left:4px;font-size:11px" title="${warnings.join(' | ').replace(/"/g,'&quot;')}">⚠</span>`
-      : '';
-    body.innerHTML+=`<tr>
-      <td class="pname"><b>${r.a}</b><span class="vs">vs</span><span style="color:var(--text-dim)">${r.b}</span></td>
-      <td class="cell" style="text-align:center;color:var(--text-dim)">${r.wave}</td>
-      <td class="cell heat" style="background:${heat((r.model-0.44)/0.24)}">${(r.model*100).toFixed(1)}%</td>
-      <td class="cell">${(r.market*100).toFixed(1)}%</td>
-      <td class="cell">${(r.nv*100).toFixed(1)}%</td>
-      <td class="cell ${edgeCls}">${edgePct>=0?'+':''}${edgePct.toFixed(1)}%<span class="bar-wrap"><span class="bar" style="width:${Math.min(100,Math.abs(edgePct)*8)}%;background:${edgePct>=0?'var(--green)':'#c96a52'}"></span></span></td>
-      <td class="cell" style="color:var(--text-dim)">${r.priceA}</td>
-      <td class="cell" style="text-align:center">
-        <span class="pill ${cls}">${call}</span>${warnIcon}
-        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}',${r.model})">+trk</button>`:''}
-      </td>
-    </tr>`;
-  });
-}
-
-// ---------------- tab switching ----------------
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('tab-'+t.dataset.tab).classList.add('active');
-  });
-});
-document.getElementById('projSearch').addEventListener('input',e=>buildProjections(e.target.value));
-document.getElementById('fitSearch').addEventListener('input',e=>buildFit(e.target.value));
-document.getElementById('matchSearch').addEventListener('input',e=>buildMatch(e.target.value));
-document.getElementById('fAll').addEventListener('click',function(){matchFilter='all';setActive(this);buildMatch();});
-document.getElementById('fEdge').addEventListener('click',function(){matchFilter='edge';setActive(this);buildMatch();});
-document.getElementById('fSame').addEventListener('click',function(){matchFilter='same';setActive(this);buildMatch();});
-document.getElementById('threeBallSearch').addEventListener('input',e=>buildThreeBall(e.target.value));
-document.getElementById('f3All').addEventListener('click',function(){threeBallFilter='all';setActive(this);buildThreeBall();});
-document.getElementById('f3Edge').addEventListener('click',function(){threeBallFilter='edge';setActive(this);buildThreeBall();});
-function setActive(btn){btn.parentNode.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
-document.getElementById('outSearch').addEventListener('input',e=>buildOutrights(e.target.value));
-document.getElementById('mWin').addEventListener('click',function(){setOutMarket('win',this);});
-document.getElementById('mTop5').addEventListener('click',function(){setOutMarket('top5',this);});
-document.getElementById('mTop10').addEventListener('click',function(){setOutMarket('top10',this);});
-document.getElementById('mTop20').addEventListener('click',function(){setOutMarket('top20',this);});
-document.getElementById('trEventFilter').addEventListener('change',function(){trackerEventFilter=this.value;renderTracker();});
-document.getElementById('rsFilterAll').addEventListener('click',function(){rsFilter='all';setActive(this);renderRoundScore();});
-document.getElementById('rsFilterPlays').addEventListener('click',function(){rsFilter='plays';setActive(this);renderRoundScore();});
-
-// ---------------- round score: client-side sim (mirrors sim_engine.py's mixture model) ----------------
-const RS_TOUR_BASELINE_SD = 2.9;
-const RS_DEFAULT_BLOWUP = 0.09;
-const RS_BLOWUP_SHIFT = 4.5;
-const RS_TRIALS = 4000; // client-side budget; enough for a stable line price, fast in-browser
-
-function gaussSample(mean, sd) {
-  let u = 0, v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
-  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  return mean + z * sd;
-}
-function simRound(mean, sd, blowupRate) {
-  // BUG FIX: the naive blow-up mixture has a TRUE mean of mean + blowupRate*RS_BLOWUP_SHIFT,
-  // not `mean` itself — invisible in matchups (bias cancels between two players) but directly
-  // distorts anything compared to an external fixed number (round-score totals against a book
-  // line). Confirmed empirically: this was pushing model% toward "Over" by ~0.3-0.6 strokes
-  // for every player, every line. De-biasing the input mean keeps the right-skew/tail-risk
-  // intentional, just centers the distribution correctly.
-  const adjustedMean = mean - blowupRate * RS_BLOWUP_SHIFT;
-  if (Math.random() < blowupRate) return gaussSample(adjustedMean + RS_BLOWUP_SHIFT, sd * 1.4);
-  return gaussSample(adjustedMean, sd);
-}
-let currentCourseName = null; // set from meta.course once real data loads — see applyMeta()
-function getCourseRow() {
-  // Matches the current event's course by name (from DataGolf's own data, not hardcoded) —
-  // falls back to NEUTRAL tour-wide defaults, not to F[0], when no course-specific row
-  // exists yet. Silently defaulting an unmatched course to whatever's first in the table
-  // would apply Royal Birkdale's atypical, extreme links-course variance to a completely
-  // different tournament — same bug that existed pipeline-side, fixed the same way here.
-  const row = currentCourseName ? F.find(r => String(r[0]).toLowerCase().includes(currentCourseName.toLowerCase())) : null;
-  return row ? { sd: row[3], blowup: row[4] } : { sd: RS_TOUR_BASELINE_SD, blowup: RS_DEFAULT_BLOWUP };
-}
-function modelUnderProb(meanPerRound, line, roundsCount = 1, elevatedRisk = false) {
-  const { sd, blowup } = getCourseRow();
-  const useSd = sd || RS_TOUR_BASELINE_SD;
-  let useBlowup = (blowup === undefined || blowup === null) ? RS_DEFAULT_BLOWUP : blowup;
-  let effectiveMean = meanPerRound;
-  // manual override for a specific player you know is trailing/pushing hard (final-round
-  // desperation play) — the course-level blowup rate is one flat number applied to
-  // everyone, with no live leaderboard-position data feeding it, so this doesn't know who's
-  // actually chasing today. This is Rod's own judgment layered on top, not something the
-  // model infers.
-  // Two effects, not one: (1) wider blow-up risk (both a great low round AND a disaster get
-  // more likely), (2) a modest average-score penalty — aggressive pressured play is usually
-  // -EV on average even as it raises the ceiling, which is precisely the trade a trailing
-  // player is choosing to make. First version of this only did (1) and, when tested, barely
-  // moved the numbers — widening variance around a threshold near the mean doesn't shift
-  // probabilities much on its own. This is a real modeling choice, not inferred from data —
-  // reasonable, not precisely calibrated.
-  if (elevatedRisk) {
-    useBlowup = Math.min(useBlowup * 2.0, 0.35);
-    effectiveMean = meanPerRound + 0.3;
-  }
-  let under = 0;
-  for (let i = 0; i < RS_TRIALS; i++) {
-    let total = 0;
-    for (let r = 0; r < roundsCount; r++) total += simRound(effectiveMean, useSd, useBlowup);
-    if (total < line) under++;
-  }
-  return under / RS_TRIALS;
-}
-function impliedProb(price) {
-  const p = parseFloat(price);
-  if (isNaN(p)) return null;
-  return p > 0 ? 100 / (p + 100) : -p / (-p + 100);
-}
-function rsCallFor(edge) {
-  if (edge === null) return { call: '—', cls: 'thin' };
-  const pct = edge * 100;
-  if (pct >= 3) return { call: 'BET', cls: 'edge' };
-  if (pct <= -3) return { call: 'FADE', cls: 'fade' };
-  return { call: 'PASS', cls: 'thin' };
-}
-
-let roundScoreProps = loadLS('rodsModel_roundScoreProps', []);
-let rsFilter = 'all'; // 'all' | 'plays'
-let formAdjustments = loadLS('rodsModel_formAdjustments', {}); // normalized name -> {adjustedProj, staticProj, toPar}
-
-function populatePlayerDatalist() {
-  const dl = document.getElementById('rsPlayerList');
-  if (!dl) return;
-  dl.innerHTML = P.map(r => `<option value="${r[0]}">`).join('');
-}
-
-// ---------------- live form adjustment: PROJ is a static pre-tournament number that never
-// updates during the week (confirmed: Sepp Straka's PROJ was 70.7 in the Round 1 commit and
-// still 70.7 four rounds later, regardless of how he actually played). This blends real
-// current-week form (from a pasted leaderboard) into the number Round Score's sim actually
-// uses. The blend weight is user-controlled (see the Blend Weight field) rather than a fixed
-// constant — 3 rounds is a genuinely noisy sample (e.g. a player who's gone 73-62-65 has an
-// 11-stroke spread across those 3 rounds; averaging that and trusting it fully risks treating
-// one outlier round as real signal), and how much to trust it is a real judgment call that
-// should be visible and adjustable, not buried in code.
-const COURSE_PAR = 70;
-
-function stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-
-// Strategy 1: simple "Name  -12" one-liner (works for manually-typed or simply-copied lists)
-function parseLeaderboardSimple(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const entries = [];
-  const toParToken = /^([+-]\d{1,2}|E|EVEN)$/i;
-  for (const line of lines) {
-    const tokens = line.split(/\s+/);
-    let toParIdx = -1, toParVal = null;
-    for (let i = 0; i < tokens.length; i++) {
-      if (toParToken.test(tokens[i])) {
-        toParIdx = i;
-        toParVal = /^E(VEN)?$/i.test(tokens[i]) ? 0 : parseInt(tokens[i], 10);
-        break;
-      }
-    }
-    if (toParIdx === -1) continue;
-    let nameTokens = tokens.slice(0, toParIdx).filter(t => !/^T?\d+$/i.test(t));
-    const name = nameTokens.join(' ').trim();
-    if (!name) continue;
-    entries.push({ name, toPar: toParVal });
-  }
-  return entries;
-}
-
-// Strategy 2: one field per line (confirmed real format from a live scoring site) —
-// [Pos] [seed#] [blank?] COUNTRY(3 letters) Name [Sponsor?] Total Thru Round R1 R2 R3 R4 ...
-// Anchors on the 3-letter country code, then consumes lines until the first +/-N or E
-// token — that's the Total-to-par. Strips known equipment-sponsor noise words (a name
-// block sometimes has "Titleist" etc. on its own line right after the player's name).
-const SPONSOR_WORDS = new Set(['titleist','nike','callaway','taylormade','ping','adidas','pxg',
-  'under armour','cobra','mizuno','srixon','footjoy','puma','honma','wilson']);
-function parseLeaderboardMultiLine(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const countryRe = /^[A-Z]{3}$/;
-  const toParRe = /^([+-]\d{1,2}|E)$/;
-  const entries = [];
-  for (let i = 0; i < lines.length; i++) {
-    if (!countryRe.test(lines[i])) continue;
-    let j = i + 1, nameParts = [];
-    while (j < lines.length && !toParRe.test(lines[j])) {
-      if (!SPONSOR_WORDS.has(lines[j].toLowerCase())) nameParts.push(lines[j]);
-      j++;
-      if (j - i > 5) break; // safety: name blocks shouldn't run this long, bail if malformed
-    }
-    if (j >= lines.length || !toParRe.test(lines[j])) continue;
-    const name = nameParts.join(' ').trim();
-    if (!name) continue;
-    const toPar = lines[j] === 'E' ? 0 : parseInt(lines[j], 10);
-    entries.push({ name, toPar });
-    i = j;
-  }
-  return entries;
-}
-
-// Strategy 3: another real format — full country names (not 3-letter codes; "New Zealand",
-// "South Korea", "Northern Ireland" don't match Strategy 2's country-code anchor at all),
-// score/today/thru/rounds all packed onto one line together. Anchors on that packed line
-// instead — it's distinctive (starts with a to-par token AND has several more tab/space-
-// separated fields after it, unlike a standalone to-par line) — then takes the player name
-// from the line immediately before it.
-function parseLeaderboardPackedLine(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const toParRe = /^([+-]\d{1,2}|E)$/;
-  const entries = [];
-  for (let i = 1; i < lines.length; i++) {
-    const tabTokens = lines[i].split(/\t+|\s{2,}/).map(t => t.trim()).filter(t => t.length);
-    const tokens = tabTokens.length > 1 ? tabTokens : lines[i].split(/\s+/);
-    if (tokens.length < 3) continue; // need at least score + today + one more field
-    if (!toParRe.test(tokens[0])) continue;
-    const name = lines[i - 1];
-    if (!name || toParRe.test(name)) continue; // guard against misfires on adjacent to-par-only lines
-    const toPar = tokens[0] === 'E' ? 0 : parseInt(tokens[0], 10);
-    entries.push({ name, toPar });
-  }
-  return entries;
-}
-
-// Try all three strategies, merge by name (covers whatever format got pasted without you
-// having to know or care which one it is).
-function parseLeaderboardText(text) {
-  const simple = parseLeaderboardSimple(text);
-  const multiLine = parseLeaderboardMultiLine(text);
-  const packed = parseLeaderboardPackedLine(text);
-  const merged = new Map();
-  simple.forEach(e => merged.set(normalizeNameForMatch(e.name), e));
-  multiLine.forEach(e => merged.set(normalizeNameForMatch(e.name), e));
-  packed.forEach(e => merged.set(normalizeNameForMatch(e.name), e)); // most distinctive anchor, wins on overlap
-  return Array.from(merged.values());
-}
-
-let fieldBaselineCorrection = loadLS('rodsModel_fieldBaselineCorrection', 0); // strokes to subtract from EVERY player's static PROJ
-
-function applyLeaderboardAdjustment() {
-  const text = document.getElementById('rsLeaderboardText').value;
-  const status = document.getElementById('rsLeaderboardStatus');
-  const roundsCompleted = parseInt(document.getElementById('rsRoundsCompleted').value, 10);
-  const blendWeight = parseFloat(document.getElementById('rsBlendWeight').value);
-  if (!text.trim()) { status.textContent = 'Paste the leaderboard first.'; return; }
-  if (isNaN(roundsCompleted) || roundsCompleted < 1) { status.textContent = 'Enter a valid rounds-completed number.'; return; }
-  if (isNaN(blendWeight) || blendWeight < 0 || blendWeight > 1) { status.textContent = 'Blend weight must be between 0 and 1.'; return; }
-  const parsed = parseLeaderboardText(text);
-  if (!parsed.length) { status.textContent = 'Found 0 players — check the paste includes a name and a +/- score-to-par on each line.'; return; }
-
-  // FIELD-WIDE correction, done correctly this time: compare each player's actual
-  // performance against THEIR OWN PROJ (not a flat par-based number) — PROJ already bakes
-  // in each player's individual skill via DataGolf's final_pred, so comparing to raw par
-  // conflates "how good is this field" with "is the model biased" and double-counts skill
-  // that's already in each player's own number. (Confirmed broken this way live: it swung
-  // Round Score from all-Overs to all-Unders instead of landing on a real mix.)
-  // The fix: residual_i = actual_avg_i - PROJ_i for every matched player, then average
-  // those residuals across the whole matched field. Averaging over ~70+ players' residuals
-  // has much lower variance than any single player's noisy 3-round sample (roughly sqrt(N)
-  // tighter), so this field-wide term is trustworthy at close to full weight even though
-  // any one player's individual signal still needs heavy shrinkage (the blend weight).
-  const matchedResiduals = [];
-  parsed.forEach(entry => {
-    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name));
-    if (!prow || prow[1] === null || prow[1] === undefined) return;
-    const actualAvg = (COURSE_PAR * roundsCompleted + entry.toPar) / roundsCompleted;
-    matchedResiduals.push({ name: prow[0], staticProj: prow[1], toPar: entry.toPar, residual: actualAvg - prow[1] });
-  });
-  if (!matchedResiduals.length) { status.textContent = 'None of the pasted players matched the current field — check names.'; return; }
-  fieldBaselineCorrection = matchedResiduals.reduce((s, r) => s + r.residual, 0) / matchedResiduals.length;
-  fieldBaselineCorrection = Math.round(fieldBaselineCorrection * 1000) / 1000;
-  saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
-
-  // individual (demeaned) signal, shrunk by the blend weight — this is each player's
-  // residual with the shared field-wide part already removed, so it's ONLY their
-  // player-specific deviation, not double-counting the field-wide term.
-  let applied = 0;
-  matchedResiduals.forEach(r => {
-    const individualResidual = r.residual - fieldBaselineCorrection;
-    const adjustedProj = r.staticProj + fieldBaselineCorrection + blendWeight * individualResidual;
-    formAdjustments[normalizeNameForMatch(r.name)] = {
-      adjustedProj: Math.round(adjustedProj * 100) / 100,
-      staticProj: r.staticProj, toPar: r.toPar, roundsCompleted, blendWeight,
-    };
-    applied++;
-  });
-  saveLS('rodsModel_formAdjustments', formAdjustments);
-
-  const notFound = parsed.filter(e => !P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(e.name))).map(e => e.name);
-
-  // retroactively recompute EVERY existing Round Score row — the field-wide correction
-  // applies to everyone in the live field, not just players specifically named in the
-  // pasted leaderboard.
-  let recomputed = 0;
-  roundScoreProps.forEach(p => {
-    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
-    if (!prow || prow[1] === null || prow[1] === undefined) return;
-    const effectiveProj = getEffectiveProj(p.name, prow[1]);
-    const roundsCount = p.round === 'T72' ? 4 : 1;
-    p.modelUnder = modelUnderProb(effectiveProj, p.line, roundsCount, p.elevatedRisk || false);
-    p.modelOver = 1 - p.modelUnder;
-    p.formAdjusted = true;
-    recomputed++;
-  });
-  if (recomputed > 0) saveLS('rodsModel_roundScoreProps', roundScoreProps);
-  renderRoundScore();
-
-  status.textContent = `Field-wide correction: ${fieldBaselineCorrection>=0?'+':''}${fieldBaselineCorrection.toFixed(2)} strokes (from ${matchedResiduals.length} matched players' own residuals, not a flat par comparison). ` +
-    `Individual blend (weight=${blendWeight}) applied to ${applied} players` +
-    (recomputed > 0 ? `, recomputed ${recomputed} existing Round Score row${recomputed===1?'':'s'}.` : '. No existing Round Score rows to update.') +
-    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
-}
-
-function clearFormAdjustments() {
-  if (!confirm('Clear all live form adjustments (including the field baseline correction)? Existing Round Score lines keep whatever numbers they were computed with — this only affects new lines added after clearing.')) return;
-  formAdjustments = {};
-  fieldBaselineCorrection = 0;
-  saveLS('rodsModel_formAdjustments', formAdjustments);
-  saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
-  document.getElementById('rsLeaderboardStatus').textContent = 'Cleared.';
-}
-
-function getEffectiveProj(playerName, staticProj) {
-  const baselineCorrected = staticProj - fieldBaselineCorrection;
-  const adj = formAdjustments[normalizeNameForMatch(playerName)];
-  return adj ? adj.adjustedProj : baselineCorrected;
-}
-
-// ---------------- bulk import: paste DraftKings' round-score slate, parse, add all at once ----------------
-function parseBulkRoundScoreText(text) {
-  // DraftKings uses U+2212 (minus sign) for negative prices, not a plain ASCII hyphen —
-  // confirmed against Rod's actual pasted text, silently breaks parseFloat if not normalized first.
-  const normalized = text.replace(/\u2212/g, '-');
-  const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  const entries = [];
-  const headerRe = /^(.+?)\s+Round Score\s*-\s*Round\s*(\d+)\s*O\/U$/i;
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(headerRe);
-    if (!m) continue;
-    const player = m[1].trim();
-    const roundNum = m[2];
-    if (i + 6 < lines.length && /^over$/i.test(lines[i+1]) && /^under$/i.test(lines[i+4])) {
-      entries.push({
-        player, round: 'R' + roundNum,
-        line: parseFloat(lines[i+2]), overPrice: lines[i+3],
-        underLine: parseFloat(lines[i+5]), underPrice: lines[i+6],
-      });
-      i += 6; // skip past the 6 lines just consumed
-    }
-  }
-  return entries;
-}
-function normalizeNameForMatch(s) {
-  return stripAccents(s).toLowerCase().replace(/[.\s]+/g, ' ').trim();
-}
-// Same player + round + line = the same prop, re-added (line moved, price moved, or you
-// just pasted the same slate twice). Update the existing entry in place instead of stacking
-// duplicates — this is what was inflating "49 plays" with the same Sepp Straka R4 69.5 line
-// showing up five times with slightly different numbers.
-function upsertRoundScoreProp(entry) {
-  const existingIdx = roundScoreProps.findIndex(p =>
-    normalizeNameForMatch(p.name) === normalizeNameForMatch(entry.name) &&
-    p.round === entry.round && p.line === entry.line);
-  if (existingIdx >= 0) {
-    roundScoreProps[existingIdx] = { ...roundScoreProps[existingIdx], ...entry, id: roundScoreProps[existingIdx].id };
-    return false; // updated, not newly added
-  }
-  roundScoreProps.push(entry);
-  return true; // newly added
-}
-
-function bulkImportRoundScore() {
-  const text = document.getElementById('rsBulkText').value;
-  const status = document.getElementById('rsBulkStatus');
-  if (!text.trim()) { status.textContent = 'Paste something first.'; return; }
-  const parsed = parseBulkRoundScoreText(text);
-  if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste includes "Round Score - Round N O/U" headers.'; return; }
-
-  let added = 0, updated = 0;
-  const notFound = [];
-  parsed.forEach((entry, i) => {
-    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
-    if (!prow || prow[1] === null || prow[1] === undefined) { notFound.push(entry.player); return; }
-    const meanPerRound = getEffectiveProj(prow[0], prow[1]);
-    const roundsCount = entry.round === 'T72' ? 4 : 1;
-    const modelUnder = modelUnderProb(meanPerRound, entry.line, roundsCount);
-    const modelOver = 1 - modelUnder;
-    const isNew = upsertRoundScoreProp({
-      id: Date.now() + Math.random() + i, // += i avoids same-ms id collisions across a big batch
-      name: prow[0], round: entry.round, line: entry.line,
-      underPrice: entry.underPrice, overPrice: entry.overPrice,
-      modelUnder, modelOver, formAdjusted: !!formAdjustments[normalizeNameForMatch(prow[0])],
-      marketUnder: impliedProb(entry.underPrice), marketOver: impliedProb(entry.overPrice),
-    });
-    if (isNew) added++; else updated++;
-  });
-  saveLS('rodsModel_roundScoreProps', roundScoreProps);
-  renderRoundScore();
-  document.getElementById('rsBulkText').value = '';
-  status.textContent = `Added ${added} new, updated ${updated} existing (of ${parsed.length} parsed).` +
-    (notFound.length ? ` Not matched (check spelling vs the field): ${notFound.join(', ')}` : '');
-}
-
-function addRoundScoreProp() {
-  const name = document.getElementById('rsPlayer').value.trim();
-  const round = document.getElementById('rsRound').value;
-  const roundsCount = round === 'T72' ? 4 : 1; // tournament total sums 4 simulated rounds, same mixture model each
-  const line = parseFloat(document.getElementById('rsLine').value);
-  const underPrice = document.getElementById('rsUnderPrice').value.trim();
-  const overPrice = document.getElementById('rsOverPrice').value.trim();
-  const elevatedRisk = document.getElementById('rsElevatedRisk').checked;
-  if (!name || isNaN(line)) { alert('Enter a player name and a line.'); return; }
-  const prow = P.find(r => r[0].toLowerCase() === name.toLowerCase());
-  if (!prow) { alert('Player not found in the current field — check the spelling / search list.'); return; }
-  if (prow[1] === null || prow[1] === undefined) { alert('No PROJ score available for this player yet.'); return; }
-  const meanPerRound = getEffectiveProj(prow[0], prow[1]);
-  const modelUnder = modelUnderProb(meanPerRound, line, roundsCount, elevatedRisk);
-  const modelOver = 1 - modelUnder;
-  const marketUnder = underPrice ? impliedProb(underPrice) : null;
-  const marketOver = overPrice ? impliedProb(overPrice) : null;
-  upsertRoundScoreProp({
-    id: Date.now() + Math.random(),
-    name: prow[0], round, line, underPrice: underPrice || null, overPrice: overPrice || null,
-    modelUnder, modelOver, marketUnder, marketOver, elevatedRisk,
-    formAdjusted: !!formAdjustments[normalizeNameForMatch(prow[0])],
-  });
-  saveLS('rodsModel_roundScoreProps', roundScoreProps);
-  document.getElementById('rsElevatedRisk').checked = false;
-  document.getElementById('rsPlayer').value = '';
-  document.getElementById('rsLine').value = '';
-  document.getElementById('rsUnderPrice').value = '';
-  document.getElementById('rsOverPrice').value = '';
-  renderRoundScore();
-}
-function deleteRoundScoreProp(id) {
-  roundScoreProps = roundScoreProps.filter(p => p.id !== id);
-  saveLS('rodsModel_roundScoreProps', roundScoreProps);
-  renderRoundScore();
-}
-function renderRoundScore() {
-  const body = document.getElementById('rscoreBody');
-  if (!body) return;
-  body.innerHTML = '';
-
-  // one-time cleanup: collapse any duplicates already sitting in storage from before the
-  // upsert fix existed (same player+round+line entered more than once) — keeps the LAST
-  // occurrence of each, since that's the most recently updated price/model numbers.
-  const seen = new Map();
-  roundScoreProps.forEach(p => {
-    const key = normalizeNameForMatch(p.name) + '|' + p.round + '|' + p.line;
-    seen.set(key, p); // later entries overwrite earlier ones for the same key
-  });
-  if (seen.size !== roundScoreProps.length) {
-    roundScoreProps = Array.from(seen.values());
-    saveLS('rodsModel_roundScoreProps', roundScoreProps);
-  }
-
-  let rows = roundScoreProps.map(p => {
-    const edgeU = (p.marketUnder !== null) ? p.modelUnder - p.marketUnder : null;
-    const edgeO = (p.marketOver !== null) ? p.modelOver - p.marketOver : null;
-    // consolidate into a single call: whichever side has the bigger edge, if it clears
-    // the BET threshold, is "the play" — this is what actually gets shown/highlighted,
-    // instead of parsing two separate Call columns to figure out which side (if either) to bet
-    let play = null;
-    const uQualifies = edgeU !== null && edgeU * 100 >= 3;
-    const oQualifies = edgeO !== null && edgeO * 100 >= 3;
-    if (uQualifies && (!oQualifies || edgeU >= edgeO)) play = { side: 'Under', edge: edgeU, price: p.underPrice };
-    else if (oQualifies) play = { side: 'Over', edge: edgeO, price: p.overPrice };
-    const bestEdge = Math.max(edgeU ?? -Infinity, edgeO ?? -Infinity);
-    return { p, edgeU, edgeO, play, bestEdge };
-  });
-
-  if (rsFilter === 'plays') rows = rows.filter(r => r.play !== null);
-  rows.sort((a, b) => b.bestEdge - a.bestEdge); // strongest edge first, PASS rows sink to the bottom
-
-  document.getElementById('rsCount').textContent = `${rows.length} line${rows.length===1?'':'s'}`;
-
-  rows.forEach(({ p, play }) => {
-    const canBet = play && play.price;
-    const playHtml = play
-      ? `<span class="pill edge" style="font-size:11px;padding:5px 10px">BET ${play.side.toUpperCase()} ${p.line.toFixed(1)}</span>
-         <span class="val-pos" style="margin-left:6px;font-size:11px">+${(play.edge*100).toFixed(1)}%</span>
-         ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}',${play.side==='Under'?p.modelUnder:p.modelOver})">+trk</button>`:''}`
-      : `<span class="pill thin">PASS</span>`;
-    body.innerHTML += `<tr>
-      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}${p.elevatedRisk?' <span class="badge push" style="font-size:8px" title="Elevated blow-up risk applied — your manual call, not model-inferred">RISK+</span>':''}${p.formAdjusted?' <span class="badge win" style="font-size:8px" title="Used a live-form-adjusted PROJ, blending real current-week performance with the static pre-tournament number">FORM-ADJ</span>':''}</td>
-      <td class="cell" style="text-align:center">${p.round}</td>
-      <td class="cell"><b>${p.line.toFixed(1)}</b></td>
-      <td class="cell heat" style="background:${heat((p.modelUnder-0.3)/0.4)}">${(p.modelUnder*100).toFixed(1)}%</td>
-      <td class="cell">${p.marketUnder!==null?(p.marketUnder*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell heat" style="background:${heat((p.modelOver-0.3)/0.4)}">${(p.modelOver*100).toFixed(1)}%</td>
-      <td class="cell">${p.marketOver!==null?(p.marketOver*100).toFixed(1)+'%':'—'}</td>
-      <td class="cell" style="text-align:center;white-space:nowrap">${playHtml}</td>
-      <td class="cell"><button class="delbtn" onclick="deleteRoundScoreProp(${p.id})">✕</button></td>
-    </tr>`;
-  });
-}
-
-// ---------------- tracker: real bets, win/loss, running P&L ----------------
-let betTracker = loadLS('rodsModel_betTracker', []);
-
-// one-click links from the other tabs — pre-fill description/price/type, ask for
-// stake, push straight into the tracker, then jump to the Tracker tab so you can
-// see it landed.
-function quickAddToTracker(desc, type, price, modelProb) {
-  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}${modelProb!==null&&modelProb!==undefined?`\nModel: ${(modelProb*100).toFixed(1)}%`:''}\n\nStake ($)?`, '50');
-  if (stakeStr === null) return; // cancelled
-  const stake = parseFloat(stakeStr);
-  if (isNaN(stake) || stake <= 0) { alert('Enter a valid stake to add this bet.'); return; }
-  // Real wager vs tracking-only matters: a tracking-only play with a real stake number
-  // would otherwise silently inflate Total Staked/Profit/ROI with money that was never
-  // actually risked. Calibration uses every bet either way — this only affects the P&L
-  // summary math.
-  const wagered = confirm('Is this a REAL wager?\n\nOK = real money, counts toward Total Staked / Profit / ROI.\nCancel = tracking only (for model calibration), excluded from your P&L summary.');
-  betTracker.push({
-    id: Date.now()+Math.random(),
-    date: new Date().toISOString().slice(0,10),
-    desc, type, price, stake, status: 'pending', event: currentEvent,
-    modelProb: (modelProb !== null && modelProb !== undefined) ? modelProb : null,
-    wagered,
-  });
-  saveLS('rodsModel_betTracker', betTracker);
-  renderTracker();
-  document.querySelector('.tab[data-tab="tracker"]').click();
-}
-function addMatchupToTracker(side, a, b, call, price, modelProbA) {
-  const other = side === a ? b : a;
-  // modelProbA is always P(player A wins) — flip it if the actual bet is on B (a FADE call)
-  const modelProb = side === a ? modelProbA : (1 - modelProbA);
-  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price, modelProb);
-}
-function addRoundScoreToTracker(name, round, line, side, price, modelProb) {
-  quickAddToTracker(`${name} ${round} ${side} ${line}`, 'Round Score', price, modelProb);
-}
-function addOutrightToTracker(name, price, modelProb) {
-  quickAddToTracker(`${name} to Win`, 'Outright', price, modelProb);
-}
-
-function payoutOnWin(price, stake) {
-  const p = parseFloat(price);
-  if (isNaN(p) || isNaN(stake)) return null;
-  return p > 0 ? stake * (p / 100) : stake * (100 / Math.abs(p));
-}
-function addBet() {
-  const date = document.getElementById('trDate').value || new Date().toISOString().slice(0,10);
-  const desc = document.getElementById('trDesc').value.trim();
-  const type = document.getElementById('trType').value;
-  const price = document.getElementById('trPrice').value.trim();
-  const stake = parseFloat(document.getElementById('trStake').value);
-  const modelProbPct = parseFloat(document.getElementById('trModelProb').value);
-  const modelProb = (!isNaN(modelProbPct) && modelProbPct >= 0 && modelProbPct <= 100) ? modelProbPct / 100 : null;
-  const wagered = document.getElementById('trWagered').checked;
-  if (!desc || !price || isNaN(stake) || stake <= 0) { alert('Fill in description, price, and a stake > 0.'); return; }
-  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent, modelProb, wagered });
-  saveLS('rodsModel_betTracker', betTracker);
-  document.getElementById('trDesc').value = '';
-  document.getElementById('trPrice').value = '';
-  document.getElementById('trStake').value = '';
-  document.getElementById('trModelProb').value = '';
-  document.getElementById('trWagered').checked = true;
-  renderTracker();
-}
-function setBetStatus(id, status) {
-  const b = betTracker.find(x => x.id === id);
-  if (b) b.status = status;
-  saveLS('rodsModel_betTracker', betTracker);
-  renderTracker();
-}
-function deleteBet(id) {
-  betTracker = betTracker.filter(b => b.id !== id);
-  saveLS('rodsModel_betTracker', betTracker);
-  renderTracker();
-}
-function betProfit(b) {
-  if (b.status === 'pending') return null;
-  if (b.status === 'push') return 0;
-  const win = payoutOnWin(b.price, b.stake);
-  if (win === null) return null;
-  return b.status === 'win' ? win : -b.stake;
-}
-let trackerEventFilter = 'all';
-function renderTracker() {
-  const body = document.getElementById('trackerBody');
-  const summary = document.getElementById('trackerSummary');
-  const byEvent = document.getElementById('trackerByEvent');
-  const filterSel = document.getElementById('trEventFilter');
-  if (!body || !summary) return;
-
-  // one-time migration: bets added before event-tagging existed get backfilled
-  // with whichever tournament is currently loaded (a safe assumption — this
-  // tracker's only ever seen one event's worth of bets before this feature)
-  let migrated = false;
-  betTracker.forEach(b => { if (!b.event || b.event === 'Unlabeled Event') { b.event = currentEvent; migrated = true; } });
-  if (migrated) saveLS('rodsModel_betTracker', betTracker);
-
-  // distinct events, most-recently-added first
-  const events = [];
-  betTracker.slice().reverse().forEach(b => { if (!events.includes(b.event)) events.push(b.event); });
-
-  if (filterSel) {
-    const prevVal = filterSel.value || 'all';
-    filterSel.innerHTML = `<option value="all">All Events (cumulative)</option>` +
-      events.map(e => `<option value="${e.replace(/"/g,'&quot;')}">${e}</option>`).join('');
-    filterSel.value = events.includes(prevVal) || prevVal === 'all' ? prevVal : 'all';
-    trackerEventFilter = filterSel.value;
-  }
-
-  const scoped = trackerEventFilter === 'all' ? betTracker : betTracker.filter(b => b.event === trackerEventFilter);
-
-  body.innerHTML = '';
-  let totalStaked = 0, totalStakedSettled = 0, totalProfit = 0, wins = 0, losses = 0, pushes = 0, pending = 0, trackingOnlyCount = 0;
-  scoped.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(b => {
-    const profit = betProfit(b);
-    // backward compatible: bets added before this feature existed have no `wagered` field
-    // at all — treat that as a real wager (the only kind that existed before), not silently
-    // exclude someone's existing P&L history.
-    const isWagered = b.wagered !== false;
-    if (!isWagered) trackingOnlyCount++;
-    if (isWagered) {
-      totalStaked += b.stake;
-      if (b.status === 'win') wins++;
-      if (b.status === 'loss') losses++;
-      if (b.status === 'push') pushes++;
-      if (b.status === 'pending') pending++;
-      if (b.status !== 'pending') { totalStakedSettled += b.stake; totalProfit += profit; }
-    }
-    const badgeCls = b.status;
-    const profitDisp = profit === null ? '—' : (profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
-    const profitCls = profit === null ? '' : (profit>=0?'val-pos':'val-neg');
-    body.innerHTML += `<tr>
-      <td class="pname">${b.desc}${!isWagered?' <span class="badge push" style="font-size:8px" title="Tracking only — not a real wager, excluded from Total Staked / Profit / ROI, still counted for calibration">TRACKING</span>':''}<div style="color:var(--text-faint);font-size:9px;margin-top:2px">${b.event||''}</div></td>
-      <td class="cell" style="text-align:center;color:var(--text-dim)">${b.date}</td>
-      <td class="cell" style="text-align:center;color:var(--text-dim)">${b.type}</td>
-      <td class="cell">${b.price}</td>
-      <td class="cell">$${b.stake.toFixed(2)}</td>
-      <td class="cell" style="text-align:center">
-        ${b.status==='pending' ? `
-          <button class="statusbtn win" onclick="setBetStatus(${b.id},'win')">WIN</button>
-          <button class="statusbtn loss" onclick="setBetStatus(${b.id},'loss')">LOSS</button>
-          <button class="statusbtn push" onclick="setBetStatus(${b.id},'push')">PUSH</button>
-        ` : `<span class="badge ${badgeCls}">${b.status}</span> <button class="delbtn" style="margin-left:6px" onclick="setBetStatus(${b.id},'pending')">reset</button>`}
-      </td>
-      <td class="cell ${profitCls}">${profitDisp}</td>
-      <td class="cell"><button class="delbtn" onclick="deleteBet(${b.id})">✕</button></td>
-    </tr>`;
-  });
-  const roi = totalStakedSettled > 0 ? (totalProfit/totalStakedSettled*100) : 0;
-  const summaryLabel = trackerEventFilter === 'all' ? 'Cumulative — All Events' : trackerEventFilter;
-  summary.innerHTML = `
-    <div class="sblock"><div class="slbl">${summaryLabel}</div><div class="sval" style="font-size:11px;color:var(--text-dim)">${scoped.length} bet${scoped.length===1?'':'s'}${trackingOnlyCount>0?` (${trackingOnlyCount} tracking-only)`:''}</div></div>
-    <div class="sblock"><div class="slbl">Record</div><div class="sval">${wins}-${losses}-${pushes}<span style="color:var(--text-faint);font-size:11px"> (${pending} pending)</span></div></div>
-    <div class="sblock"><div class="slbl">Total Staked</div><div class="sval">$${totalStaked.toFixed(2)}</div></div>
-    <div class="sblock"><div class="slbl">Profit / Loss</div><div class="sval ${totalProfit>=0?'pos':'neg'}">${totalProfit>=0?'+':'-'}$${Math.abs(totalProfit).toFixed(2)}</div></div>
-    <div class="sblock"><div class="slbl">ROI (settled)</div><div class="sval ${roi>=0?'pos':'neg'}">${roi>=0?'+':''}${roi.toFixed(1)}%</div></div>
-  `;
-
-  // per-event breakdown — always shows every event side by side, regardless of the filter above
-  if (byEvent) {
-    if (events.length <= 1) {
-      byEvent.innerHTML = '';
-    } else {
-      let rows = '';
-      events.forEach(ev => {
-        const evBets = betTracker.filter(b => b.event === ev && b.wagered !== false);
-        let ew=0, el=0, ep=0, epend=0, estaked=0, eprofit=0;
-        evBets.forEach(b => {
-          const pf = betProfit(b);
-          estaked += b.stake;
-          if (b.status==='win') ew++; if (b.status==='loss') el++; if (b.status==='push') ep++;
-          if (b.status==='pending') epend++; else eprofit += pf;
-        });
-        rows += `<tr>
-          <td class="pname">${ev}</td>
-          <td class="cell" style="text-align:center">${ew}-${el}-${ep}<span style="color:var(--text-faint)"> (${epend}p)</span></td>
-          <td class="cell">$${estaked.toFixed(2)}</td>
-          <td class="cell ${eprofit>=0?'val-pos':'val-neg'}">${eprofit>=0?'+':'-'}$${Math.abs(eprofit).toFixed(2)}</td>
-        </tr>`;
-      });
-      byEvent.innerHTML = `<div class="section-hd" style="margin-top:14px">BY TOURNAMENT</div>
-        <table><thead><tr><th class="player">Event</th><th>Record</th><th>Staked</th><th>Profit</th></tr></thead>
-        <tbody>${rows}</tbody></table>`;
-    }
-  }
-  renderCalibration(scoped);
-}
-
-// ---------------- calibration: is the model's stated confidence actually trustworthy? ----------------
-// A model that says "60% chance" should win about 60% of those bets over time — that's a
-// different, more rigorous question than "did I make money" (small-sample noisy). Only uses
-// SETTLED bets (win/loss, not push/pending) that have a stored model probability — bets added
-// before this feature existed, or added without a model% on the manual form, won't have one
-// and are correctly excluded rather than silently treated as some default.
-const CALIBRATION_BUCKETS = [[0.30,0.40],[0.40,0.50],[0.50,0.60],[0.60,0.70],[0.70,0.80],[0.80,0.90],[0.90,1.01]];
-function computeCalibration(bets) {
-  const buckets = CALIBRATION_BUCKETS.map(([lo,hi]) => ({ lo, hi, bets: [] }));
-  bets.forEach(b => {
-    const bucket = buckets.find(bk => b.modelProb >= bk.lo && b.modelProb < bk.hi);
-    if (bucket) bucket.bets.push(b);
-  });
-  const results = buckets.filter(bk => bk.bets.length > 0).map(bk => {
-    const n = bk.bets.length;
-    const avgPredicted = bk.bets.reduce((s,b) => s + b.modelProb, 0) / n;
-    const actualWinRate = bk.bets.reduce((s,b) => s + b.outcome, 0) / n;
-    return { lo: bk.lo, hi: bk.hi, n, avgPredicted, actualWinRate, gap: avgPredicted - actualWinRate };
-  });
-  const brier = bets.length ? bets.reduce((s,b) => s + Math.pow(b.modelProb - b.outcome, 2), 0) / bets.length : null;
-  return { buckets: results, brier, n: bets.length };
-}
-function renderCalibration(scopedBets) {
-  const container = document.getElementById('trackerCalibration');
-  if (!container) return;
-  const usable = scopedBets
-    .filter(b => (b.status === 'win' || b.status === 'loss') && b.modelProb !== null && b.modelProb !== undefined)
-    .map(b => ({ modelProb: b.modelProb, outcome: b.status === 'win' ? 1 : 0 }));
-
-  if (usable.length < 5) {
-    container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
-      <div class="note">Needs at least 5 settled bets with a recorded model % to show anything meaningful — currently have ${usable.length}. New bets added via a +trk button capture this automatically; manually-added bets need the optional Model % field filled in. This accumulates across tournaments as long as you're viewing "All Events."</div>`;
-    return;
-  }
-
-  const { buckets, brier, n } = computeCalibration(usable);
-  let rows = '';
-  buckets.forEach(bk => {
-    const gapPct = bk.gap * 100;
-    const gapCls = Math.abs(gapPct) < 5 ? '' : (gapPct > 0 ? 'val-neg' : 'val-pos'); // overconfident (gap>0) shown as a warning color, underconfident as a good-color
-    rows += `<tr>
-      <td class="pname">${(bk.lo*100).toFixed(0)}–${(bk.hi*100).toFixed(0)}%</td>
-      <td class="cell" style="text-align:center">${bk.n}</td>
-      <td class="cell">${(bk.avgPredicted*100).toFixed(1)}%</td>
-      <td class="cell">${(bk.actualWinRate*100).toFixed(1)}%</td>
-      <td class="cell ${gapCls}">${gapPct>=0?'+':''}${gapPct.toFixed(1)}pp</td>
-    </tr>`;
-  });
-  container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
-    <div class="summary" style="margin-bottom:10px">
-      <div class="sblock"><div class="slbl">Settled Bets w/ Model %</div><div class="sval">${n}</div></div>
-      <div class="sblock"><div class="slbl">Brier Score</div><div class="sval">${brier.toFixed(3)}</div></div>
-      <div class="sblock" style="flex:2"><div class="slbl">Reading It</div><div class="sval" style="font-size:10px;color:var(--text-dim);font-weight:400">0 = perfect · 0.25 = random 50/50 guessing · lower is better. Gap column: positive = model overconfident in that range, negative = underconfident.</div></div>
-    </div>
-    <table><thead><tr><th class="player">Predicted Range</th><th># Bets</th><th>Avg Predicted</th><th>Actual Win Rate</th><th>Gap</th></tr></thead>
-    <tbody>${rows}</tbody></table>
-    <div class="note">Small-sample buckets (single digits) will be noisy — don't over-read one or two bets in a range. This gets more meaningful as it accumulates across tournaments; keep "Viewing: All Events" selected above to see the full history rather than just one event.</div>`;
-}
-
-// ---------------- shared: localStorage + CSV export ----------------
-function loadLS(key, fallback) {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
-  catch (e) { return fallback; }
-}
-function saveLS(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); }
-  catch (e) { console.warn('localStorage save failed', e); }
-}
-function clearAll(kind) {
-  if (!confirm('Clear all saved entries for this tab? This cannot be undone (export CSV first if you want a backup).')) return;
-  if (kind === 'roundscore') { roundScoreProps = []; saveLS('rodsModel_roundScoreProps', roundScoreProps); renderRoundScore(); }
-  if (kind === 'tracker') { betTracker = []; saveLS('rodsModel_betTracker', betTracker); renderTracker(); }
-}
-// ---------------- tracker: import bets from a CSV file (round-trips with Export CSV, also
-// accepts hand-edited or externally-prepared CSVs as long as the headers match) ----------------
-function parseCSVLine(line) {
-  const result = [];
-  let cur = '', inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (line[i+1] === '"') { cur += '"'; i++; } // escaped quote inside a quoted field
-        else { inQuotes = false; }
-      } else { cur += c; }
-    } else {
-      if (c === '"') inQuotes = true;
-      else if (c === ',') { result.push(cur); cur = ''; }
-      else cur += c;
-    }
-  }
-  result.push(cur);
-  return result;
-}
-function parseCSV(text) {
-  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-  if (!lines.length) return [];
-  const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
-  return lines.slice(1).map(line => {
-    const values = parseCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = values[i] !== undefined ? values[i].trim() : ''; });
-    return obj;
-  });
-}
-const VALID_STATUSES = new Set(['pending', 'win', 'loss', 'push']);
-
-function importTrackerCSV(event) {
-  const file = event.target.files[0];
-  const status = document.getElementById('trackerImportStatus');
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const rows = parseCSV(e.target.result);
-    if (!rows.length) { status.textContent = 'No rows found in that file.'; event.target.value = ''; return; }
-
-    let added = 0, updated = 0, skipped = 0;
-    rows.forEach(r => {
-      const desc = r.description || r.desc || '';
-      const price = r.price || '';
-      const stake = parseFloat(r.stake);
-      const date = r.date || new Date().toISOString().slice(0,10);
-      if (!desc || !price || isNaN(stake) || stake <= 0) { skipped++; return; } // need the essentials to make sense of a row
-
-      const typeLookup = { matchup: 'Matchup', 'round score': 'Round Score', outright: 'Outright', other: 'Other' };
-      const type = typeLookup[(r.type || 'Other').trim().toLowerCase()] || 'Other';
-
-      let statusVal = (r.status || 'pending').trim().toLowerCase();
-      if (!VALID_STATUSES.has(statusVal)) statusVal = 'pending';
-
-      const eventName = r.event || currentEvent;
-      const modelProbRaw = parseFloat(r['modelprob%'] || r['model%'] || r.modelprob);
-      const modelProb = (!isNaN(modelProbRaw) && modelProbRaw >= 0 && modelProbRaw <= 100) ? modelProbRaw / 100 : null;
-      // missing/blank Wagered column = treat as a real wager (matches pre-this-feature CSVs
-      // and the same backward-compat rule used everywhere else this field is read)
-      const wagered = (r.wagered || '').trim().toLowerCase() !== 'no';
-
-      // dedupe/update key: same date+description+price+stake = the same bet re-imported
-      // (e.g. re-importing your own export after marking some bets Win/Loss elsewhere)
-      const existingIdx = betTracker.findIndex(b =>
-        b.date === date && b.desc === desc && b.price === price && b.stake === stake);
-      if (existingIdx >= 0) {
-        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName, modelProb: modelProb!==null?modelProb:betTracker[existingIdx].modelProb, wagered };
-        updated++;
-      } else {
-        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName, modelProb, wagered });
-        added++;
-      }
-    });
-    saveLS('rodsModel_betTracker', betTracker);
-    renderTracker();
-    status.textContent = `Imported: ${added} added, ${updated} updated${skipped ? `, ${skipped} skipped (missing description/price/stake)` : ''}.`;
-    event.target.value = ''; // allow re-importing the same file if needed
-  };
-  reader.onerror = () => { status.textContent = 'Could not read that file.'; event.target.value = ''; };
-  reader.readAsText(file);
-}
-
-function exportCSV(kind) {
-  let rows = [], filename = '';
-  if (kind === 'roundscore') {
-    rows = [['Player','Round','Line','ModelUnder%','MarketUnder%','ModelOver%','MarketOver%','UnderPrice','OverPrice']];
-    roundScoreProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
-    filename = 'round_score_props.csv';
-  } else {
-    rows = [['Date','Event','Description','Type','Price','Stake','Status','ModelProb%','Wagered','Profit']];
-    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,(b.modelProb!==null&&b.modelProb!==undefined)?(b.modelProb*100).toFixed(1):'',b.wagered!==false?'yes':'no',betProfit(b)!==null?betProfit(b).toFixed(2):'']));
-    filename = 'bet_tracker.csv';
-  }
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
-}
-
-// default the tracker date field to today
-document.addEventListener('DOMContentLoaded', () => {
-  const d = document.getElementById('trDate');
-  if (d) d.value = new Date().toISOString().slice(0,10);
-  renderRoundScore();
-  renderTracker();
-});
-
-// ---------------- data source: rods_data.json (from pipeline) or fallback ----------------
-let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK, W = W_FALLBACK, W5 = W5_FALLBACK, W10 = W10_FALLBACK, W20 = W20_FALLBACK;
-
-function renderAll(){ buildProjections(); buildFit(); buildMatch(); buildThreeBall(); buildOutrights(); populatePlayerDatalist(); }
-
-let currentEvent = 'Unlabeled Event'; // set from meta.event once real data loads; used to auto-tag new bets by tournament
-let lastKnownEvent = loadLS('rodsModel_lastKnownEvent', null);
-function applyMeta(meta){
-  if(!meta) return;
-  if(meta.players){ document.querySelectorAll('.meta .stat .v')[0].textContent = meta.players; }
-  if(meta.draw_bias!==undefined && meta.draw_bias!==null){
-    const el=document.getElementById('drawBias');
-    if(el){ const v=Number(meta.draw_bias); el.textContent=(v>0?'+':'')+v.toFixed(1)+' AM'; }
-  }
-  if(meta.event){
-    // Auto-clear tournament-specific calculation overrides when the event actually changes
-    // (not on the first load, when lastKnownEvent is still null). These are pure calculation
-    // aids, not user records — formAdjustments/fieldBaselineCorrection were calibrated
-    // against a DIFFERENT tournament's players and static PROJ values, and silently
-    // reapplying them to a new event's field would corrupt every Round Score calculation
-    // without any visible sign why. dkMatchupOverride is equally stale once the event
-    // changes. roundScoreProps/betTracker are NOT touched here — those are real records,
-    // not calculation aids, and Tracker specifically is meant to accumulate across events.
-    if (lastKnownEvent !== null && lastKnownEvent !== meta.event) {
-      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length);
-      formAdjustments = {};
-      fieldBaselineCorrection = 0;
-      dkMatchupOverride = null;
-      dk3BallData = null;
-      saveLS('rodsModel_formAdjustments', formAdjustments);
-      saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
-      saveLS('rodsModel_dkMatchupOverride', null);
-      saveLS('rodsModel_dk3BallData', null);
-      if (hadStaleData) {
-        console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, and DraftKings matchup overrides from the previous tournament.`);
-        alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, and DraftKings matchup data from the previous event — these were still being applied to this event's calculations. Existing Round Score lines have been recomputed without the stale correction.`);
-        // existing Round Score rows already had their model% computed and saved using the
-        // now-cleared (stale) correction — clearing the override alone doesn't fix rows
-        // already sitting in the table, same reason the Live Form Adjustment feature needed
-        // its own retroactive recompute when it was first built.
-        let recomputed = 0;
-        roundScoreProps.forEach(p => {
-          const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
-          if (!prow || prow[1] === null || prow[1] === undefined) return;
-          const effectiveProj = getEffectiveProj(p.name, prow[1]);
-          const roundsCount = p.round === 'T72' ? 4 : 1;
-          p.modelUnder = modelUnderProb(effectiveProj, p.line, roundsCount, p.elevatedRisk || false);
-          p.modelOver = 1 - p.modelUnder;
-          p.formAdjusted = false;
-          recomputed++;
-        });
-        if (recomputed > 0) { saveLS('rodsModel_roundScoreProps', roundScoreProps); renderRoundScore(); }
-      }
-    }
-    lastKnownEvent = meta.event;
-    saveLS('rodsModel_lastKnownEvent', lastKnownEvent);
-    currentEvent = meta.event;
-    const sub = document.getElementById('eventSub');
-    if(sub) sub.textContent = meta.course ? `${meta.event} · ${meta.course} · Golf Betting Analytics` : `${meta.event} · Golf Betting Analytics`;
-  }
-  if(meta.course){
-    const el = document.getElementById('courseName');
-    if(el) el.textContent = meta.course;
-    currentCourseName = meta.course;
-  }
-  if(meta.generated){
-    const el=document.getElementById('dataAsOf');
-    if(el) el.textContent = meta.generated;
-  }
-}
-
-fetch('rods_data.json',{cache:'no-store'})
-  .then(r=>{ if(!r.ok) throw new Error('no data file'); return r.json(); })
-  .then(d=>{
-    if(Array.isArray(d.P)&&d.P.length) P=d.P;
-    if(Array.isArray(d.F)&&d.F.length) F=d.F;
-    if(Array.isArray(d.M)&&d.M.length) M=d.M;
-    if(Array.isArray(d.W)&&d.W.length) W=d.W;
-    if(Array.isArray(d.W5)&&d.W5.length) W5=d.W5;
-    if(Array.isArray(d.W10)&&d.W10.length) W10=d.W10;
-    if(Array.isArray(d.W20)&&d.W20.length) W20=d.W20;
-    // recompute per-column ranges for heat scaling now that P changed
-    cols.forEach(ci=>{
-      const vals=P.map(r=>r[ci]).filter(v=>v!==null&&v!==undefined);
-      if(vals.length) ranges[ci]=[Math.min(...vals),Math.max(...vals)];
-    });
-    applyMeta(d.meta);
-    renderAll();
-    console.log('Loaded rods_data.json',d.meta);
-  })
-  .catch(()=>{ renderAll(); console.log('Using fallback placeholder data (rods_data.json not found)'); });
-</script>
 </body>
 </html>
