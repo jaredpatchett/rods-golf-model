@@ -561,6 +561,12 @@
       <label title="Optional — the model's stated probability when you placed this bet, if known. Needed for calibration tracking (see below); leave blank if you don't have it handy.">Model % (optional)</label>
       <input class="finput" id="trModelProb" type="number" step="0.1" min="0" max="100" placeholder="62.5" style="min-width:70px">
     </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer" for="trWagered" title="Uncheck for a play you're tracking purely for model calibration, not an actual bet — keeps it out of Total Staked / Profit / ROI while still counting it for calibration.">
+        <input type="checkbox" id="trWagered" checked style="width:13px;height:13px;accent-color:var(--green);cursor:pointer">
+        Real wager
+      </label>
+    </div>
     <button class="addbtn" onclick="addBet()">Add Bet</button>
   </div>
   <div class="toolrow">
@@ -1640,11 +1646,17 @@ function quickAddToTracker(desc, type, price, modelProb) {
   if (stakeStr === null) return; // cancelled
   const stake = parseFloat(stakeStr);
   if (isNaN(stake) || stake <= 0) { alert('Enter a valid stake to add this bet.'); return; }
+  // Real wager vs tracking-only matters: a tracking-only play with a real stake number
+  // would otherwise silently inflate Total Staked/Profit/ROI with money that was never
+  // actually risked. Calibration uses every bet either way — this only affects the P&L
+  // summary math.
+  const wagered = confirm('Is this a REAL wager?\n\nOK = real money, counts toward Total Staked / Profit / ROI.\nCancel = tracking only (for model calibration), excluded from your P&L summary.');
   betTracker.push({
     id: Date.now()+Math.random(),
     date: new Date().toISOString().slice(0,10),
     desc, type, price, stake, status: 'pending', event: currentEvent,
     modelProb: (modelProb !== null && modelProb !== undefined) ? modelProb : null,
+    wagered,
   });
   saveLS('rodsModel_betTracker', betTracker);
   renderTracker();
@@ -1676,13 +1688,15 @@ function addBet() {
   const stake = parseFloat(document.getElementById('trStake').value);
   const modelProbPct = parseFloat(document.getElementById('trModelProb').value);
   const modelProb = (!isNaN(modelProbPct) && modelProbPct >= 0 && modelProbPct <= 100) ? modelProbPct / 100 : null;
+  const wagered = document.getElementById('trWagered').checked;
   if (!desc || !price || isNaN(stake) || stake <= 0) { alert('Fill in description, price, and a stake > 0.'); return; }
-  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent, modelProb });
+  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent, modelProb, wagered });
   saveLS('rodsModel_betTracker', betTracker);
   document.getElementById('trDesc').value = '';
   document.getElementById('trPrice').value = '';
   document.getElementById('trStake').value = '';
   document.getElementById('trModelProb').value = '';
+  document.getElementById('trWagered').checked = true;
   renderTracker();
 }
 function setBetStatus(id, status) {
@@ -1733,20 +1747,27 @@ function renderTracker() {
   const scoped = trackerEventFilter === 'all' ? betTracker : betTracker.filter(b => b.event === trackerEventFilter);
 
   body.innerHTML = '';
-  let totalStaked = 0, totalStakedSettled = 0, totalProfit = 0, wins = 0, losses = 0, pushes = 0, pending = 0;
+  let totalStaked = 0, totalStakedSettled = 0, totalProfit = 0, wins = 0, losses = 0, pushes = 0, pending = 0, trackingOnlyCount = 0;
   scoped.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(b => {
     const profit = betProfit(b);
-    totalStaked += b.stake;
-    if (b.status === 'win') wins++;
-    if (b.status === 'loss') losses++;
-    if (b.status === 'push') pushes++;
-    if (b.status === 'pending') pending++;
-    if (b.status !== 'pending') { totalStakedSettled += b.stake; totalProfit += profit; }
+    // backward compatible: bets added before this feature existed have no `wagered` field
+    // at all — treat that as a real wager (the only kind that existed before), not silently
+    // exclude someone's existing P&L history.
+    const isWagered = b.wagered !== false;
+    if (!isWagered) trackingOnlyCount++;
+    if (isWagered) {
+      totalStaked += b.stake;
+      if (b.status === 'win') wins++;
+      if (b.status === 'loss') losses++;
+      if (b.status === 'push') pushes++;
+      if (b.status === 'pending') pending++;
+      if (b.status !== 'pending') { totalStakedSettled += b.stake; totalProfit += profit; }
+    }
     const badgeCls = b.status;
     const profitDisp = profit === null ? '—' : (profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
     const profitCls = profit === null ? '' : (profit>=0?'val-pos':'val-neg');
     body.innerHTML += `<tr>
-      <td class="pname">${b.desc}<div style="color:var(--text-faint);font-size:9px;margin-top:2px">${b.event||''}</div></td>
+      <td class="pname">${b.desc}${!isWagered?' <span class="badge push" style="font-size:8px" title="Tracking only — not a real wager, excluded from Total Staked / Profit / ROI, still counted for calibration">TRACKING</span>':''}<div style="color:var(--text-faint);font-size:9px;margin-top:2px">${b.event||''}</div></td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.date}</td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.type}</td>
       <td class="cell">${b.price}</td>
@@ -1765,7 +1786,7 @@ function renderTracker() {
   const roi = totalStakedSettled > 0 ? (totalProfit/totalStakedSettled*100) : 0;
   const summaryLabel = trackerEventFilter === 'all' ? 'Cumulative — All Events' : trackerEventFilter;
   summary.innerHTML = `
-    <div class="sblock"><div class="slbl">${summaryLabel}</div><div class="sval" style="font-size:11px;color:var(--text-dim)">${scoped.length} bet${scoped.length===1?'':'s'}</div></div>
+    <div class="sblock"><div class="slbl">${summaryLabel}</div><div class="sval" style="font-size:11px;color:var(--text-dim)">${scoped.length} bet${scoped.length===1?'':'s'}${trackingOnlyCount>0?` (${trackingOnlyCount} tracking-only)`:''}</div></div>
     <div class="sblock"><div class="slbl">Record</div><div class="sval">${wins}-${losses}-${pushes}<span style="color:var(--text-faint);font-size:11px"> (${pending} pending)</span></div></div>
     <div class="sblock"><div class="slbl">Total Staked</div><div class="sval">$${totalStaked.toFixed(2)}</div></div>
     <div class="sblock"><div class="slbl">Profit / Loss</div><div class="sval ${totalProfit>=0?'pos':'neg'}">${totalProfit>=0?'+':'-'}$${Math.abs(totalProfit).toFixed(2)}</div></div>
@@ -1779,7 +1800,7 @@ function renderTracker() {
     } else {
       let rows = '';
       events.forEach(ev => {
-        const evBets = betTracker.filter(b => b.event === ev);
+        const evBets = betTracker.filter(b => b.event === ev && b.wagered !== false);
         let ew=0, el=0, ep=0, epend=0, estaked=0, eprofit=0;
         evBets.forEach(b => {
           const pf = betProfit(b);
@@ -1935,16 +1956,19 @@ function importTrackerCSV(event) {
       const eventName = r.event || currentEvent;
       const modelProbRaw = parseFloat(r['modelprob%'] || r['model%'] || r.modelprob);
       const modelProb = (!isNaN(modelProbRaw) && modelProbRaw >= 0 && modelProbRaw <= 100) ? modelProbRaw / 100 : null;
+      // missing/blank Wagered column = treat as a real wager (matches pre-this-feature CSVs
+      // and the same backward-compat rule used everywhere else this field is read)
+      const wagered = (r.wagered || '').trim().toLowerCase() !== 'no';
 
       // dedupe/update key: same date+description+price+stake = the same bet re-imported
       // (e.g. re-importing your own export after marking some bets Win/Loss elsewhere)
       const existingIdx = betTracker.findIndex(b =>
         b.date === date && b.desc === desc && b.price === price && b.stake === stake);
       if (existingIdx >= 0) {
-        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName, modelProb: modelProb!==null?modelProb:betTracker[existingIdx].modelProb };
+        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName, modelProb: modelProb!==null?modelProb:betTracker[existingIdx].modelProb, wagered };
         updated++;
       } else {
-        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName, modelProb });
+        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName, modelProb, wagered });
         added++;
       }
     });
@@ -1964,8 +1988,8 @@ function exportCSV(kind) {
     roundScoreProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
     filename = 'round_score_props.csv';
   } else {
-    rows = [['Date','Event','Description','Type','Price','Stake','Status','ModelProb%','Profit']];
-    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,(b.modelProb!==null&&b.modelProb!==undefined)?(b.modelProb*100).toFixed(1):'',betProfit(b)!==null?betProfit(b).toFixed(2):'']));
+    rows = [['Date','Event','Description','Type','Price','Stake','Status','ModelProb%','Wagered','Profit']];
+    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,(b.modelProb!==null&&b.modelProb!==undefined)?(b.modelProb*100).toFixed(1):'',b.wagered!==false?'yes':'no',betProfit(b)!==null?betProfit(b).toFixed(2):'']));
     filename = 'bet_tracker.csv';
   }
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
