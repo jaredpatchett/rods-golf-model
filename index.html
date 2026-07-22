@@ -228,14 +228,13 @@
     </div>
     <div>
       <h1>ROD'S MODEL</h1>
-      <div class="sub">The 154th Open · Royal Birkdale · Links Analytics</div>
+      <div class="sub" id="eventSub">Golf Betting Analytics</div>
     </div>
   </div>
   <div class="spacer"></div>
   <div class="meta">
     <div class="stat"><div class="v">156</div><div class="l">Players</div></div>
-    <div class="stat"><div class="v">Par 70</div><div class="l">7,223 yds</div></div>
-    <div class="stat"><div class="v">R1</div><div class="l">Jul 16–19</div></div>
+    <div class="stat"><div class="v" id="courseName" style="font-size:13px">—</div><div class="l">Course</div></div>
     <div class="stat"><div class="v" id="dataAsOf" style="font-size:11px">—</div><div class="l">Data As Of (UTC)</div></div>
     <div class="live"><div class="dot"></div><span>LIVE</span></div>
   </div>
@@ -905,12 +904,18 @@ function simRound(mean, sd, blowupRate) {
   if (Math.random() < blowupRate) return gaussSample(adjustedMean + RS_BLOWUP_SHIFT, sd * 1.4);
   return gaussSample(adjustedMean, sd);
 }
-function birkdaleCourseRow() {
-  const row = F.find(r => String(r[0]).toLowerCase().includes('birkdale')) || F[0];
+let currentCourseName = null; // set from meta.course once real data loads — see applyMeta()
+function getCourseRow() {
+  // Matches the current event's course by name (from DataGolf's own data, not hardcoded) —
+  // falls back to NEUTRAL tour-wide defaults, not to F[0], when no course-specific row
+  // exists yet. Silently defaulting an unmatched course to whatever's first in the table
+  // would apply Royal Birkdale's atypical, extreme links-course variance to a completely
+  // different tournament — same bug that existed pipeline-side, fixed the same way here.
+  const row = currentCourseName ? F.find(r => String(r[0]).toLowerCase().includes(currentCourseName.toLowerCase())) : null;
   return row ? { sd: row[3], blowup: row[4] } : { sd: RS_TOUR_BASELINE_SD, blowup: RS_DEFAULT_BLOWUP };
 }
 function modelUnderProb(meanPerRound, line, roundsCount = 1, elevatedRisk = false) {
-  const { sd, blowup } = birkdaleCourseRow();
+  const { sd, blowup } = getCourseRow();
   const useSd = sd || RS_TOUR_BASELINE_SD;
   let useBlowup = (blowup === undefined || blowup === null) ? RS_DEFAULT_BLOWUP : blowup;
   let effectiveMean = meanPerRound;
@@ -1691,7 +1696,16 @@ function applyMeta(meta){
     const el=document.getElementById('drawBias');
     if(el){ const v=Number(meta.draw_bias); el.textContent=(v>0?'+':'')+v.toFixed(1)+' AM'; }
   }
-  if(meta.event){ currentEvent = meta.event; }
+  if(meta.event){
+    currentEvent = meta.event;
+    const sub = document.getElementById('eventSub');
+    if(sub) sub.textContent = meta.course ? `${meta.event} · ${meta.course} · Golf Betting Analytics` : `${meta.event} · Golf Betting Analytics`;
+  }
+  if(meta.course){
+    const el = document.getElementById('courseName');
+    if(el) el.textContent = meta.course;
+    currentCourseName = meta.course;
+  }
   if(meta.generated){
     const el=document.getElementById('dataAsOf');
     if(el) el.textContent = meta.generated;
