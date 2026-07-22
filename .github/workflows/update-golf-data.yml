@@ -25,11 +25,6 @@ jobs:
           DG_KEY: ${{ secrets.DG_KEY }}
         run: python3 rods_pipeline.py
 
-      - name: Debug all pairs (temporary)
-        env:
-          DG_KEY: ${{ secrets.DG_KEY }}
-        run: python3 debug_all_pairs.py
-
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -45,5 +40,6 @@ jobs:
             echo "No changes to rods_data.json — skipping commit."
           else
             git commit -m "Auto-update rods_data.json"
+            git pull --rebase origin main
             git push
           fi
