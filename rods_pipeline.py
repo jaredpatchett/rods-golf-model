@@ -305,7 +305,7 @@ def pick_single_book_price(row):
     return None, None
 
 
-def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_rounds=1):
+def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_rounds=1, market_used="round_matchups"):
     """
     Map DataGolf matchup tool -> Rod's `M` rows:
       [playerA, playerB, wave, modelPct, marketPct, priceA, priceB]
@@ -331,19 +331,27 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
     # standard 2-way market (ties refunded — "ties": "void") and a 3-way market (ties as
     # their own outcome — "ties": "separate bet offered"). Confirmed live: the 3-way variant
     # carries far fewer books and never includes DraftKings, so keeping both just duplicates
-    # every such pairing on the page with a worse, less-actionable price.
+    # every such pairing with a worse, less-actionable price. This part applies to BOTH
+    # market types — always prefer the void (2-way) entry's price when both exist.
     #
-    # SEPARATE, BIGGER ISSUE (confirmed against Rod's real DraftKings tee-group list): the feed
-    # also contains "alternate 2-ball" pairings between players who are NOT in the same tee
-    # group at all — e.g. "McIlroy vs Schauffele" when their real groups are McIlroy/Bridgeman
-    # and Fox/Schauffele. These alternates only ever appear ONCE, as "ties":"void", with no
-    # "ties":"separate bet offered" sibling for that exact pair. Every genuine tee-group pairing
-    # in Rod's real list appeared TWICE — both tie structures — except one (missing its void
-    # entry entirely on DataGolf's end). So: a pair is a real tee-group matchup if a "separate
-    # bet offered" entry exists for it (use the void entry for the actual price if one exists,
-    # since that's the bettable 2-way market; fall back to the separate-bet entry's price only
-    # if no void version showed up). Pairs with ONLY a void entry and no separate-bet sibling
-    # are alternates and get dropped from this table entirely.
+    # The DUAL-TIE-STRUCTURE REQUIREMENT (a pair only counts as "real" if it has BOTH tie
+    # types) is market-SPECIFIC and does NOT generalize — confirmed with two separate live
+    # pulls:
+    #   - round_matchups (single-round 2-ball, tied to actual tee groups): every genuine
+    #     tee-group pairing appeared under BOTH tie structures; "alternate" cross-group
+    #     pairings (not real tee groups — e.g. "McIlroy vs Schauffele" when their real groups
+    #     were McIlroy/Bridgeman and Fox/Schauffele) only ever had "void", no sibling. The
+    #     dual-structure check correctly separated real from fabricated here.
+    #   - tournament_matchups (72-hole, NOT tied to tee groups at all — any two named players
+    #     can have a legitimate full-tournament head-to-head): confirmed live, 116 of 128 real
+    #     pairs had ONLY "void", no "separate" sibling — ties are near-impossible over 72
+    #     holes, so books mostly skip offering the 3-way variant at all. Applying the
+    #     round_matchups-derived dual-structure rule here wrongly dropped 128 real matchups
+    #     down to 12. There's no "fabricated pairing" concept for tournament matchups in the
+    #     first place — any two players is a legitimate market — so this market just needs
+    #     simple dedup, not the stricter round_matchups filter.
+    require_dual_tie_types = (market_used == "round_matchups")
+
     by_pair = defaultdict(list)
     for r in raw_rows:
         p1_raw = pick(r, "p1_player_name", "player1", "p1")
@@ -354,9 +362,10 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
 
     rows = []
     for key, entries in by_pair.items():
-        tie_types = {e.get("ties") for e in entries}
-        if "separate bet offered" not in tie_types:
-            continue  # alternate/cross-group pairing, not a real tee-group matchup — drop it
+        if require_dual_tie_types:
+            tie_types = {e.get("ties") for e in entries}
+            if "separate bet offered" not in tie_types:
+                continue  # alternate/cross-group pairing (round_matchups only) — drop it
         void_entry = next((e for e in entries if e.get("ties") == "void"), None)
         rows.append(void_entry if void_entry is not None else entries[0])
 
@@ -670,7 +679,7 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
     # automatically to whichever market actually had data (4 for tournament_matchups,
     # 1 for round_matchups). This ignores cuts/WDs on the 4-round path — a real 72-hole
     # matchup settles on made-cut rounds only, which this sim doesn't model yet.
-    match = build_matchups(matchup_rows, waves, proj_by_name, target_course_row, n_rounds=n_rounds)
+    match = build_matchups(matchup_rows, waves, proj_by_name, target_course_row, n_rounds=n_rounds, market_used=market_used)
 
     print(f"   running full-field finish sim ({finish_trials} trials) ...")
     finish_sim_results = run_finish_sim(proj_by_name, course_row=target_course_row,
