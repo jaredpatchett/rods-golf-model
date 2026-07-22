@@ -1802,6 +1802,7 @@ let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK, W = W_FALLBACK, W5 = W5_FALL
 function renderAll(){ buildProjections(); buildFit(); buildMatch(); buildOutrights(); populatePlayerDatalist(); }
 
 let currentEvent = 'Unlabeled Event'; // set from meta.event once real data loads; used to auto-tag new bets by tournament
+let lastKnownEvent = loadLS('rodsModel_lastKnownEvent', null);
 function applyMeta(meta){
   if(!meta) return;
   if(meta.players){ document.querySelectorAll('.meta .stat .v')[0].textContent = meta.players; }
@@ -1810,6 +1811,45 @@ function applyMeta(meta){
     if(el){ const v=Number(meta.draw_bias); el.textContent=(v>0?'+':'')+v.toFixed(1)+' AM'; }
   }
   if(meta.event){
+    // Auto-clear tournament-specific calculation overrides when the event actually changes
+    // (not on the first load, when lastKnownEvent is still null). These are pure calculation
+    // aids, not user records — formAdjustments/fieldBaselineCorrection were calibrated
+    // against a DIFFERENT tournament's players and static PROJ values, and silently
+    // reapplying them to a new event's field would corrupt every Round Score calculation
+    // without any visible sign why. dkMatchupOverride is equally stale once the event
+    // changes. roundScoreProps/betTracker are NOT touched here — those are real records,
+    // not calculation aids, and Tracker specifically is meant to accumulate across events.
+    if (lastKnownEvent !== null && lastKnownEvent !== meta.event) {
+      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length);
+      formAdjustments = {};
+      fieldBaselineCorrection = 0;
+      dkMatchupOverride = null;
+      saveLS('rodsModel_formAdjustments', formAdjustments);
+      saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
+      saveLS('rodsModel_dkMatchupOverride', null);
+      if (hadStaleData) {
+        console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, and DraftKings matchup overrides from the previous tournament.`);
+        alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, and DraftKings matchup data from the previous event — these were still being applied to this event's calculations. Existing Round Score lines have been recomputed without the stale correction.`);
+        // existing Round Score rows already had their model% computed and saved using the
+        // now-cleared (stale) correction — clearing the override alone doesn't fix rows
+        // already sitting in the table, same reason the Live Form Adjustment feature needed
+        // its own retroactive recompute when it was first built.
+        let recomputed = 0;
+        roundScoreProps.forEach(p => {
+          const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
+          if (!prow || prow[1] === null || prow[1] === undefined) return;
+          const effectiveProj = getEffectiveProj(p.name, prow[1]);
+          const roundsCount = p.round === 'T72' ? 4 : 1;
+          p.modelUnder = modelUnderProb(effectiveProj, p.line, roundsCount, p.elevatedRisk || false);
+          p.modelOver = 1 - p.modelUnder;
+          p.formAdjusted = false;
+          recomputed++;
+        });
+        if (recomputed > 0) { saveLS('rodsModel_roundScoreProps', roundScoreProps); renderRoundScore(); }
+      }
+    }
+    lastKnownEvent = meta.event;
+    saveLS('rodsModel_lastKnownEvent', lastKnownEvent);
     currentEvent = meta.event;
     const sub = document.getElementById('eventSub');
     if(sub) sub.textContent = meta.course ? `${meta.event} · ${meta.course} · Golf Betting Analytics` : `${meta.event} · Golf Betting Analytics`;
