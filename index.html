@@ -512,8 +512,11 @@
     <button class="addbtn" onclick="addBet()">Add Bet</button>
   </div>
   <div class="toolrow">
+    <button class="toolbtn" onclick="document.getElementById('trackerImportFile').click()">Import CSV</button>
+    <input type="file" id="trackerImportFile" accept=".csv" style="display:none" onchange="importTrackerCSV(event)">
     <button class="toolbtn" onclick="exportCSV('tracker')">Export CSV</button>
     <button class="toolbtn" onclick="clearAll('tracker')">Clear All</button>
+    <span id="trackerImportStatus" style="font-size:10px;color:var(--text-dim);align-self:center"></span>
   </div>
   <div class="wide">
     <table id="trackerTable">
@@ -1497,6 +1500,86 @@ function clearAll(kind) {
   if (kind === 'roundscore') { roundScoreProps = []; saveLS('rodsModel_roundScoreProps', roundScoreProps); renderRoundScore(); }
   if (kind === 'tracker') { betTracker = []; saveLS('rodsModel_betTracker', betTracker); renderTracker(); }
 }
+// ---------------- tracker: import bets from a CSV file (round-trips with Export CSV, also
+// accepts hand-edited or externally-prepared CSVs as long as the headers match) ----------------
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i+1] === '"') { cur += '"'; i++; } // escaped quote inside a quoted field
+        else { inQuotes = false; }
+      } else { cur += c; }
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { result.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (!lines.length) return [];
+  const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+  return lines.slice(1).map(line => {
+    const values = parseCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = values[i] !== undefined ? values[i].trim() : ''; });
+    return obj;
+  });
+}
+const VALID_STATUSES = new Set(['pending', 'win', 'loss', 'push']);
+
+function importTrackerCSV(event) {
+  const file = event.target.files[0];
+  const status = document.getElementById('trackerImportStatus');
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const rows = parseCSV(e.target.result);
+    if (!rows.length) { status.textContent = 'No rows found in that file.'; event.target.value = ''; return; }
+
+    let added = 0, updated = 0, skipped = 0;
+    rows.forEach(r => {
+      const desc = r.description || r.desc || '';
+      const price = r.price || '';
+      const stake = parseFloat(r.stake);
+      const date = r.date || new Date().toISOString().slice(0,10);
+      if (!desc || !price || isNaN(stake) || stake <= 0) { skipped++; return; } // need the essentials to make sense of a row
+
+      const typeLookup = { matchup: 'Matchup', 'round score': 'Round Score', outright: 'Outright', other: 'Other' };
+      const type = typeLookup[(r.type || 'Other').trim().toLowerCase()] || 'Other';
+
+      let statusVal = (r.status || 'pending').trim().toLowerCase();
+      if (!VALID_STATUSES.has(statusVal)) statusVal = 'pending';
+
+      const eventName = r.event || currentEvent;
+
+      // dedupe/update key: same date+description+price+stake = the same bet re-imported
+      // (e.g. re-importing your own export after marking some bets Win/Loss elsewhere)
+      const existingIdx = betTracker.findIndex(b =>
+        b.date === date && b.desc === desc && b.price === price && b.stake === stake);
+      if (existingIdx >= 0) {
+        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName };
+        updated++;
+      } else {
+        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName });
+        added++;
+      }
+    });
+    saveLS('rodsModel_betTracker', betTracker);
+    renderTracker();
+    status.textContent = `Imported: ${added} added, ${updated} updated${skipped ? `, ${skipped} skipped (missing description/price/stake)` : ''}.`;
+    event.target.value = ''; // allow re-importing the same file if needed
+  };
+  reader.onerror = () => { status.textContent = 'Could not read that file.'; event.target.value = ''; };
+  reader.readAsText(file);
+}
+
 function exportCSV(kind) {
   let rows = [], filename = '';
   if (kind === 'roundscore') {
