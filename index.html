@@ -486,6 +486,7 @@
   </div>
   <div class="summary" id="trackerSummary"></div>
   <div id="trackerByEvent"></div>
+  <div id="trackerCalibration"></div>
   <div class="form-panel" style="margin-top:14px">
     <div class="field">
       <label>Date</label>
@@ -508,6 +509,10 @@
     <div class="field">
       <label>Stake ($)</label>
       <input class="finput" id="trStake" type="number" step="1" placeholder="50" style="min-width:70px">
+    </div>
+    <div class="field">
+      <label title="Optional — the model's stated probability when you placed this bet, if known. Needed for calibration tracking (see below); leave blank if you don't have it handy.">Model % (optional)</label>
+      <input class="finput" id="trModelProb" type="number" step="0.1" min="0" max="100" placeholder="62.5" style="min-width:70px">
     </div>
     <button class="addbtn" onclick="addBet()">Add Bet</button>
   </div>
@@ -642,7 +647,7 @@ function buildOutrights(search='') {
       <td class="cell" style="color:var(--text-dim)">${r.price}</td>
       <td class="cell" style="text-align:center">
         <span class="pill ${wc.cls}">${wc.call}</span>
-        ${wc.call==='BET'&&r.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r.name.replace(/'/g,"\\'")} (${outMarket})','${r.price.replace(/'/g,"\\'")}')">+trk</button>`:''}
+        ${wc.call==='BET'&&r.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r.name.replace(/'/g,"\\'")} (${outMarket})','${r.price.replace(/'/g,"\\'")}',${r.model})">+trk</button>`:''}
       </td>
     </tr>`;
   });
@@ -690,7 +695,7 @@ function buildProjections(filter=''){
           <td class="cell">${win.market!==null?(win.market*100).toFixed(1)+'%':'—'}</td>
           <td class="cell" style="text-align:center">
             <span class="pill ${wc.cls}">${wc.call}</span>
-            ${wc.call==='BET'&&win.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r[0].replace(/'/g,"\\'")}','${win.price.replace(/'/g,"\\'")}')">+trk</button>`:''}
+            ${wc.call==='BET'&&win.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r[0].replace(/'/g,"\\'")}','${win.price.replace(/'/g,"\\'")}',${win.model})">+trk</button>`:''}
           </td>`;
       } else {
         html += `<td class="cell nan">nan</td><td class="cell nan">nan</td><td class="cell">—</td>`;
@@ -845,7 +850,7 @@ function buildMatch(search=''){
       <td class="cell" style="color:var(--text-dim)">${r.priceA}</td>
       <td class="cell" style="text-align:center">
         <span class="pill ${cls}">${call}</span>${warnIcon}
-        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}')">+trk</button>`:''}
+        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}',${r.model})">+trk</button>`:''}
       </td>
     </tr>`;
   });
@@ -1304,7 +1309,7 @@ function renderRoundScore() {
     const playHtml = play
       ? `<span class="pill edge" style="font-size:11px;padding:5px 10px">BET ${play.side.toUpperCase()} ${p.line.toFixed(1)}</span>
          <span class="val-pos" style="margin-left:6px;font-size:11px">+${(play.edge*100).toFixed(1)}%</span>
-         ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}')">+trk</button>`:''}`
+         ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}',${play.side==='Under'?p.modelUnder:p.modelOver})">+trk</button>`:''}`
       : `<span class="pill thin">PASS</span>`;
     body.innerHTML += `<tr>
       <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}${p.elevatedRisk?' <span class="badge push" style="font-size:8px" title="Elevated blow-up risk applied — your manual call, not model-inferred">RISK+</span>':''}${p.formAdjusted?' <span class="badge win" style="font-size:8px" title="Used a live-form-adjusted PROJ, blending real current-week performance with the static pre-tournament number">FORM-ADJ</span>':''}</td>
@@ -1326,8 +1331,8 @@ let betTracker = loadLS('rodsModel_betTracker', []);
 // one-click links from the other tabs — pre-fill description/price/type, ask for
 // stake, push straight into the tracker, then jump to the Tracker tab so you can
 // see it landed.
-function quickAddToTracker(desc, type, price) {
-  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}\n\nStake ($)?`, '50');
+function quickAddToTracker(desc, type, price, modelProb) {
+  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}${modelProb!==null&&modelProb!==undefined?`\nModel: ${(modelProb*100).toFixed(1)}%`:''}\n\nStake ($)?`, '50');
   if (stakeStr === null) return; // cancelled
   const stake = parseFloat(stakeStr);
   if (isNaN(stake) || stake <= 0) { alert('Enter a valid stake to add this bet.'); return; }
@@ -1335,20 +1340,23 @@ function quickAddToTracker(desc, type, price) {
     id: Date.now()+Math.random(),
     date: new Date().toISOString().slice(0,10),
     desc, type, price, stake, status: 'pending', event: currentEvent,
+    modelProb: (modelProb !== null && modelProb !== undefined) ? modelProb : null,
   });
   saveLS('rodsModel_betTracker', betTracker);
   renderTracker();
   document.querySelector('.tab[data-tab="tracker"]').click();
 }
-function addMatchupToTracker(side, a, b, call, price) {
+function addMatchupToTracker(side, a, b, call, price, modelProbA) {
   const other = side === a ? b : a;
-  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price);
+  // modelProbA is always P(player A wins) — flip it if the actual bet is on B (a FADE call)
+  const modelProb = side === a ? modelProbA : (1 - modelProbA);
+  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price, modelProb);
 }
-function addRoundScoreToTracker(name, round, line, side, price) {
-  quickAddToTracker(`${name} ${round} ${side} ${line}`, 'Round Score', price);
+function addRoundScoreToTracker(name, round, line, side, price, modelProb) {
+  quickAddToTracker(`${name} ${round} ${side} ${line}`, 'Round Score', price, modelProb);
 }
-function addOutrightToTracker(name, price) {
-  quickAddToTracker(`${name} to Win`, 'Outright', price);
+function addOutrightToTracker(name, price, modelProb) {
+  quickAddToTracker(`${name} to Win`, 'Outright', price, modelProb);
 }
 
 function payoutOnWin(price, stake) {
@@ -1362,12 +1370,15 @@ function addBet() {
   const type = document.getElementById('trType').value;
   const price = document.getElementById('trPrice').value.trim();
   const stake = parseFloat(document.getElementById('trStake').value);
+  const modelProbPct = parseFloat(document.getElementById('trModelProb').value);
+  const modelProb = (!isNaN(modelProbPct) && modelProbPct >= 0 && modelProbPct <= 100) ? modelProbPct / 100 : null;
   if (!desc || !price || isNaN(stake) || stake <= 0) { alert('Fill in description, price, and a stake > 0.'); return; }
-  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent });
+  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent, modelProb });
   saveLS('rodsModel_betTracker', betTracker);
   document.getElementById('trDesc').value = '';
   document.getElementById('trPrice').value = '';
   document.getElementById('trStake').value = '';
+  document.getElementById('trModelProb').value = '';
   renderTracker();
 }
 function setBetStatus(id, status) {
@@ -1484,6 +1495,66 @@ function renderTracker() {
         <tbody>${rows}</tbody></table>`;
     }
   }
+  renderCalibration(scoped);
+}
+
+// ---------------- calibration: is the model's stated confidence actually trustworthy? ----------------
+// A model that says "60% chance" should win about 60% of those bets over time — that's a
+// different, more rigorous question than "did I make money" (small-sample noisy). Only uses
+// SETTLED bets (win/loss, not push/pending) that have a stored model probability — bets added
+// before this feature existed, or added without a model% on the manual form, won't have one
+// and are correctly excluded rather than silently treated as some default.
+const CALIBRATION_BUCKETS = [[0.30,0.40],[0.40,0.50],[0.50,0.60],[0.60,0.70],[0.70,0.80],[0.80,0.90],[0.90,1.01]];
+function computeCalibration(bets) {
+  const buckets = CALIBRATION_BUCKETS.map(([lo,hi]) => ({ lo, hi, bets: [] }));
+  bets.forEach(b => {
+    const bucket = buckets.find(bk => b.modelProb >= bk.lo && b.modelProb < bk.hi);
+    if (bucket) bucket.bets.push(b);
+  });
+  const results = buckets.filter(bk => bk.bets.length > 0).map(bk => {
+    const n = bk.bets.length;
+    const avgPredicted = bk.bets.reduce((s,b) => s + b.modelProb, 0) / n;
+    const actualWinRate = bk.bets.reduce((s,b) => s + b.outcome, 0) / n;
+    return { lo: bk.lo, hi: bk.hi, n, avgPredicted, actualWinRate, gap: avgPredicted - actualWinRate };
+  });
+  const brier = bets.length ? bets.reduce((s,b) => s + Math.pow(b.modelProb - b.outcome, 2), 0) / bets.length : null;
+  return { buckets: results, brier, n: bets.length };
+}
+function renderCalibration(scopedBets) {
+  const container = document.getElementById('trackerCalibration');
+  if (!container) return;
+  const usable = scopedBets
+    .filter(b => (b.status === 'win' || b.status === 'loss') && b.modelProb !== null && b.modelProb !== undefined)
+    .map(b => ({ modelProb: b.modelProb, outcome: b.status === 'win' ? 1 : 0 }));
+
+  if (usable.length < 5) {
+    container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
+      <div class="note">Needs at least 5 settled bets with a recorded model % to show anything meaningful — currently have ${usable.length}. New bets added via a +trk button capture this automatically; manually-added bets need the optional Model % field filled in. This accumulates across tournaments as long as you're viewing "All Events."</div>`;
+    return;
+  }
+
+  const { buckets, brier, n } = computeCalibration(usable);
+  let rows = '';
+  buckets.forEach(bk => {
+    const gapPct = bk.gap * 100;
+    const gapCls = Math.abs(gapPct) < 5 ? '' : (gapPct > 0 ? 'val-neg' : 'val-pos'); // overconfident (gap>0) shown as a warning color, underconfident as a good-color
+    rows += `<tr>
+      <td class="pname">${(bk.lo*100).toFixed(0)}–${(bk.hi*100).toFixed(0)}%</td>
+      <td class="cell" style="text-align:center">${bk.n}</td>
+      <td class="cell">${(bk.avgPredicted*100).toFixed(1)}%</td>
+      <td class="cell">${(bk.actualWinRate*100).toFixed(1)}%</td>
+      <td class="cell ${gapCls}">${gapPct>=0?'+':''}${gapPct.toFixed(1)}pp</td>
+    </tr>`;
+  });
+  container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
+    <div class="summary" style="margin-bottom:10px">
+      <div class="sblock"><div class="slbl">Settled Bets w/ Model %</div><div class="sval">${n}</div></div>
+      <div class="sblock"><div class="slbl">Brier Score</div><div class="sval">${brier.toFixed(3)}</div></div>
+      <div class="sblock" style="flex:2"><div class="slbl">Reading It</div><div class="sval" style="font-size:10px;color:var(--text-dim);font-weight:400">0 = perfect · 0.25 = random 50/50 guessing · lower is better. Gap column: positive = model overconfident in that range, negative = underconfident.</div></div>
+    </div>
+    <table><thead><tr><th class="player">Predicted Range</th><th># Bets</th><th>Avg Predicted</th><th>Actual Win Rate</th><th>Gap</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="note">Small-sample buckets (single digits) will be noisy — don't over-read one or two bets in a range. This gets more meaningful as it accumulates across tournaments; keep "Viewing: All Events" selected above to see the full history rather than just one event.</div>`;
 }
 
 // ---------------- shared: localStorage + CSV export ----------------
@@ -1558,16 +1629,18 @@ function importTrackerCSV(event) {
       if (!VALID_STATUSES.has(statusVal)) statusVal = 'pending';
 
       const eventName = r.event || currentEvent;
+      const modelProbRaw = parseFloat(r['modelprob%'] || r['model%'] || r.modelprob);
+      const modelProb = (!isNaN(modelProbRaw) && modelProbRaw >= 0 && modelProbRaw <= 100) ? modelProbRaw / 100 : null;
 
       // dedupe/update key: same date+description+price+stake = the same bet re-imported
       // (e.g. re-importing your own export after marking some bets Win/Loss elsewhere)
       const existingIdx = betTracker.findIndex(b =>
         b.date === date && b.desc === desc && b.price === price && b.stake === stake);
       if (existingIdx >= 0) {
-        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName };
+        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName, modelProb: modelProb!==null?modelProb:betTracker[existingIdx].modelProb };
         updated++;
       } else {
-        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName });
+        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName, modelProb });
         added++;
       }
     });
@@ -1587,8 +1660,8 @@ function exportCSV(kind) {
     roundScoreProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
     filename = 'round_score_props.csv';
   } else {
-    rows = [['Date','Event','Description','Type','Price','Stake','Status','Profit']];
-    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,betProfit(b)!==null?betProfit(b).toFixed(2):'']));
+    rows = [['Date','Event','Description','Type','Price','Stake','Status','ModelProb%','Profit']];
+    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,(b.modelProb!==null&&b.modelProb!==undefined)?(b.modelProb*100).toFixed(1):'',betProfit(b)!==null?betProfit(b).toFixed(2):'']));
     filename = 'bet_tracker.csv';
   }
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
