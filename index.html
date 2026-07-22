@@ -321,6 +321,15 @@
 
 <!-- ============ TAB 3: MATCHUPS ============ -->
 <div class="tabpane" id="tab-match">
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Load DraftKings Odds — paste straight from DraftKings' 2-Ball Matchups page, so the price/market% shown is always your real book, not whichever book DataGolf's feed happened to have</label>
+    <textarea id="dkMatchText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied 2-ball slate here — player names, 'Tomorrow H:MM AM' times, '2 Ball - Round N' headers, and the two prices, exactly as copied. Everything else is ignored automatically."></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="addbtn" onclick="loadDKMatchups()">Load DraftKings Matchups</button>
+      <button class="toolbtn" onclick="clearDKMatchups()">Revert to Auto (Pipeline)</button>
+      <span id="dkMatchStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+  </div>
   <div class="controls">
     <input class="search" id="matchSearch" placeholder="Search matchup...">
     <div class="filters">
@@ -329,6 +338,7 @@
       <button class="fbtn" id="fSame">SAME WAVE</button>
     </div>
     <span class="count" id="matchCount"></span>
+    <span id="matchSourceTag" style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase"></span>
     <div class="legend"><span class="lbl">MODEL % vs MARKET %</span></div>
   </div>
   <div class="wide">
@@ -348,7 +358,7 @@
       <tbody id="matchBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books. Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
+  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books (only shown for auto/pipeline data — DraftKings-loaded matchups always show your real book). Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
 </div>
 
 <!-- ============ TAB 4: ROUND SCORE ============ -->
@@ -794,18 +804,121 @@ const W20_FALLBACK=[
 ["Xander Schauffele",0.52,0.54,"-100 (bet365)"],
 ["Jon Rahm",0.48,0.46,"+105 (bet365)"]
 ];
+// ---------------- Load DraftKings 2-ball matchup odds directly, bypassing the pipeline's
+// book-preference fallback entirely — the price/market% shown is always your real book. ----------------
+let dkMatchupOverride = loadLS('rodsModel_dkMatchupOverride', null); // null = showing auto/pipeline data
+
+function parseDKMatchups(text) {
+  // Confirmed real DraftKings page format — the market label varies by event: "2 Ball -
+  // Round N" for The Open, "Matchup - Round N" for the 3M Open. Both confirmed live, so
+  // this matches either:
+  //   {Name1}vs{Name2}  OR  {Name1} / VS / {Name2}   <- header line(s), format also varies
+  //   Tomorrow H:MM AM/PM
+  //   2 Ball - Round N  |  Matchup - Round N
+  //   {Name1}
+  //   {price1}                  <- U+2212 minus sign, same DraftKings quirk as Round Score
+  //   {Name2}
+  //   {price2}
+  const normalized = text.replace(/\u2212/g, '-');
+  const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const headerRe = /^(2\s*Ball|Matchup)\s*-\s*Round\s*(\d+)$/i;
+  const priceRe = /^[+-]\d{2,4}$/;
+  const entries = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(headerRe);
+    if (!m) continue;
+    const round = 'R' + m[2];
+    if (i + 4 < lines.length &&
+        !priceRe.test(lines[i+1]) && priceRe.test(lines[i+2]) &&
+        !priceRe.test(lines[i+3]) && priceRe.test(lines[i+4])) {
+      entries.push({ round, name1: lines[i+1], price1: lines[i+2], name2: lines[i+3], price2: lines[i+4] });
+      i += 4;
+    }
+  }
+  return entries;
+}
+
+function matchupModelProb(meanA, meanB, sd, blowup, roundsCount, trials) {
+  // Mirrors sim_engine.py's matchup_prob exactly — same mixture-model simRound() already
+  // tested for Round Score, just comparing two players' totals against each other instead
+  // of one player's total against a fixed line.
+  let winsA = 0, decided = 0;
+  for (let i = 0; i < trials; i++) {
+    let totalA = 0, totalB = 0;
+    for (let r = 0; r < roundsCount; r++) {
+      totalA += simRound(meanA, sd, blowup);
+      totalB += simRound(meanB, sd, blowup);
+    }
+    if (totalA < totalB) { winsA++; decided++; }
+    else if (totalB < totalA) { decided++; }
+  }
+  return decided > 0 ? winsA / decided : 0.5;
+}
+
+function loadDKMatchups() {
+  const text = document.getElementById('dkMatchText').value;
+  const status = document.getElementById('dkMatchStatus');
+  if (!text.trim()) { status.textContent = 'Paste the DraftKings matchup slate first.'; return; }
+  const parsed = parseDKMatchups(text);
+  if (!parsed.length) { status.textContent = 'Found 0 matchups — check the paste includes "2 Ball - Round N" headers.'; return; }
+
+  const { sd, blowup } = getCourseRow();
+  const rows = [];
+  const notFound = [];
+  parsed.forEach(entry => {
+    const prowA = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name1));
+    const prowB = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name2));
+    if (!prowA || prowA[1] === null || prowA[1] === undefined) { notFound.push(entry.name1); return; }
+    if (!prowB || prowB[1] === null || prowB[1] === undefined) { notFound.push(entry.name2); return; }
+    // DraftKings' "2 Ball - Round N" is explicitly a single-round market
+    const model = matchupModelProb(prowA[1], prowB[1], sd, blowup, 1, 8000);
+    const impliedA = impliedProb(entry.price1);
+    const impliedB = impliedProb(entry.price2);
+    let noVig = null;
+    if (impliedA !== null && impliedB !== null && (impliedA + impliedB) > 0) noVig = impliedA / (impliedA + impliedB);
+    rows.push({
+      a: prowA[0], b: prowB[0], wave: '?', model,
+      market: impliedA, nv: noVig !== null ? noVig : impliedA,
+      priceA: `${entry.price1} (draftkings)`, priceB: `${entry.price2} (draftkings)`,
+      edge: model - (noVig !== null ? noVig : (impliedA !== null ? impliedA : model)),
+    });
+  });
+  if (!rows.length) { status.textContent = 'None of the pasted players matched the current field — check names.'; return; }
+
+  dkMatchupOverride = rows;
+  saveLS('rodsModel_dkMatchupOverride', dkMatchupOverride);
+  buildMatch(document.getElementById('matchSearch').value);
+  status.textContent = `Loaded ${rows.length} of ${parsed.length} matchups from DraftKings.` +
+    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
+}
+
+function clearDKMatchups() {
+  dkMatchupOverride = null;
+  saveLS('rodsModel_dkMatchupOverride', null);
+  document.getElementById('dkMatchStatus').textContent = 'Reverted to auto (pipeline) data.';
+  buildMatch(document.getElementById('matchSearch').value);
+}
+
 let matchFilter='all';
 function buildMatch(search=''){
   const body=document.getElementById('matchBody');body.innerHTML='';
-  let rows=M.map(m=>{
-    const [a,b,wave,model,market,priceA,priceB,noVig,skillGap,bookCount]=m;
-    // real no-vig: computed pipeline-side from BOTH sides' actual prices (impliedA /
-    // (impliedA+impliedB)), removing the book's overround. Falls back to raw market% only
-    // for old cached data from before this fix (noVig undefined) or when priceB was missing.
-    const nv = (noVig !== undefined && noVig !== null) ? noVig : market;
-    const edge=model-nv;
-    return {a,b,wave,model,market,nv,priceA,priceB,edge,skillGap,bookCount};
-  });
+  const sourceTag = document.getElementById('matchSourceTag');
+  let rows;
+  if (dkMatchupOverride && dkMatchupOverride.length) {
+    if (sourceTag) sourceTag.textContent = 'SOURCE: DRAFTKINGS (LOADED)';
+    rows = dkMatchupOverride.map(r => ({ ...r, skillGap: null, bookCount: null }));
+  } else {
+    if (sourceTag) sourceTag.textContent = 'SOURCE: AUTO (PIPELINE)';
+    rows=M.map(m=>{
+      const [a,b,wave,model,market,priceA,priceB,noVig,skillGap,bookCount]=m;
+      // real no-vig: computed pipeline-side from BOTH sides' actual prices (impliedA /
+      // (impliedA+impliedB)), removing the book's overround. Falls back to raw market% only
+      // for old cached data from before this fix (noVig undefined) or when priceB was missing.
+      const nv = (noVig !== undefined && noVig !== null) ? noVig : market;
+      const edge=model-nv;
+      return {a,b,wave,model,market,nv,priceA,priceB,edge,skillGap,bookCount};
+    });
+  }
   if(matchFilter==='edge')rows=rows.filter(r=>Math.abs(r.edge)>=0.03);
   if(matchFilter==='same')rows=rows.filter(r=>r.wave==='AM');
   if(search)rows=rows.filter(r=>(r.a+' '+r.b).toLowerCase().includes(search.toLowerCase()));
