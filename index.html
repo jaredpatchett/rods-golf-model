@@ -359,6 +359,44 @@
     </table>
   </div>
   <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books (only shown for auto/pipeline data — DraftKings-loaded matchups always show your real book). Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
+
+  <div class="section-hd" style="margin-top:22px">3-BALL MATCHUPS</div>
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Load DraftKings 3-Ball Odds — paste straight from DraftKings' 3-Ball Matchups page</label>
+    <textarea id="dk3BallText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied 3-ball slate here — player names, 'Tomorrow H:MM AM' times, '3 Ball - Round N' headers, and the three prices, exactly as copied. Everything else is ignored automatically."></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="addbtn" onclick="loadDK3Ball()">Load 3-Ball Matchups</button>
+      <button class="toolbtn" onclick="clearDK3Ball()">Clear</button>
+      <span id="dk3BallStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+  </div>
+  <div class="controls">
+    <input class="search" id="threeBallSearch" placeholder="Search player...">
+    <div class="filters">
+      <button class="fbtn on" id="f3All">ALL</button>
+      <button class="fbtn" id="f3Edge">EDGE ≥ 3%</button>
+    </div>
+    <span class="count" id="threeBallCount"></span>
+  </div>
+  <div class="wide">
+    <table id="threeBallTable">
+      <thead>
+        <tr>
+          <th class="player">Player</th>
+          <th>Group</th>
+          <th>Rd</th>
+          <th>Model %</th>
+          <th>Market %</th>
+          <th>No-Vig %</th>
+          <th>Edge</th>
+          <th>Price</th>
+          <th>Call</th>
+        </tr>
+      </thead>
+      <tbody id="threeBallBody"></tbody>
+    </table>
+  </div>
+  <div class="note">Same math as the 2-ball table, extended to three players: model% comes from the same simulation (now tracking who has the lowest 1-round total among all three), no-vig removes the vig across all three real DraftKings prices at once instead of two. One row per player per trio — "Group" shows the other two players so you can see the full trio at a glance.</div>
 </div>
 
 <!-- ============ TAB 4: ROUND SCORE ============ -->
@@ -899,6 +937,151 @@ function clearDKMatchups() {
   buildMatch(document.getElementById('matchSearch').value);
 }
 
+// ---------------- 3-Ball Matchups: same idea as the 2-ball loader, extended to three
+// players. DraftKings' page format confirmed real and distinct from 2-ball's — different
+// market label ("3 Ball - Round N"), three names/prices per group instead of two. ----------------
+let dk3BallData = loadLS('rodsModel_dk3BallData', null); // array of {round, players:[{name,price}x3]}
+let threeBallFilter = 'all';
+
+function parseDK3BallMatchups(text) {
+  const normalized = text.replace(/\u2212/g, '-');
+  const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const headerRe = /^3\s*Ball\s*-\s*Round\s*(\d+)$/i;
+  const priceRe = /^[+-]\d{2,4}$/;
+  const entries = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(headerRe);
+    if (!m) continue;
+    const round = 'R' + m[1];
+    if (i + 6 < lines.length &&
+        !priceRe.test(lines[i+1]) && priceRe.test(lines[i+2]) &&
+        !priceRe.test(lines[i+3]) && priceRe.test(lines[i+4]) &&
+        !priceRe.test(lines[i+5]) && priceRe.test(lines[i+6])) {
+      entries.push({
+        round,
+        name1: lines[i+1], price1: lines[i+2],
+        name2: lines[i+3], price2: lines[i+4],
+        name3: lines[i+5], price3: lines[i+6],
+      });
+      i += 6;
+    }
+  }
+  return entries;
+}
+
+function threeBallModelProb(meanA, meanB, meanC, sd, blowup, roundsCount, trials) {
+  // Same mixture-model simRound() as everywhere else — simulate all three, track who has
+  // the lowest total (wins the 3-ball), same principle as the 2-player matchupModelProb.
+  let winsA = 0, winsB = 0, winsC = 0, decided = 0;
+  for (let i = 0; i < trials; i++) {
+    let totalA = 0, totalB = 0, totalC = 0;
+    for (let r = 0; r < roundsCount; r++) {
+      totalA += simRound(meanA, sd, blowup);
+      totalB += simRound(meanB, sd, blowup);
+      totalC += simRound(meanC, sd, blowup);
+    }
+    const lowest = Math.min(totalA, totalB, totalC);
+    const winnersCount = [totalA, totalB, totalC].filter(t => t === lowest).length;
+    if (winnersCount === 1) { // guards against an exact-tie edge case with continuous distributions
+      decided++;
+      if (totalA === lowest) winsA++;
+      else if (totalB === lowest) winsB++;
+      else winsC++;
+    }
+  }
+  return decided > 0 ? [winsA/decided, winsB/decided, winsC/decided] : [1/3, 1/3, 1/3];
+}
+
+function loadDK3Ball() {
+  const text = document.getElementById('dk3BallText').value;
+  const status = document.getElementById('dk3BallStatus');
+  if (!text.trim()) { status.textContent = 'Paste the DraftKings 3-ball slate first.'; return; }
+  const parsed = parseDK3BallMatchups(text);
+  if (!parsed.length) { status.textContent = 'Found 0 trios — check the paste includes "3 Ball - Round N" headers.'; return; }
+
+  const { sd, blowup } = getCourseRow();
+  const groups = [];
+  const notFound = [];
+  parsed.forEach(entry => {
+    const prowA = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name1));
+    const prowB = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name2));
+    const prowC = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name3));
+    const missing = [[prowA,entry.name1],[prowB,entry.name2],[prowC,entry.name3]].filter(([r])=>!r||r[1]===null||r[1]===undefined);
+    if (missing.length) { missing.forEach(([,n]) => notFound.push(n)); return; }
+
+    const roundsCount = 1; // DraftKings' "3 Ball - Round N" is explicitly single-round
+    const [modelA, modelB, modelC] = threeBallModelProb(prowA[1], prowB[1], prowC[1], sd, blowup, roundsCount, 6000);
+    const impliedA = impliedProb(entry.price1), impliedB = impliedProb(entry.price2), impliedC = impliedProb(entry.price3);
+    let noVigA = null, noVigB = null, noVigC = null;
+    if (impliedA !== null && impliedB !== null && impliedC !== null) {
+      const total = impliedA + impliedB + impliedC;
+      if (total > 0) { noVigA = impliedA/total; noVigB = impliedB/total; noVigC = impliedC/total; }
+    }
+    groups.push({
+      round: entry.round,
+      players: [
+        { name: prowA[0], model: modelA, market: impliedA, nv: noVigA ?? modelA, price: entry.price1 },
+        { name: prowB[0], model: modelB, market: impliedB, nv: noVigB ?? modelB, price: entry.price2 },
+        { name: prowC[0], model: modelC, market: impliedC, nv: noVigC ?? modelC, price: entry.price3 },
+      ],
+    });
+  });
+  if (!groups.length) { status.textContent = 'None of the pasted trios matched the current field — check names.'; return; }
+
+  dk3BallData = groups;
+  saveLS('rodsModel_dk3BallData', dk3BallData);
+  buildThreeBall(document.getElementById('threeBallSearch').value);
+  status.textContent = `Loaded ${groups.length} of ${parsed.length} trios from DraftKings.` +
+    (notFound.length ? ` Not matched: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
+}
+
+function clearDK3Ball() {
+  dk3BallData = null;
+  saveLS('rodsModel_dk3BallData', null);
+  document.getElementById('dk3BallStatus').textContent = 'Cleared.';
+  buildThreeBall('');
+}
+
+function buildThreeBall(search='') {
+  const body = document.getElementById('threeBallBody');
+  if (!body) return;
+  body.innerHTML = '';
+  let rows = [];
+  (dk3BallData || []).forEach(group => {
+    group.players.forEach((p, i) => {
+      const others = group.players.filter((_, j) => j !== i).map(o => o.name).join(' / ');
+      const edge = p.model - p.nv;
+      rows.push({ name: p.name, others, round: group.round, model: p.model, market: p.market, nv: p.nv, edge, price: p.price });
+    });
+  });
+  if (threeBallFilter === 'edge') rows = rows.filter(r => Math.abs(r.edge) >= 0.03);
+  if (search) rows = rows.filter(r => (r.name + ' ' + r.others).toLowerCase().includes(search.toLowerCase()));
+  const countEl = document.getElementById('threeBallCount');
+  if (countEl) countEl.textContent = `${rows.length} rows`;
+  rows.sort((a, b) => b.edge - a.edge);
+  rows.forEach(r => {
+    const edgePct = r.edge * 100;
+    const call = edgePct >= 3 ? 'BET' : 'PASS'; // FADE doesn't cleanly apply to a 3-way market — "the other two combined" isn't one bettable side
+    const cls = edgePct >= 3 ? 'edge' : 'thin';
+    const edgeCls = edgePct >= 0 ? 'val-pos' : 'val-neg';
+    const canBet = call === 'BET' && r.price;
+    body.innerHTML += `<tr>
+      <td class="pname"><b>${r.name}</b></td>
+      <td class="cell" style="color:var(--text-dim);font-size:11px">${r.others}</td>
+      <td class="cell" style="text-align:center">${r.round}</td>
+      <td class="cell heat" style="background:${heat((r.model-0.2)/0.4)}">${(r.model*100).toFixed(1)}%</td>
+      <td class="cell">${r.market!==null?(r.market*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell">${(r.nv*100).toFixed(1)}%</td>
+      <td class="cell ${edgeCls}">${edgePct>=0?'+':''}${edgePct.toFixed(1)}%</td>
+      <td class="cell" style="color:var(--text-dim)">${r.price} (draftkings)</td>
+      <td class="cell" style="text-align:center">
+        <span class="pill ${cls}">${call}</span>
+        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="quickAddToTracker('${r.name.replace(/'/g,"\\'")} 3-Ball (${r.round})','Matchup','${r.price} (draftkings)',${r.model})">+trk</button>`:''}
+      </td>
+    </tr>`;
+  });
+}
+
 let matchFilter='all';
 function buildMatch(search=''){
   const body=document.getElementById('matchBody');body.innerHTML='';
@@ -983,6 +1166,9 @@ document.getElementById('matchSearch').addEventListener('input',e=>buildMatch(e.
 document.getElementById('fAll').addEventListener('click',function(){matchFilter='all';setActive(this);buildMatch();});
 document.getElementById('fEdge').addEventListener('click',function(){matchFilter='edge';setActive(this);buildMatch();});
 document.getElementById('fSame').addEventListener('click',function(){matchFilter='same';setActive(this);buildMatch();});
+document.getElementById('threeBallSearch').addEventListener('input',e=>buildThreeBall(e.target.value));
+document.getElementById('f3All').addEventListener('click',function(){threeBallFilter='all';setActive(this);buildThreeBall();});
+document.getElementById('f3Edge').addEventListener('click',function(){threeBallFilter='edge';setActive(this);buildThreeBall();});
 function setActive(btn){btn.parentNode.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
 document.getElementById('outSearch').addEventListener('input',e=>buildOutrights(e.target.value));
 document.getElementById('mWin').addEventListener('click',function(){setOutMarket('win',this);});
@@ -1799,7 +1985,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ---------------- data source: rods_data.json (from pipeline) or fallback ----------------
 let P = P_FALLBACK, F = F_FALLBACK, M = M_FALLBACK, W = W_FALLBACK, W5 = W5_FALLBACK, W10 = W10_FALLBACK, W20 = W20_FALLBACK;
 
-function renderAll(){ buildProjections(); buildFit(); buildMatch(); buildOutrights(); populatePlayerDatalist(); }
+function renderAll(){ buildProjections(); buildFit(); buildMatch(); buildThreeBall(); buildOutrights(); populatePlayerDatalist(); }
 
 let currentEvent = 'Unlabeled Event'; // set from meta.event once real data loads; used to auto-tag new bets by tournament
 let lastKnownEvent = loadLS('rodsModel_lastKnownEvent', null);
@@ -1820,13 +2006,15 @@ function applyMeta(meta){
     // changes. roundScoreProps/betTracker are NOT touched here — those are real records,
     // not calculation aids, and Tracker specifically is meant to accumulate across events.
     if (lastKnownEvent !== null && lastKnownEvent !== meta.event) {
-      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length);
+      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length);
       formAdjustments = {};
       fieldBaselineCorrection = 0;
       dkMatchupOverride = null;
+      dk3BallData = null;
       saveLS('rodsModel_formAdjustments', formAdjustments);
       saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
       saveLS('rodsModel_dkMatchupOverride', null);
+      saveLS('rodsModel_dk3BallData', null);
       if (hadStaleData) {
         console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, and DraftKings matchup overrides from the previous tournament.`);
         alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, and DraftKings matchup data from the previous event — these were still being applied to this event's calculations. Existing Round Score lines have been recomputed without the stale correction.`);
