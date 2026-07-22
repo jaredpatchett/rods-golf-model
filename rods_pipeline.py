@@ -130,12 +130,24 @@ def num(x, nd=1):
 # gained-vs-field prediction, confirmed live to run ~2.0-2.7 for the top of
 # the field) into an absolute score for the PROJ column. This is a rough
 # constant, not derived from real course data — Path B (computing your own
-# Birkdale scoring baseline from round-level history, see course_fit_engine.py)
-# replaces this with something real. Until then it's directionally correct
-# (better predicted players get a lower/better PROJ number) but the absolute
-# number is an approximation. 71.0 ≈ Birkdale's par 70 + a small toughening
-# margin typical of Open Championship setups.
-BASELINE_ROUND_SCORE = 71.0
+# per-course scoring baseline from round-level history, see
+# course_fit_engine.py) replaces this with something real.
+#
+# CONFIRMED BUG (found live during the 3M Open): the original 71.0 default
+# was tuned specifically for Royal Birkdale during a major championship setup
+# ("par 70 + toughening margin typical of Open Championship setups") — that's
+# a HARD, high-scoring setup. A regular PGA Tour stop is a completely
+# different scoring environment (the 3M Open historically runs LOW, often
+# -20 or better winning scores), so 71.0 makes every player's PROJ too
+# pessimistic for events like it — which directly caused a systematic
+# "everything says bet the Over" pattern on Round Score, since the model's
+# expectation was worse than the real market's for nearly every player.
+#
+# This is now a CLI parameter (--baseline-score), not a fixed constant — set
+# it based on the actual course's par for whichever event you're running.
+# Defaults to 71.0 only for backward compatibility with majors-style setups;
+# don't trust that default for a regular tour stop without checking it.
+DEFAULT_BASELINE_ROUND_SCORE = 71.0
 
 
 def build_skill_ratings(skill_payload):
@@ -170,7 +182,7 @@ def build_skill_ratings(skill_payload):
     return by_id, by_name
 
 
-def build_projections(decomp_payload, skill_by_id, skill_by_name):
+def build_projections(decomp_payload, skill_by_id, skill_by_name, baseline_round_score=DEFAULT_BASELINE_ROUND_SCORE):
     """
     Map DataGolf player-decompositions + skill-ratings -> Rod's `P` rows:
       [name, proj, ttg, ott, app, put, arg, fit]
@@ -179,6 +191,10 @@ def build_projections(decomp_payload, skill_by_id, skill_by_name):
       player_name, dg_id, final_pred, total_fit_adjustment)
     - ttg/ott/app/put/arg come from skill-ratings, joined by dg_id (falls back
       to normalized name if dg_id isn't present in either feed)
+    - baseline_round_score converts final_pred into an absolute score — see the
+      warning on DEFAULT_BASELINE_ROUND_SCORE above. Pass the real course's par
+      (roughly) for whichever event this is; don't trust the 71.0 default
+      outside of a major-style tough setup.
     """
     def pick(row, *names):
         for n in names:
@@ -199,7 +215,7 @@ def build_projections(decomp_payload, skill_by_id, skill_by_name):
             skill = skill_by_name.get(norm_name, {})
 
         final_pred = pick(r, "final_pred", "baseline_pred")
-        proj = num(BASELINE_ROUND_SCORE - final_pred) if final_pred is not None else None
+        proj = num(baseline_round_score - final_pred) if final_pred is not None else None
 
         out.append({
             "name": norm_name,
@@ -601,7 +617,7 @@ def fetch_matchups_with_fallback(key, tour):
         return [], None, 1
 
 
-def build(tour, matchup_rounds=None, finish_trials=10000):
+def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=DEFAULT_BASELINE_ROUND_SCORE):
     key = get_key()
     print(f"[1/6] player decompositions ({tour}) ...")
     decomp = fetch(EP["decomp"], key, tour=tour)
@@ -635,7 +651,9 @@ def build(tour, matchup_rounds=None, finish_trials=10000):
     n_rounds = matchup_rounds if matchup_rounds is not None else auto_rounds
 
     skill_by_id, skill_by_name = build_skill_ratings(skill)
-    proj = build_projections(decomp, skill_by_id, skill_by_name)
+    print(f"   using baseline round score: {baseline_round_score} (converts final_pred to an absolute PROJ number — "
+          f"set this to roughly this course's par, not the 71.0 major-tuned default, for a regular tour stop)")
+    proj = build_projections(decomp, skill_by_id, skill_by_name, baseline_round_score=baseline_round_score)
     waves = build_waves(field)
 
     # Confirmed live (decompositions payload top-level keys): DataGolf's own response already
@@ -697,17 +715,28 @@ def main():
                      help="Monte Carlo trials for the full-field win-probability sim. "
                           "10000 runs in a few seconds for a ~156-player field; raise for "
                           "tighter estimates, lower if the pipeline needs to run faster.")
+    ap.add_argument("--baseline-score", type=float, default=DEFAULT_BASELINE_ROUND_SCORE,
+                     help="Converts DataGolf's final_pred into an absolute PROJ score. The "
+                          "71.0 default was tuned for Royal Birkdale during a major (tough, "
+                          "high-scoring setup) — confirmed to cause a systematic 'everything "
+                          "says bet the Over' bias when left as-is for a normal, lower-scoring "
+                          "PGA Tour stop. Set this to roughly the course's par for whichever "
+                          "event you're running (e.g. --baseline-score 71 for a par-71 course), "
+                          "and correct further with the Live Form Adjustment panel once real "
+                          "scores exist.")
     args = ap.parse_args()
     if args.watch:
         print(f"watch mode: every {args.watch}s (ctrl-C to stop)")
         while True:
             try:
-                build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials)
+                build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials,
+                      baseline_round_score=args.baseline_score)
             except SystemExit as e:
                 print(e)
             time.sleep(args.watch)
     else:
-        build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials)
+        build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials,
+              baseline_round_score=args.baseline_score)
 
 
 if __name__ == "__main__":
