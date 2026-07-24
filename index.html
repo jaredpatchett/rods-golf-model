@@ -1198,7 +1198,12 @@ document.getElementById('rsRoundsCompleted').addEventListener('input', function(
     document.getElementById('rsBlendWeight').value = computeAutoBlendWeight(n).toFixed(3);
   }
 });
-document.getElementById('rsBlendWeight').value = computeAutoBlendWeight(parseInt(document.getElementById('rsRoundsCompleted').value, 10)).toFixed(3);
+// NOTE: do not call computeAutoBlendWeight() synchronously here — it depends on F (course
+// data), which isn't declared until later in the script (let P = P_FALLBACK, F = F_FALLBACK,
+// ...). Calling it this early throws "Cannot access 'F' before initialization" and halts the
+// ENTIRE script — nothing after this point runs, including the fetch/render chain, which is
+// exactly what broke the live page. applyMeta() (called safely after the fetch resolves,
+// well after F exists) already refreshes this value correctly — see there instead.
 
 // ---------------- round score: client-side sim (mirrors sim_engine.py's mixture model) ----------------
 const RS_TOUR_BASELINE_SD = 2.9;
