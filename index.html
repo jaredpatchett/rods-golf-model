@@ -1505,6 +1505,21 @@ function getEffectiveProj(playerName, staticProj) {
 }
 
 // ---------------- bulk import: paste DraftKings' round-score slate, parse, add all at once ----------------
+function parseKeywordNumber(lines, idx, keyword) {
+  // Handles BOTH confirmed real DraftKings formats: "Over67.5" jammed together on one line
+  // (confirmed live for Round 2), or "Over" / "67.5" split across two separate lines
+  // (confirmed live for earlier rounds — the same page apparently renders this differently
+  // at different times, not something we control). Returns {value, nextIdx} or null.
+  if (idx >= lines.length) return null;
+  const jammedRe = new RegExp('^' + keyword + '\\s*(-?\\d+\\.?\\d*)$', 'i');
+  const jm = lines[idx].match(jammedRe);
+  if (jm) return { value: parseFloat(jm[1]), nextIdx: idx + 1 };
+  const bareRe = new RegExp('^' + keyword + '$', 'i');
+  if (bareRe.test(lines[idx]) && idx + 1 < lines.length && /^-?\d+\.?\d*$/.test(lines[idx+1])) {
+    return { value: parseFloat(lines[idx+1]), nextIdx: idx + 2 };
+  }
+  return null;
+}
 function parseBulkRoundScoreText(text) {
   // DraftKings uses U+2212 (minus sign) for negative prices, not a plain ASCII hyphen —
   // confirmed against Rod's actual pasted text, silently breaks parseFloat if not normalized first.
@@ -1512,19 +1527,24 @@ function parseBulkRoundScoreText(text) {
   const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const entries = [];
   const headerRe = /^(.+?)\s+Round Score\s*-\s*Round\s*(\d+)\s*O\/U$/i;
+  const priceRe = /^[+-]\d{2,4}$/;
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(headerRe);
     if (!m) continue;
     const player = m[1].trim();
     const roundNum = m[2];
-    if (i + 6 < lines.length && /^over$/i.test(lines[i+1]) && /^under$/i.test(lines[i+4])) {
-      entries.push({
-        player, round: 'R' + roundNum,
-        line: parseFloat(lines[i+2]), overPrice: lines[i+3],
-        underLine: parseFloat(lines[i+5]), underPrice: lines[i+6],
-      });
-      i += 6; // skip past the 6 lines just consumed
-    }
+    const over = parseKeywordNumber(lines, i + 1, 'Over');
+    if (!over || over.nextIdx >= lines.length || !priceRe.test(lines[over.nextIdx])) continue;
+    const overPrice = lines[over.nextIdx];
+    const under = parseKeywordNumber(lines, over.nextIdx + 1, 'Under');
+    if (!under || under.nextIdx > lines.length || !priceRe.test(lines[under.nextIdx])) continue;
+    const underPrice = lines[under.nextIdx];
+    entries.push({
+      player, round: 'R' + roundNum,
+      line: over.value, overPrice,
+      underLine: under.value, underPrice,
+    });
+    i = under.nextIdx; // resume scanning after everything just consumed
   }
   return entries;
 }
