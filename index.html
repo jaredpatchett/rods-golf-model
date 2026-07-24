@@ -457,11 +457,11 @@
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <div class="field" style="margin:0">
         <label>Rounds Completed</label>
-        <input class="finput" id="rsRoundsCompleted" type="number" value="3" min="1" max="4" style="min-width:60px">
+        <input class="finput" id="rsRoundsCompleted" type="number" value="1" min="1" max="4" style="min-width:60px">
       </div>
       <div class="field" style="margin:0">
-        <label title="How much weight to give actual current-week performance vs. the static pre-tournament PROJ. Default 0.10 — a real 2025 empirical Bayes study (Brill &amp; Wyner, UPenn/Wharton, arXiv:2506.21822) found even a FULL SEASON of putting data is 'nearly indistinguishable from noise' for most golfers. 3 rounds of overall score is a much smaller, noisier sample than that — the shrinkage-formula estimate (using this course's own scoring variance) lands near 0.09, consistent with that finding. A real tournament-specific backtest would need DataGolf's historical raw data, which isn't accessible on the current plan.">Blend Weight (0-1)</label>
-        <input class="finput" id="rsBlendWeight" type="number" value="0.10" min="0" max="1" step="0.05" style="min-width:60px">
+        <label title="Auto-computed from a real shrinkage formula (k* = signal_variance / (signal_variance + noise_variance/roundsCompleted)), using THIS course's actual scoring variance and however many rounds you've entered above. Fewer rounds = noisier sample = automatically lower weight — 1 round should get roughly 1/3 the weight 3 rounds would, which a flat manual number can't do on its own. Still editable if you want to override it.">Blend Weight (auto)</label>
+        <input class="finput" id="rsBlendWeight" type="number" value="0.10" min="0" max="1" step="0.01" style="min-width:60px">
       </div>
       <button class="addbtn" onclick="applyLeaderboardAdjustment()" style="border-color:var(--amber);color:var(--amber)">Apply Form Adjustment</button>
       <button class="toolbtn" onclick="clearFormAdjustments()">Clear Adjustments</button>
@@ -1192,6 +1192,13 @@ document.getElementById('mTop20').addEventListener('click',function(){setOutMark
 document.getElementById('trEventFilter').addEventListener('change',function(){trackerEventFilter=this.value;renderTracker();});
 document.getElementById('rsFilterAll').addEventListener('click',function(){rsFilter='all';setActive(this);renderRoundScore();});
 document.getElementById('rsFilterPlays').addEventListener('click',function(){rsFilter='plays';setActive(this);renderRoundScore();});
+document.getElementById('rsRoundsCompleted').addEventListener('input', function(){
+  const n = parseInt(this.value, 10);
+  if (!isNaN(n) && n >= 1) {
+    document.getElementById('rsBlendWeight').value = computeAutoBlendWeight(n).toFixed(3);
+  }
+});
+document.getElementById('rsBlendWeight').value = computeAutoBlendWeight(parseInt(document.getElementById('rsRoundsCompleted').value, 10)).toFixed(3);
 
 // ---------------- round score: client-side sim (mirrors sim_engine.py's mixture model) ----------------
 const RS_TOUR_BASELINE_SD = 2.9;
@@ -1382,7 +1389,23 @@ function parseLeaderboardText(text) {
   return Array.from(merged.values());
 }
 
-let fieldBaselineCorrection = loadLS('rodsModel_fieldBaselineCorrection', 0); // strokes to subtract from EVERY player's static PROJ
+let fieldBaselineCorrection = loadLS('rodsModel_fieldBaselineCorrection', 0); // strokes to ADD to every player's static PROJ (see applyLeaderboardAdjustment)
+
+// Real shrinkage formula: k* = signal_variance / (signal_variance + noise_variance/n).
+// signal_sd=0.7 is the same rough estimate used before (grounded in the empirical Bayes
+// putting-skill finding — see the Blend Weight tooltip); noise comes from THIS course's
+// actual round-to-round variance (via getCourseRow(), already correctly course-aware).
+// The key fix: this now properly accounts for roundsCompleted — 1 round of data is a much
+// noisier sample than 3, and should get proportionally LESS weight, not the same flat
+// number. Confirmed live: applying the old flat 0.10 to just 1 round of real data produced
+// several 15-18% "edges" that were mostly amplified single-round noise, not real signal.
+function computeAutoBlendWeight(roundsCompleted) {
+  const { sd } = getCourseRow();
+  const courseSd = sd || RS_TOUR_BASELINE_SD;
+  const signalVar = 0.7 * 0.7;
+  const noiseVarOfAvg = (courseSd * courseSd) / Math.max(1, roundsCompleted);
+  return signalVar / (signalVar + noiseVarOfAvg);
+}
 
 function applyLeaderboardAdjustment() {
   const text = document.getElementById('rsLeaderboardText').value;
@@ -1468,7 +1491,10 @@ function clearFormAdjustments() {
 }
 
 function getEffectiveProj(playerName, staticProj) {
-  const baselineCorrected = staticProj - fieldBaselineCorrection;
+  // Confirmed sign bug, fixed: matched players get staticProj + fieldBaselineCorrection
+  // (see applyLeaderboardAdjustment) — this fallback for UNMATCHED players was subtracting
+  // instead of adding, moving their number the wrong direction relative to everyone else.
+  const baselineCorrected = staticProj + fieldBaselineCorrection;
   const adj = formAdjustments[normalizeNameForMatch(playerName)];
   return adj ? adj.adjustedProj : baselineCorrected;
 }
@@ -2129,6 +2155,13 @@ function applyMeta(meta){
     const el=document.getElementById('dataAsOf');
     if(el) el.textContent = meta.generated;
   }
+  // real course data just loaded (or changed) — refresh the auto-computed blend weight so
+  // it's based on this event's actual course variance, not whatever was there before the
+  // fetch completed (placeholder data on first load, or the previous event's course on a
+  // tournament change).
+  const rc = document.getElementById('rsRoundsCompleted');
+  const bw = document.getElementById('rsBlendWeight');
+  if (rc && bw) bw.value = computeAutoBlendWeight(parseInt(rc.value, 10) || 1).toFixed(3);
 }
 
 fetch('rods_data.json',{cache:'no-store'})
