@@ -1841,6 +1841,17 @@ function setBetStatus(id, status) {
   saveLS('rodsModel_betTracker', betTracker);
   renderTracker();
 }
+function toggleWagered(id) {
+  const b = betTracker.find(x => x.id === id);
+  if (!b) return;
+  // backward-compatible default matches getEffectiveProj's rule elsewhere: missing/undefined
+  // wagered field is treated as a real wager (the only kind that existed before this
+  // feature), so the first toggle on an old bet correctly flips it to tracking-only.
+  const currentlyWagered = b.wagered !== false;
+  b.wagered = !currentlyWagered;
+  saveLS('rodsModel_betTracker', betTracker);
+  renderTracker(); // only changes Total Staked/Profit/ROI/Record — calibration is unaffected, it doesn't check this field
+}
 function deleteBet(id) {
   betTracker = betTracker.filter(b => b.id !== id);
   saveLS('rodsModel_betTracker', betTracker);
@@ -1903,7 +1914,10 @@ function renderTracker() {
     const profitDisp = profit === null ? '—' : (profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
     const profitCls = profit === null ? '' : (profit>=0?'val-pos':'val-neg');
     body.innerHTML += `<tr>
-      <td class="pname">${b.desc}${!isWagered?' <span class="badge push" style="font-size:8px" title="Tracking only — not a real wager, excluded from Total Staked / Profit / ROI, still counted for calibration">TRACKING</span>':''}<div style="color:var(--text-faint);font-size:9px;margin-top:2px">${b.event||''}</div></td>
+      <td class="pname">${b.desc}${!isWagered
+          ? ` <span class="badge push" style="font-size:8px;cursor:pointer" onclick="toggleWagered(${b.id})" title="Tracking only — excluded from Total Staked / Profit / ROI, still counted for calibration either way. Click to mark as a real wager.">TRACKING (click to mark real)</span>`
+          : ` <span style="font-size:8px;color:var(--text-faint);cursor:pointer" onclick="toggleWagered(${b.id})" title="Counts toward Total Staked / Profit / ROI. Click to mark as tracking-only instead.">[mark tracking-only]</span>`
+        }<div style="color:var(--text-faint);font-size:9px;margin-top:2px">${b.event||''}</div></td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.date}</td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.type}</td>
       <td class="cell">${b.price}</td>
