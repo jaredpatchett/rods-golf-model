@@ -1838,6 +1838,31 @@ function renderTracker() {
 // before this feature existed, or added without a model% on the manual form, won't have one
 // and are correctly excluded rather than silently treated as some default.
 const CALIBRATION_BUCKETS = [[0.30,0.40],[0.40,0.50],[0.50,0.60],[0.60,0.70],[0.70,0.80],[0.80,0.90],[0.90,1.01]];
+function extractBook(priceStr) {
+  if (!priceStr) return 'Unknown';
+  const m = String(priceStr).match(/\(([^)]+)\)/);
+  return m ? m[1] : 'Unknown';
+}
+function computeCalibrationByBook(bets) {
+  // bets: [{modelProb, outcome, book}] — same predicted-vs-actual analysis as
+  // computeCalibration, just grouped by which book priced the bet instead of by predicted
+  // probability range. Lets you see whether edges sourced from one book are more reliable
+  // than another, which the aggregate number can't show — a mix of one book doing fine and
+  // another going cold looks identical to "the model is wrong" in the combined total.
+  const byBook = {};
+  bets.forEach(b => {
+    if (!byBook[b.book]) byBook[b.book] = [];
+    byBook[b.book].push(b);
+  });
+  return Object.keys(byBook).map(book => {
+    const bookBets = byBook[book];
+    const n = bookBets.length;
+    const avgPredicted = bookBets.reduce((s,b) => s + b.modelProb, 0) / n;
+    const actualWinRate = bookBets.reduce((s,b) => s + b.outcome, 0) / n;
+    const brier = bookBets.reduce((s,b) => s + Math.pow(b.modelProb - b.outcome, 2), 0) / n;
+    return { book, n, avgPredicted, actualWinRate, gap: avgPredicted - actualWinRate, brier };
+  }).sort((a,b) => b.n - a.n);
+}
 function computeCalibration(bets) {
   const buckets = CALIBRATION_BUCKETS.map(([lo,hi]) => ({ lo, hi, bets: [] }));
   bets.forEach(b => {
@@ -1858,7 +1883,7 @@ function renderCalibration(scopedBets) {
   if (!container) return;
   const usable = scopedBets
     .filter(b => (b.status === 'win' || b.status === 'loss') && b.modelProb !== null && b.modelProb !== undefined)
-    .map(b => ({ modelProb: b.modelProb, outcome: b.status === 'win' ? 1 : 0 }));
+    .map(b => ({ modelProb: b.modelProb, outcome: b.status === 'win' ? 1 : 0, book: extractBook(b.price) }));
 
   if (usable.length < 5) {
     container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
@@ -1879,6 +1904,22 @@ function renderCalibration(scopedBets) {
       <td class="cell ${gapCls}">${gapPct>=0?'+':''}${gapPct.toFixed(1)}pp</td>
     </tr>`;
   });
+
+  const byBook = computeCalibrationByBook(usable);
+  let bookRows = '';
+  byBook.forEach(bk => {
+    const gapPct = bk.gap * 100;
+    const gapCls = Math.abs(gapPct) < 5 ? '' : (gapPct > 0 ? 'val-neg' : 'val-pos');
+    bookRows += `<tr>
+      <td class="pname">${bk.book}</td>
+      <td class="cell" style="text-align:center">${bk.n}</td>
+      <td class="cell">${(bk.avgPredicted*100).toFixed(1)}%</td>
+      <td class="cell">${(bk.actualWinRate*100).toFixed(1)}%</td>
+      <td class="cell ${gapCls}">${gapPct>=0?'+':''}${gapPct.toFixed(1)}pp</td>
+      <td class="cell">${bk.brier.toFixed(3)}</td>
+    </tr>`;
+  });
+
   container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
     <div class="summary" style="margin-bottom:10px">
       <div class="sblock"><div class="slbl">Settled Bets w/ Model %</div><div class="sval">${n}</div></div>
@@ -1887,7 +1928,12 @@ function renderCalibration(scopedBets) {
     </div>
     <table><thead><tr><th class="player">Predicted Range</th><th># Bets</th><th>Avg Predicted</th><th>Actual Win Rate</th><th>Gap</th></tr></thead>
     <tbody>${rows}</tbody></table>
-    <div class="note">Small-sample buckets (single digits) will be noisy — don't over-read one or two bets in a range. This gets more meaningful as it accumulates across tournaments; keep "Viewing: All Events" selected above to see the full history rather than just one event.</div>`;
+    <div class="note">Small-sample buckets (single digits) will be noisy — don't over-read one or two bets in a range. This gets more meaningful as it accumulates across tournaments; keep "Viewing: All Events" selected above to see the full history rather than just one event.</div>
+
+    <div class="section-hd" style="margin-top:18px">CALIBRATION BY BOOK</div>
+    <table><thead><tr><th class="player">Book</th><th># Bets</th><th>Avg Predicted</th><th>Actual Win Rate</th><th>Gap</th><th>Brier</th></tr></thead>
+    <tbody>${bookRows}</tbody></table>
+    <div class="note">Parsed straight from the price you already store on each bet (e.g. "-138 (fanduel)") — no extra tagging needed. Different books can genuinely have different line sharpness; this lets the data show whether edges sourced from one book are holding up differently than another, rather than guessing from one day's results. Same small-sample caution applies — a book with 1-3 bets tells you almost nothing yet.</div>`;
 }
 
 // ---------------- shared: localStorage + CSV export ----------------
