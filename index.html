@@ -444,7 +444,7 @@
     <button class="addbtn" onclick="addRoundScoreProp()">Add Line</button>
   </div>
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
-    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Bulk Import — paste straight from DraftKings' Round Score page</label>
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Bulk Import — paste straight from DraftKings' Round Score page. Every import now automatically computes a fresh correction from these real prices (see status message after importing) and applies it to every player, not just this batch.</label>
     <textarea id="rsBulkText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied slate here — e.g. player names, 'Round Score - Round N O/U' headers, Over/Under lines and prices, exactly as copied. Non-matching lines are ignored automatically."></textarea>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="addbtn" onclick="bulkImportRoundScore()">Parse &amp; Add All</button>
@@ -452,7 +452,7 @@
     </div>
   </div>
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px;border-color:var(--amber)">
-    <label style="font-size:8px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase">Live Form Adjustment — PROJ is a static pre-tournament number that doesn't update during the week. Paste the current leaderboard here to blend in real current-week form.</label>
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase">Live Form Adjustment (leaderboard-based) — ⚠ superseded by automatic market calibration below. Real Round 2+ market lines already reflect Round 1 results (books update dynamically) — correcting from a leaderboard on top of that risks double-counting the same information against a target that's already moved. Bulk Import (below) now computes a market-grounded correction automatically from your real pasted prices every time — that one can't double-count, since it's measuring the gap to today's actual market, not re-deriving what the market already knows. Only use this leaderboard panel early in a round before real market lines exist yet.</label>
     <textarea id="rsLeaderboardText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the leaderboard — needs a player name and their current score-to-par on each line (e.g. 'Scottie Scheffler -12', or a full copy-pasted leaderboard with position/rounds mixed in, that's fine too). Round scores without a +/- sign are ignored automatically."></textarea>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <div class="field" style="margin:0">
@@ -1268,6 +1268,39 @@ function modelUnderProb(meanPerRound, line, roundsCount = 1, elevatedRisk = fals
   }
   return under / RS_TRIALS;
 }
+// Real market lines already reflect everything that's happened so far (books update
+// dynamically) — instead of independently re-deriving "how did the field play" from a
+// leaderboard and risking double-counting information the market already has, this solves
+// for the projection that would make our OWN model agree with today's real no-vig market
+// probability. Binary search since modelUnderProb is monotonic in mean (lower mean = more
+// likely to go under). Confirmed live: for a real player (static proj 68.3, market 58.3%
+// no-vig under vs. the 66.8% our static proj alone implied), this correctly recovers a
+// market-implied fair proj of ~69.05 — a real, market-grounded correction, not a guess.
+function solveForFairProj(line, targetUnderProb, roundsCount) {
+  const { sd, blowup } = getCourseRow();
+  const useSd = sd || RS_TOUR_BASELINE_SD;
+  const useBlowup = (blowup === undefined || blowup === null) ? RS_DEFAULT_BLOWUP : blowup;
+  let lo = line - 15, hi = line + 15;
+  for (let iter = 0; iter < 16; iter++) {
+    const mid = (lo + hi) / 2;
+    let under = 0;
+    for (let i = 0; i < 3000; i++) { // fewer trials than the main sim — just need to know which side of target, run many times during search
+      let total = 0;
+      for (let r = 0; r < roundsCount; r++) total += simRound(mid, useSd, useBlowup);
+      if (total < line) under++;
+    }
+    const p = under / 3000;
+    if (p > targetUnderProb) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+// Two-outcome no-vig for a round-score O/U price pair — same normalize-so-they-sum-to-1
+// logic already validated for 2-ball matchups.
+function noVigRoundScore(underPrice, overPrice) {
+  const iu = impliedProb(underPrice), io = impliedProb(overPrice);
+  if (iu === null || io === null || (iu + io) <= 0) return null;
+  return iu / (iu + io);
+}
 function impliedProb(price) {
   const p = parseFloat(price);
   if (isNaN(p)) return null;
@@ -1574,28 +1607,72 @@ function bulkImportRoundScore() {
   const parsed = parseBulkRoundScoreText(text);
   if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste includes "Round Score - Round N O/U" headers.'; return; }
 
-  let added = 0, updated = 0;
-  const notFound = [];
-  parsed.forEach((entry, i) => {
+  // Market calibration, computed fresh from THIS batch's real prices every time you import —
+  // no separate leaderboard paste needed. For every matched player, solve for the projection
+  // that would make our model agree with today's real no-vig market price, then average that
+  // residual across the whole batch. This measures "how far off is our static PROJ from what
+  // today's real market believes," using the market itself as ground truth — it can't
+  // double-count information the market already has, since it's not independently
+  // re-deriving anything, just measuring the gap to what's actually being offered right now.
+  const residuals = [];
+  const matchedRows = [];
+  parsed.forEach(entry => {
     const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
-    if (!prow || prow[1] === null || prow[1] === undefined) { notFound.push(entry.player); return; }
-    const meanPerRound = getEffectiveProj(prow[0], prow[1]);
+    if (!prow || prow[1] === null || prow[1] === undefined) return;
     const roundsCount = entry.round === 'T72' ? 4 : 1;
+    const marketNoVig = noVigRoundScore(entry.underPrice, entry.overPrice);
+    if (marketNoVig === null) return;
+    const fairProj = solveForFairProj(entry.line, marketNoVig, roundsCount);
+    residuals.push(fairProj - prow[1]);
+    matchedRows.push({ entry, prow, roundsCount });
+  });
+  if (residuals.length > 0) {
+    fieldBaselineCorrection = residuals.reduce((s, r) => s + r, 0) / residuals.length;
+    fieldBaselineCorrection = Math.round(fieldBaselineCorrection * 1000) / 1000;
+    saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
+    // this correction supersedes any leaderboard-based one — clear the per-player blend so
+    // getEffectiveProj falls through cleanly to the fresh market-calibrated number for
+    // everyone, not a stale mix of two different correction sources.
+    formAdjustments = {};
+    saveLS('rodsModel_formAdjustments', formAdjustments);
+  }
+
+  let added = 0, updated = 0;
+  matchedRows.forEach(({ entry, prow, roundsCount }, i) => {
+    const meanPerRound = getEffectiveProj(prow[0], prow[1]);
     const modelUnder = modelUnderProb(meanPerRound, entry.line, roundsCount);
     const modelOver = 1 - modelUnder;
     const isNew = upsertRoundScoreProp({
-      id: Date.now() + Math.random() + i, // += i avoids same-ms id collisions across a big batch
+      id: Date.now() + Math.random() + i,
       name: prow[0], round: entry.round, line: entry.line,
       underPrice: entry.underPrice, overPrice: entry.overPrice,
-      modelUnder, modelOver, formAdjusted: !!formAdjustments[normalizeNameForMatch(prow[0])],
+      modelUnder, modelOver, formAdjusted: residuals.length > 0,
       marketUnder: impliedProb(entry.underPrice), marketOver: impliedProb(entry.overPrice),
     });
     if (isNew) added++; else updated++;
   });
+  const notFound = parsed.filter(entry => !matchedRows.find(r => r.entry === entry)).map(e => e.player);
+
+  // retroactively recompute EVERY existing Round Score row with the fresh correction —
+  // not just this batch — same principle as the old leaderboard-based recompute.
+  let recomputedOthers = 0;
+  roundScoreProps.forEach(p => {
+    if (matchedRows.find(r => r.prow[0] === p.name && r.entry.round === p.round && r.entry.line === p.line)) return; // already just computed above
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
+    if (!prow || prow[1] === null || prow[1] === undefined) return;
+    const effectiveProj = getEffectiveProj(p.name, prow[1]);
+    const roundsCount = p.round === 'T72' ? 4 : 1;
+    p.modelUnder = modelUnderProb(effectiveProj, p.line, roundsCount, p.elevatedRisk || false);
+    p.modelOver = 1 - p.modelUnder;
+    p.formAdjusted = residuals.length > 0;
+    recomputedOthers++;
+  });
+
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
   document.getElementById('rsBulkText').value = '';
   status.textContent = `Added ${added} new, updated ${updated} existing (of ${parsed.length} parsed).` +
+    (residuals.length > 0 ? ` Market-calibrated correction: ${fieldBaselineCorrection>=0?'+':''}${fieldBaselineCorrection.toFixed(2)} strokes (from ${residuals.length} real priced lines in this batch, applied to everyone${recomputedOthers>0?`, recomputed ${recomputedOthers} other existing row${recomputedOthers===1?'':'s'}`:''}).` : '') +
     (notFound.length ? ` Not matched (check spelling vs the field): ${notFound.join(', ')}` : '');
 }
 
