@@ -451,6 +451,20 @@
       <span id="rsBulkStatus" style="font-size:10px;color:var(--text-dim)"></span>
     </div>
   </div>
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Bulk Import (Fanatics) — paste straight from Fanatics Sportsbook's Round Score page, one player per line: "Name | OX.X price | UX.X price". Fanatics' page doesn't include a round number in its text, so pick the round below — it applies to every line in this paste.</label>
+    <textarea id="rsFanaticsText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Scottie Scheffler | O66.5 +100 | U66.5 -150&#10;Troy Merritt | O69.5 -125 | U69.5 -115&#10;..."></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="field" style="margin:0">
+        <label>Round</label>
+        <select class="finput" id="rsFanaticsRound" style="min-width:70px">
+          <option value="R1">R1</option><option value="R2">R2</option><option value="R3">R3</option><option value="R4">R4</option><option value="T72">Tournament (T72)</option>
+        </select>
+      </div>
+      <button class="addbtn" onclick="bulkImportFanaticsRoundScore()">Parse &amp; Add All</button>
+      <span id="rsFanaticsStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+  </div>
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px;border-color:var(--amber)">
     <label style="font-size:8px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase">Live Form Adjustment (leaderboard-based) — ⚠ superseded by automatic market calibration below. Real Round 2+ market lines already reflect Round 1 results (books update dynamically) — correcting from a leaderboard on top of that risks double-counting the same information against a target that's already moved. Bulk Import (below) now computes a market-grounded correction automatically from your real pasted prices every time — that one can't double-count, since it's measuring the gap to today's actual market, not re-deriving what the market already knows. Only use this leaderboard panel early in a round before real market lines exist yet.</label>
     <textarea id="rsLeaderboardText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the leaderboard — needs a player name and their current score-to-par on each line (e.g. 'Scottie Scheffler -12', or a full copy-pasted leaderboard with position/rounds mixed in, that's fine too). Round scores without a +/- sign are ignored automatically."></textarea>
@@ -1609,23 +1623,37 @@ function parseBulkRoundScoreText(text) {
     const roundNum = m[2];
     const over = parseKeywordNumber(lines, i + 1, 'Over');
     if (!over || over.nextIdx >= lines.length || !priceRe.test(lines[over.nextIdx])) continue;
-    const overPrice = lines[over.nextIdx] + ' (draftkings)';
+    const overPrice = lines[over.nextIdx]; // book gets tagged later, in processRoundScoreImport — same bare price feeds either book's import path
     const under = parseKeywordNumber(lines, over.nextIdx + 1, 'Under');
     if (!under || under.nextIdx > lines.length || !priceRe.test(lines[under.nextIdx])) continue;
-    const underPrice = lines[under.nextIdx] + ' (draftkings)';
-    // Tagged with the book here, at the single source every downstream path reads from —
-    // DraftKings' own Round Score page never includes a book name in its text (it doesn't
-    // need to, it's already on DraftKings' page), and this bulk importer only ever handles
-    // DraftKings pastes (no multi-book support here, unlike Matchups). Without this, bets
-    // added to the Tracker via +trk had no book attached at all, showing up as "Unknown" in
-    // Calibration by Book — confirmed live, Rod's real DraftKings-sourced Round Score bets
-    // were the ones landing in that bucket.
+    const underPrice = lines[under.nextIdx];
     entries.push({
       player, round: 'R' + roundNum,
       line: over.value, overPrice,
       underLine: under.value, underPrice,
     });
     i = under.nextIdx; // resume scanning after everything just consumed
+  }
+  return entries;
+}
+// Fanatics' page uses a completely different layout: one line per player, pipe-delimited,
+// "O"/"U" jammed directly against the line number instead of DraftKings' multi-line "Round
+// Score - Round N O/U" header format. No round number appears anywhere in the text at all
+// (confirmed against a real paste), so the round has to come from elsewhere — see
+// bulkImportFanaticsRoundScore(), which applies whatever round is selected in the UI to
+// every parsed entry. Regex-based rather than line-by-line since a real paste had two
+// players' entries run together with no line break between them.
+function parseFanaticsRoundScoreText(text) {
+  const normalized = text.replace(/\u2212/g, '-');
+  const entryRe = /([A-Za-z][A-Za-z.\-' ]*?)\s*\|\s*O(\d+\.?\d*)\s*([+-]\d+)\s*\|\s*U(\d+\.?\d*)\s*([+-]\d+)/g;
+  const entries = [];
+  let m;
+  while ((m = entryRe.exec(normalized)) !== null) {
+    entries.push({
+      player: m[1].trim(),
+      line: parseFloat(m[2]), overPrice: m[3],
+      underLine: parseFloat(m[4]), underPrice: m[5],
+    });
   }
   return entries;
 }
@@ -1648,64 +1676,53 @@ function upsertRoundScoreProp(entry) {
   return true; // newly added
 }
 
-function bulkImportRoundScore() {
-  const text = document.getElementById('rsBulkText').value;
-  const status = document.getElementById('rsBulkStatus');
-  if (!text.trim()) { status.textContent = 'Paste something first.'; return; }
-  const parsed = parseBulkRoundScoreText(text);
-  if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste includes "Round Score - Round N O/U" headers.'; return; }
-
-  // Market calibration, computed fresh from THIS batch's real prices every time you import —
-  // no separate leaderboard paste needed. For every matched player, solve for the projection
-  // that would make our model agree with today's real no-vig market price, then average that
-  // residual across the whole batch. This measures "how far off is our static PROJ from what
-  // today's real market believes," using the market itself as ground truth — it can't
-  // double-count information the market already has, since it's not independently
-  // re-deriving anything, just measuring the gap to what's actually being offered right now.
+// Shared by both DraftKings and Fanatics imports — parsing differs by format, but matching,
+// market calibration, and storage are identical regardless of which book the prices came
+// from. bookName gets tagged onto every price here, once, in one place, so it can never
+// silently go missing (that was the original "Unknown" book bug) or get mislabeled onto the
+// wrong book (a risk once a second format existed).
+function processRoundScoreImport(parsed, bookName) {
   const residuals = [];
   const matchedRows = [];
   parsed.forEach(entry => {
     const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
     if (!prow || prow[1] === null || prow[1] === undefined) return;
     const roundsCount = entry.round === 'T72' ? 4 : 1;
-    const marketNoVig = noVigRoundScore(entry.underPrice, entry.overPrice);
+    const taggedUnder = `${entry.underPrice} (${bookName})`;
+    const taggedOver = `${entry.overPrice} (${bookName})`;
+    const marketNoVig = noVigRoundScore(taggedUnder, taggedOver);
     if (marketNoVig === null) return;
     const fairProj = solveForFairProj(entry.line, marketNoVig, roundsCount);
     residuals.push(fairProj - prow[1]);
-    matchedRows.push({ entry, prow, roundsCount });
+    matchedRows.push({ entry, prow, roundsCount, taggedUnder, taggedOver });
   });
   if (residuals.length > 0) {
     fieldBaselineCorrection = residuals.reduce((s, r) => s + r, 0) / residuals.length;
     fieldBaselineCorrection = Math.round(fieldBaselineCorrection * 1000) / 1000;
     saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
-    // this correction supersedes any leaderboard-based one — clear the per-player blend so
-    // getEffectiveProj falls through cleanly to the fresh market-calibrated number for
-    // everyone, not a stale mix of two different correction sources.
     formAdjustments = {};
     saveLS('rodsModel_formAdjustments', formAdjustments);
   }
 
   let added = 0, updated = 0;
-  matchedRows.forEach(({ entry, prow, roundsCount }, i) => {
+  matchedRows.forEach(({ entry, prow, roundsCount, taggedUnder, taggedOver }, i) => {
     const meanPerRound = getEffectiveProj(prow[0], prow[1]);
     const modelUnder = modelUnderProb(meanPerRound, entry.line, roundsCount);
     const modelOver = 1 - modelUnder;
     const isNew = upsertRoundScoreProp({
       id: Date.now() + Math.random() + i,
       name: prow[0], round: entry.round, line: entry.line,
-      underPrice: entry.underPrice, overPrice: entry.overPrice,
+      underPrice: taggedUnder, overPrice: taggedOver,
       modelUnder, modelOver, formAdjusted: residuals.length > 0,
-      marketUnder: impliedProb(entry.underPrice), marketOver: impliedProb(entry.overPrice),
+      marketUnder: impliedProb(taggedUnder), marketOver: impliedProb(taggedOver),
     });
     if (isNew) added++; else updated++;
   });
   const notFound = parsed.filter(entry => !matchedRows.find(r => r.entry === entry)).map(e => e.player);
 
-  // retroactively recompute EVERY existing Round Score row with the fresh correction —
-  // not just this batch — same principle as the old leaderboard-based recompute.
   let recomputedOthers = 0;
   roundScoreProps.forEach(p => {
-    if (matchedRows.find(r => r.prow[0] === p.name && r.entry.round === p.round && r.entry.line === p.line)) return; // already just computed above
+    if (matchedRows.find(r => r.prow[0] === p.name && r.entry.round === p.round && r.entry.line === p.line)) return;
     const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
     if (!prow || prow[1] === null || prow[1] === undefined) return;
     const effectiveProj = getEffectiveProj(p.name, prow[1]);
@@ -1718,10 +1735,33 @@ function bulkImportRoundScore() {
 
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
+  return { added, updated, notFound, correction: residuals.length > 0 ? fieldBaselineCorrection : null, correctionN: residuals.length, recomputedOthers, totalParsed: parsed.length };
+}
+function bulkImportRoundScore() {
+  const text = document.getElementById('rsBulkText').value;
+  const status = document.getElementById('rsBulkStatus');
+  if (!text.trim()) { status.textContent = 'Paste something first.'; return; }
+  const parsed = parseBulkRoundScoreText(text);
+  if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste includes "Round Score - Round N O/U" headers.'; return; }
+  const r = processRoundScoreImport(parsed, 'draftkings');
   document.getElementById('rsBulkText').value = '';
-  status.textContent = `Added ${added} new, updated ${updated} existing (of ${parsed.length} parsed).` +
-    (residuals.length > 0 ? ` Market-calibrated correction: ${fieldBaselineCorrection>=0?'+':''}${fieldBaselineCorrection.toFixed(2)} strokes (from ${residuals.length} real priced lines in this batch, applied to everyone${recomputedOthers>0?`, recomputed ${recomputedOthers} other existing row${recomputedOthers===1?'':'s'}`:''}).` : '') +
-    (notFound.length ? ` Not matched (check spelling vs the field): ${notFound.join(', ')}` : '');
+  status.textContent = `Added ${r.added} new, updated ${r.updated} existing (of ${r.totalParsed} parsed).` +
+    (r.correction !== null ? ` Market-calibrated correction: ${r.correction>=0?'+':''}${r.correction.toFixed(2)} strokes (from ${r.correctionN} real priced lines in this batch, applied to everyone${r.recomputedOthers>0?`, recomputed ${r.recomputedOthers} other existing row${r.recomputedOthers===1?'':'s'}`:''}).` : '') +
+    (r.notFound.length ? ` Not matched (check spelling vs the field): ${r.notFound.join(', ')}` : '');
+}
+function bulkImportFanaticsRoundScore() {
+  const text = document.getElementById('rsFanaticsText').value;
+  const status = document.getElementById('rsFanaticsStatus');
+  const round = document.getElementById('rsFanaticsRound').value;
+  if (!text.trim()) { status.textContent = 'Paste something first.'; return; }
+  const parsed = parseFanaticsRoundScoreText(text);
+  if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste matches "Name | OX.X price | UX.X price" per player.'; return; }
+  parsed.forEach(e => { e.round = round; }); // Fanatics' format has no round in the text itself — applied from the dropdown instead
+  const r = processRoundScoreImport(parsed, 'fanatics');
+  document.getElementById('rsFanaticsText').value = '';
+  status.textContent = `Added ${r.added} new, updated ${r.updated} existing (of ${r.totalParsed} parsed) for ${round}.` +
+    (r.correction !== null ? ` Market-calibrated correction: ${r.correction>=0?'+':''}${r.correction.toFixed(2)} strokes (from ${r.correctionN} real priced lines in this batch, applied to everyone${r.recomputedOthers>0?`, recomputed ${r.recomputedOthers} other existing row${r.recomputedOthers===1?'':'s'}`:''}).` : '') +
+    (r.notFound.length ? ` Not matched (check spelling vs the field): ${r.notFound.join(', ')}` : '');
 }
 
 function addRoundScoreProp() {
