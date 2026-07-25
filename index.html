@@ -1749,12 +1749,19 @@ function processRoundScoreImport(parsed, bookName) {
     const meanPerRound = getEffectiveProj(prow[0], prow[1]);
     const modelUnder = modelUnderProb(meanPerRound, entry.line, roundsCount);
     const modelOver = 1 - modelUnder;
+    // Confirmed bug, fixed: this used to store the RAW vig-inflated implied probability
+    // (each side computed independently, together summing to >100% since vig is the book's
+    // built-in edge on both sides). Comparing a true, 100%-summing model probability against
+    // that inflated number systematically understated every edge by roughly half the vig —
+    // confirmed live: EVERY one of 25 real rows showed a negative edge on BOTH Under and
+    // Over simultaneously, which is the tell — a fair comparison should show a real mix.
+    const noVigU = noVigRoundScore(taggedUnder, taggedOver);
     const isNew = upsertRoundScoreProp({
       id: Date.now() + Math.random() + i,
       name: prow[0], round: entry.round, line: entry.line,
       underPrice: taggedUnder, overPrice: taggedOver,
       modelUnder, modelOver, formAdjusted: residuals.length > 0,
-      marketUnder: impliedProb(taggedUnder), marketOver: impliedProb(taggedOver),
+      marketUnder: noVigU, marketOver: noVigU !== null ? 1 - noVigU : null,
     });
     if (isNew) added++; else updated++;
   });
@@ -1823,8 +1830,8 @@ function addRoundScoreProp() {
   const meanPerRound = getEffectiveProj(prow[0], prow[1]);
   const modelUnder = modelUnderProb(meanPerRound, line, roundsCount, elevatedRisk);
   const modelOver = 1 - modelUnder;
-  const marketUnder = underPrice ? impliedProb(underPrice) : null;
-  const marketOver = overPrice ? impliedProb(overPrice) : null;
+  const marketUnder = (underPrice && overPrice) ? noVigRoundScore(underPrice, overPrice) : null;
+  const marketOver = (underPrice && overPrice) ? (marketUnder !== null ? 1 - marketUnder : null) : null;
   upsertRoundScoreProp({
     id: Date.now() + Math.random(),
     name: prow[0], round, line, underPrice: underPrice || null, overPrice: overPrice || null,
