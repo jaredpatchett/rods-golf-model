@@ -409,6 +409,7 @@
 
 <!-- ============ TAB 4: ROUND SCORE ============ -->
 <div class="tabpane" id="tab-rscore">
+  <div style="padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;font-size:12px" id="rsCorrectionBadge">No correction active — PROJ is the raw static pre-tournament number.</div>
   <div class="form-panel">
     <div class="field wide-field">
       <label>Player</label>
@@ -1483,6 +1484,7 @@ function parseLeaderboardText(text) {
 }
 
 let fieldBaselineCorrection = loadLS('rodsModel_fieldBaselineCorrection', 0); // strokes to ADD to every player's static PROJ (see applyLeaderboardAdjustment)
+let fieldBaselineCorrectionInfo = loadLS('rodsModel_fieldBaselineCorrectionInfo', null); // {source, detail} — persistent record of WHERE the active correction came from, so this never has to be reconstructed from a scrolled-away status message again
 
 // Real shrinkage formula: k* = signal_variance / (signal_variance + noise_variance/n).
 // signal_sd=0.7 is the same rough estimate used before (grounded in the empirical Bayes
@@ -1546,6 +1548,9 @@ function applyLeaderboardAdjustment() {
   fieldBaselineCorrection = matchedResiduals.reduce((s, r) => s + r.residual, 0) / matchedResiduals.length;
   fieldBaselineCorrection = Math.round(fieldBaselineCorrection * 1000) / 1000;
   saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
+  fieldBaselineCorrectionInfo = { source: 'leaderboard', detail: `${matchedResiduals.length} players, blend ${blendWeight}` };
+  saveLS('rodsModel_fieldBaselineCorrectionInfo', fieldBaselineCorrectionInfo);
+  renderCorrectionBadge();
 
   // individual (demeaned) signal, shrunk by the blend weight — this is each player's
   // residual with the shared field-wide part already removed, so it's ONLY their
@@ -1591,9 +1596,27 @@ function clearFormAdjustments() {
   if (!confirm('Clear all live form adjustments (including the field baseline correction)? Existing Round Score lines keep whatever numbers they were computed with — this only affects new lines added after clearing.')) return;
   formAdjustments = {};
   fieldBaselineCorrection = 0;
+  fieldBaselineCorrectionInfo = null;
   saveLS('rodsModel_formAdjustments', formAdjustments);
   saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
+  saveLS('rodsModel_fieldBaselineCorrectionInfo', fieldBaselineCorrectionInfo);
   document.getElementById('rsLeaderboardStatus').textContent = 'Cleared.';
+  renderCorrectionBadge();
+}
+function renderCorrectionBadge() {
+  const el = document.getElementById('rsCorrectionBadge');
+  if (!el) return;
+  if (fieldBaselineCorrection === 0 && !fieldBaselineCorrectionInfo) {
+    el.innerHTML = `<span style="color:var(--text-faint)">No correction active — PROJ is the raw static pre-tournament number.</span>`;
+    return;
+  }
+  const sign = fieldBaselineCorrection >= 0 ? '+' : '';
+  const sourceLabel = fieldBaselineCorrectionInfo?.source === 'leaderboard'
+    ? `<span style="color:var(--amber)">LEADERBOARD-BASED ⚠</span>`
+    : fieldBaselineCorrectionInfo?.source === 'market'
+    ? `<span style="color:var(--green)">MARKET-CALIBRATED</span>`
+    : `<span style="color:var(--text-faint)">UNKNOWN SOURCE</span>`;
+  el.innerHTML = `Active correction: <b>${sign}${fieldBaselineCorrection.toFixed(2)} strokes</b> — ${sourceLabel}${fieldBaselineCorrectionInfo?.detail ? ` (${fieldBaselineCorrectionInfo.detail})` : ''}`;
 }
 
 function getEffectiveProj(playerName, staticProj) {
@@ -1715,6 +1738,10 @@ function processRoundScoreImport(parsed, bookName) {
     saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
     formAdjustments = {};
     saveLS('rodsModel_formAdjustments', formAdjustments);
+    const roundsInBatch = [...new Set(matchedRows.map(r => r.entry.round))].join('/');
+    fieldBaselineCorrectionInfo = { source: 'market', detail: `${residuals.length} ${bookName} lines, ${roundsInBatch}` };
+    saveLS('rodsModel_fieldBaselineCorrectionInfo', fieldBaselineCorrectionInfo);
+    renderCorrectionBadge();
   }
 
   let added = 0, updated = 0;
@@ -1820,6 +1847,7 @@ function deleteRoundScoreProp(id) {
 function renderRoundScore() {
   const body = document.getElementById('rscoreBody');
   if (!body) return;
+  renderCorrectionBadge();
   body.innerHTML = '';
 
   // one-time cleanup: collapse any duplicates already sitting in storage from before the
