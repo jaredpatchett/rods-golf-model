@@ -1508,6 +1508,19 @@ function applyLeaderboardAdjustment() {
   if (!text.trim()) { status.textContent = 'Paste the leaderboard first.'; return; }
   if (isNaN(roundsCompleted) || roundsCompleted < 1) { status.textContent = 'Enter a valid rounds-completed number.'; return; }
   if (isNaN(blendWeight) || blendWeight < 0 || blendWeight > 1) { status.textContent = 'Blend weight must be between 0 and 1.'; return; }
+  // Real, blocking confirmation, not just a label someone can click past — confirmed live
+  // that a market-calibrated correction (-0.46, computed from real Fanatics prices) got
+  // silently overwritten by this leaderboard panel's -2.32, reintroducing the exact
+  // all-Under pattern the market calibration was built to fix. A warning label alone wasn't
+  // a real safeguard; this is.
+  if (fieldBaselineCorrection !== 0) {
+    const proceed = confirm(
+      `Current correction is ${fieldBaselineCorrection>=0?'+':''}${fieldBaselineCorrection.toFixed(2)} strokes.\n\n` +
+      `This will REPLACE it with a new leaderboard-based correction, which real Round 2+ market lines may already reflect (double-counting risk).\n\n` +
+      `If your current correction came from a Bulk Import (market-calibrated), that's very likely more trustworthy than this. Overwrite it anyway?`
+    );
+    if (!proceed) { status.textContent = 'Cancelled — kept the existing correction.'; return; }
+  }
   const parsed = parseLeaderboardText(text);
   if (!parsed.length) { status.textContent = 'Found 0 players — check the paste includes a name and a +/- score-to-par on each line.'; return; }
 
