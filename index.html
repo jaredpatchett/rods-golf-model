@@ -1568,10 +1568,17 @@ function parseBulkRoundScoreText(text) {
     const roundNum = m[2];
     const over = parseKeywordNumber(lines, i + 1, 'Over');
     if (!over || over.nextIdx >= lines.length || !priceRe.test(lines[over.nextIdx])) continue;
-    const overPrice = lines[over.nextIdx];
+    const overPrice = lines[over.nextIdx] + ' (draftkings)';
     const under = parseKeywordNumber(lines, over.nextIdx + 1, 'Under');
     if (!under || under.nextIdx > lines.length || !priceRe.test(lines[under.nextIdx])) continue;
-    const underPrice = lines[under.nextIdx];
+    const underPrice = lines[under.nextIdx] + ' (draftkings)';
+    // Tagged with the book here, at the single source every downstream path reads from —
+    // DraftKings' own Round Score page never includes a book name in its text (it doesn't
+    // need to, it's already on DraftKings' page), and this bulk importer only ever handles
+    // DraftKings pastes (no multi-book support here, unlike Matchups). Without this, bets
+    // added to the Tracker via +trk had no book attached at all, showing up as "Unknown" in
+    // Calibration by Book — confirmed live, Rod's real DraftKings-sourced Round Score bets
+    // were the ones landing in that bucket.
     entries.push({
       player, round: 'R' + roundNum,
       line: over.value, overPrice,
@@ -1681,8 +1688,12 @@ function addRoundScoreProp() {
   const round = document.getElementById('rsRound').value;
   const roundsCount = round === 'T72' ? 4 : 1; // tournament total sums 4 simulated rounds, same mixture model each
   const line = parseFloat(document.getElementById('rsLine').value);
-  const underPrice = document.getElementById('rsUnderPrice').value.trim();
-  const overPrice = document.getElementById('rsOverPrice').value.trim();
+  const underPriceRaw = document.getElementById('rsUnderPrice').value.trim();
+  const overPriceRaw = document.getElementById('rsOverPrice').value.trim();
+  // Same fix as the bulk importer: default to DraftKings (this whole tab is scoped to it),
+  // but respect an explicit book tag if you type one in yourself, e.g. "-110 (fanduel)".
+  const underPrice = underPriceRaw && !/\(.+\)/.test(underPriceRaw) ? underPriceRaw + ' (draftkings)' : underPriceRaw;
+  const overPrice = overPriceRaw && !/\(.+\)/.test(overPriceRaw) ? overPriceRaw + ' (draftkings)' : overPriceRaw;
   const elevatedRisk = document.getElementById('rsElevatedRisk').checked;
   if (!name || isNaN(line)) { alert('Enter a player name and a line.'); return; }
   const prow = P.find(r => r[0].toLowerCase() === name.toLowerCase());
