@@ -261,17 +261,17 @@
   <div class="wblock">
     <span class="wlbl">DRAW BIAS</span>
     <span class="wval" id="drawBias">—</span>
-    <span class="wnote">AM vs PM wave scoring gap (placeholder — feed from forecast)</span>
+    <span class="wnote">AM vs PM wave scoring gap — needs tee-time + leaderboard cross-referencing, a separate, bigger data problem than wind/conditions. Still a placeholder.</span>
   </div>
   <div class="wblock">
-    <span class="wlbl">R1 WIND</span>
-    <span class="wval">— mph</span>
-    <span class="wnote">gust —</span>
+    <span class="wlbl">WIND</span>
+    <span class="wval" id="windVal">— mph</span>
+    <span class="wnote" id="windNote">gust —</span>
   </div>
   <div class="wblock">
     <span class="wlbl">CONDITIONS</span>
-    <span class="wval">Firm / fast links</span>
-    <span class="wnote">coastal · high variance regime</span>
+    <span class="wval" id="conditionsVal">—</span>
+    <span class="wnote" id="conditionsNote">real forecast — National Weather Service</span>
   </div>
 </div>
 
@@ -2419,6 +2419,60 @@ function renderAll(){ buildProjections(); buildFit(); buildMatch(); buildThreeBa
 
 let currentEvent = 'Unlabeled Event'; // set from meta.event once real data loads; used to auto-tag new bets by tournament
 let lastKnownEvent = loadLS('rodsModel_lastKnownEvent', null);
+// Real course coordinates for the National Weather Service API (api.weather.gov — free, no
+// key required, US-only). Add a new course's lat/lon here when the tournament changes;
+// unmapped courses just leave the wind/conditions placeholders as-is rather than breaking
+// anything. Confirmed real coordinates for TPC Twin Cities via search (45.177, -93.213) —
+// NOTE: I could not directly test-fetch a live response myself (api.weather.gov blocks
+// automated fetches via robots.txt, and isn't in the sandboxed domains my bash environment
+// can reach), so this is built against the API's real, documented structure and confirmed
+// real-world browser usage, but hasn't been verified with an actual live response the way
+// everything else this session was. Worth confirming it populates real data once deployed.
+const COURSE_COORDS = {
+  'tpc twin cities': { lat: 45.177, lon: -93.213 },
+};
+async function fetchWeatherForCourse(courseName) {
+  const key = (courseName || '').toLowerCase().trim();
+  const coords = COURSE_COORDS[key];
+  if (!coords) return null; // no known coordinates for this course yet -- add one above
+  try {
+    const pointsRes = await fetch(`https://api.weather.gov/points/${coords.lat},${coords.lon}`);
+    if (!pointsRes.ok) return null;
+    const pointsData = await pointsRes.json();
+    const forecastUrl = pointsData?.properties?.forecast;
+    if (!forecastUrl) return null;
+    const forecastRes = await fetch(forecastUrl);
+    if (!forecastRes.ok) return null;
+    const forecastData = await forecastRes.json();
+    const period = forecastData?.properties?.periods?.[0];
+    if (!period) return null;
+    return {
+      windSpeed: period.windSpeed || null,           // e.g. "10 to 15 mph"
+      windDirection: period.windDirection || null,    // e.g. "NW"
+      shortForecast: period.shortForecast || null,     // e.g. "Partly Cloudy"
+      temperature: period.temperature ?? null,
+      temperatureUnit: period.temperatureUnit || '',
+      periodName: period.name || null,                 // e.g. "Today", "Tonight"
+    };
+  } catch (e) {
+    console.warn('Weather fetch failed (page continues normally without it):', e);
+    return null;
+  }
+}
+function applyWeatherToUI(weather) {
+  const windEl = document.getElementById('windVal');
+  const windNoteEl = document.getElementById('windNote');
+  const condEl = document.getElementById('conditionsVal');
+  const condNoteEl = document.getElementById('conditionsNote');
+  if (!weather) {
+    if (condNoteEl) condNoteEl.textContent = 'no forecast available for this course yet';
+    return;
+  }
+  if (windEl && weather.windSpeed) windEl.textContent = weather.windSpeed + (weather.windDirection ? ' ' + weather.windDirection : '');
+  if (windNoteEl) windNoteEl.textContent = weather.periodName ? `as of ${weather.periodName}` : '';
+  if (condEl && weather.shortForecast) condEl.textContent = weather.shortForecast + (weather.temperature !== null ? ` · ${weather.temperature}°${weather.temperatureUnit}` : '');
+  if (condNoteEl) condNoteEl.textContent = 'National Weather Service forecast';
+}
 function applyMeta(meta){
   if(!meta) return;
   if(meta.players){ document.querySelectorAll('.meta .stat .v')[0].textContent = meta.players; }
@@ -2475,6 +2529,11 @@ function applyMeta(meta){
   if(meta.course){
     const el = document.getElementById('courseName');
     if(el) el.textContent = meta.course;
+    if (currentCourseName !== meta.course) {
+      // only re-fetch weather when the course actually changes, not on every applyMeta call
+      // (which also runs after every retroactive recompute) -- avoids hammering the API.
+      fetchWeatherForCourse(meta.course).then(applyWeatherToUI);
+    }
     currentCourseName = meta.course;
   }
   if(meta.generated){
