@@ -254,6 +254,7 @@
   <button class="tab" data-tab="match">2-Ball Matchups</button>
   <button class="tab" data-tab="rscore">Round Score</button>
   <button class="tab" data-tab="outrights">Outrights</button>
+  <button class="tab" data-tab="weather">Weather</button>
   <button class="tab" data-tab="tracker">Tracker</button>
 </div>
 
@@ -548,6 +549,26 @@
     </table>
   </div>
   <div class="note"><b>Model %</b> comes from the same full-field Monte Carlo as the Win column on Projections — every player simmed together, ranked each trial, tallied for whichever finish threshold you've selected above. <b>Market %</b> is DataGolf's real book odds for that specific market. Switch markets with the buttons above; edge and the BET/FADE call recompute automatically. <b>+trk</b> one-click adds a BET call to the Tracker.</div>
+</div>
+
+<!-- ============ TAB: WEATHER ============ -->
+<div class="tabpane" id="tab-weather">
+  <div id="weatherAlerts"></div>
+  <div class="section-hd" style="margin-top:14px">FORECAST — TPC TWIN CITIES</div>
+  <div class="note" style="margin-bottom:10px">Live from the National Weather Service (api.weather.gov) — same source as the Wind/Conditions boxes above every tab, shown here with the full multi-period outlook instead of just the current period. Not yet baked into PROJ or any edge calculation — display only for now.</div>
+  <div class="wide">
+    <table id="weatherTable">
+      <thead>
+        <tr>
+          <th class="player">Period</th>
+          <th>Temp</th>
+          <th>Wind</th>
+          <th>Conditions</th>
+        </tr>
+      </thead>
+      <tbody id="weatherBody"><tr><td colspan="4" class="cell" style="text-align:center;color:var(--text-faint)">Loading…</td></tr></tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ============ TAB 6: TRACKER ============ -->
@@ -2444,8 +2465,27 @@ async function fetchWeatherForCourse(courseName) {
     const forecastRes = await fetch(forecastUrl);
     if (!forecastRes.ok) return null;
     const forecastData = await forecastRes.json();
-    const period = forecastData?.properties?.periods?.[0];
+    const periods = forecastData?.properties?.periods || [];
+    const period = periods[0];
     if (!period) return null;
+
+    // Active alerts (heat warnings, storms, etc.) — real, actionable info the simple
+    // current-conditions display doesn't surface at all. Confirmed real, live example: an
+    // Extreme Heat Warning was active for TPC Twin Cities the same day the base wind fetch
+    // was verified against independent sources.
+    let alerts = [];
+    try {
+      const alertsRes = await fetch(`https://api.weather.gov/alerts/active?point=${coords.lat},${coords.lon}`);
+      if (alertsRes.ok) {
+        const alertsData = await alertsRes.json();
+        alerts = (alertsData?.features || []).map(f => ({
+          event: f.properties?.event || 'Alert',
+          headline: f.properties?.headline || '',
+          severity: f.properties?.severity || '',
+        }));
+      }
+    } catch (e) { /* alerts are a bonus, not fetching them shouldn't break the main forecast */ }
+
     return {
       windSpeed: period.windSpeed || null,           // e.g. "10 to 15 mph"
       windDirection: period.windDirection || null,    // e.g. "NW"
@@ -2453,6 +2493,8 @@ async function fetchWeatherForCourse(courseName) {
       temperature: period.temperature ?? null,
       temperatureUnit: period.temperatureUnit || '',
       periodName: period.name || null,                 // e.g. "Today", "Tonight"
+      periods,                                          // full list for the Weather tab table
+      alerts,
     };
   } catch (e) {
     console.warn('Weather fetch failed (page continues normally without it):', e);
@@ -2466,12 +2508,49 @@ function applyWeatherToUI(weather) {
   const condNoteEl = document.getElementById('conditionsNote');
   if (!weather) {
     if (condNoteEl) condNoteEl.textContent = 'no forecast available for this course yet';
+    renderWeatherTab(null);
     return;
   }
   if (windEl && weather.windSpeed) windEl.textContent = weather.windSpeed + (weather.windDirection ? ' ' + weather.windDirection : '');
   if (windNoteEl) windNoteEl.textContent = weather.periodName ? `as of ${weather.periodName}` : '';
   if (condEl && weather.shortForecast) condEl.textContent = weather.shortForecast + (weather.temperature !== null ? ` · ${weather.temperature}°${weather.temperatureUnit}` : '');
   if (condNoteEl) condNoteEl.textContent = 'National Weather Service forecast';
+  renderWeatherTab(weather);
+}
+function renderWeatherTab(weather) {
+  const alertsEl = document.getElementById('weatherAlerts');
+  const bodyEl = document.getElementById('weatherBody');
+  if (!alertsEl || !bodyEl) return; // tab not in the DOM yet on first call, harmless
+
+  if (!weather) {
+    alertsEl.innerHTML = '';
+    bodyEl.innerHTML = '<tr><td colspan="4" class="cell" style="text-align:center;color:var(--text-faint)">No forecast available for this course yet — add its coordinates to COURSE_COORDS.</td></tr>';
+    return;
+  }
+
+  if (weather.alerts && weather.alerts.length > 0) {
+    alertsEl.innerHTML = weather.alerts.map(a => `
+      <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:4px;border-color:var(--amber);margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.08em">⚠ ${a.event}${a.severity?` · ${a.severity}`:''}</div>
+        <div style="font-size:12px;color:var(--text-dim)">${a.headline}</div>
+      </div>
+    `).join('');
+  } else {
+    alertsEl.innerHTML = '';
+  }
+
+  bodyEl.innerHTML = '';
+  (weather.periods || []).slice(0, 8).forEach(p => {
+    bodyEl.innerHTML += `<tr>
+      <td class="pname">${p.name || '—'}</td>
+      <td class="cell">${p.temperature !== undefined && p.temperature !== null ? p.temperature + '°' + (p.temperatureUnit||'') : '—'}</td>
+      <td class="cell">${(p.windSpeed||'—') + (p.windDirection ? ' ' + p.windDirection : '')}</td>
+      <td class="cell" style="color:var(--text-dim)">${p.shortForecast || '—'}</td>
+    </tr>`;
+  });
+  if (!weather.periods || weather.periods.length === 0) {
+    bodyEl.innerHTML = '<tr><td colspan="4" class="cell" style="text-align:center;color:var(--text-faint)">No period data returned.</td></tr>';
+  }
 }
 function applyMeta(meta){
   if(!meta) return;
