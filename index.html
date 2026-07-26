@@ -490,6 +490,10 @@
   <div class="toolrow" style="justify-content:flex-start;gap:8px">
     <button class="fbtn on" id="rsFilterAll">ALL</button>
     <button class="fbtn" id="rsFilterPlays">PLAYS ONLY</button>
+    <select class="finput" id="rsRoundFilter" style="min-width:130px;font-size:11px">
+      <option value="current">Current round only</option>
+      <option value="all">All rounds</option>
+    </select>
     <span id="rsCount" style="font-size:10px;color:var(--text-dim);align-self:center"></span>
     <span style="flex:1"></span>
     <span style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;align-self:center">sorted by best edge</span>
@@ -1217,6 +1221,7 @@ document.getElementById('mTop20').addEventListener('click',function(){setOutMark
 document.getElementById('trEventFilter').addEventListener('change',function(){trackerEventFilter=this.value;renderTracker();});
 document.getElementById('rsFilterAll').addEventListener('click',function(){rsFilter='all';setActive(this);renderRoundScore();});
 document.getElementById('rsFilterPlays').addEventListener('click',function(){rsFilter='plays';setActive(this);renderRoundScore();});
+document.getElementById('rsRoundFilter').addEventListener('change', function(){ rsRoundFilterMode = this.value; renderRoundScore(); });
 document.getElementById('rsRoundsCompleted').addEventListener('input', function(){
   const n = parseInt(this.value, 10);
   if (!isNaN(n) && n >= 1) {
@@ -1372,6 +1377,12 @@ function rsCallFor(edge) {
 
 let roundScoreProps = loadLS('rodsModel_roundScoreProps', []);
 let rsFilter = 'all'; // 'all' | 'plays'
+let rsRoundFilterMode = 'current'; // 'current' | 'all'
+// Tracks whichever round was most recently imported (bulk or manual) — defaults the view
+// to that round, so old rounds' leftover rows (which still get their model% recomputed by
+// every new import, since the correction applies to everyone) don't visually mix in with
+// what's actually current and bettable right now.
+let lastImportedRound = loadLS('rodsModel_lastImportedRound', null);
 let formAdjustments = loadLS('rodsModel_formAdjustments', {}); // normalized name -> {adjustedProj, staticProj, toPar}
 
 function populatePlayerDatalist() {
@@ -1795,6 +1806,14 @@ function bulkImportRoundScore() {
   status.textContent = `Added ${r.added} new, updated ${r.updated} existing (of ${r.totalParsed} parsed).` +
     (r.correction !== null ? ` Market-calibrated correction: ${r.correction>=0?'+':''}${r.correction.toFixed(2)} strokes (from ${r.correctionN} real priced lines in this batch, applied to everyone${r.recomputedOthers>0?`, recomputed ${r.recomputedOthers} other existing row${r.recomputedOthers===1?'':'s'}`:''}).` : '') +
     (r.notFound.length ? ` Not matched (check spelling vs the field): ${r.notFound.join(', ')}` : '');
+  // Default the view to whichever round this batch was actually for — most parsed entries
+  // agree on a single round in practice, but takes the most common one just in case a paste
+  // ever mixes rounds.
+  const roundCounts = {};
+  parsed.forEach(e => { roundCounts[e.round] = (roundCounts[e.round]||0) + 1; });
+  const topRound = Object.keys(roundCounts).sort((a,b) => roundCounts[b]-roundCounts[a])[0];
+  if (topRound) { lastImportedRound = topRound; saveLS('rodsModel_lastImportedRound', lastImportedRound); }
+  renderRoundScore();
 }
 function bulkImportFanaticsRoundScore() {
   const text = document.getElementById('rsFanaticsText').value;
@@ -1809,6 +1828,9 @@ function bulkImportFanaticsRoundScore() {
   status.textContent = `Added ${r.added} new, updated ${r.updated} existing (of ${r.totalParsed} parsed) for ${round}.` +
     (r.correction !== null ? ` Market-calibrated correction: ${r.correction>=0?'+':''}${r.correction.toFixed(2)} strokes (from ${r.correctionN} real priced lines in this batch, applied to everyone${r.recomputedOthers>0?`, recomputed ${r.recomputedOthers} other existing row${r.recomputedOthers===1?'':'s'}`:''}).` : '') +
     (r.notFound.length ? ` Not matched (check spelling vs the field): ${r.notFound.join(', ')}` : '');
+  lastImportedRound = round;
+  saveLS('rodsModel_lastImportedRound', lastImportedRound);
+  renderRoundScore();
 }
 
 function addRoundScoreProp() {
@@ -1844,6 +1866,8 @@ function addRoundScoreProp() {
   document.getElementById('rsLine').value = '';
   document.getElementById('rsUnderPrice').value = '';
   document.getElementById('rsOverPrice').value = '';
+  lastImportedRound = round;
+  saveLS('rodsModel_lastImportedRound', lastImportedRound);
   renderRoundScore();
 }
 function deleteRoundScoreProp(id) {
@@ -1886,9 +1910,13 @@ function renderRoundScore() {
   });
 
   if (rsFilter === 'plays') rows = rows.filter(r => r.play !== null);
+  const totalBeforeRoundFilter = rows.length;
+  if (rsRoundFilterMode === 'current' && lastImportedRound) rows = rows.filter(r => r.p.round === lastImportedRound);
+  const hiddenByRound = totalBeforeRoundFilter - rows.length;
   rows.sort((a, b) => b.bestEdge - a.bestEdge); // strongest edge first, PASS rows sink to the bottom
 
-  document.getElementById('rsCount').textContent = `${rows.length} line${rows.length===1?'':'s'}`;
+  document.getElementById('rsCount').textContent = `${rows.length} line${rows.length===1?'':'s'}` +
+    (hiddenByRound > 0 ? ` (${hiddenByRound} from other rounds hidden — showing ${lastImportedRound})` : '');
 
   rows.forEach(({ p, play }) => {
     const canBet = play && play.price;
