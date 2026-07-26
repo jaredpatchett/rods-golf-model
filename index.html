@@ -560,6 +560,7 @@
   </div>
   <div class="summary" id="trackerSummary"></div>
   <div id="trackerByEvent"></div>
+  <div id="trackerByType"></div>
   <div id="trackerCalibration"></div>
   <div class="form-panel" style="margin-top:14px">
     <div class="field">
@@ -1362,8 +1363,18 @@ function noVigRoundScore(underPrice, overPrice) {
   if (iu === null || io === null || (iu + io) <= 0) return null;
   return iu / (iu + io);
 }
+// Confirmed real bug, fixed: parseFloat() on a raw price string only works if the number
+// comes first — "-134 (draftkings)" parses fine, but "(draftkings) -134" (book tag first)
+// hits the "(" immediately and returns NaN. Found this by hand-checking Rod's real tracker
+// export, where 7 real wins/losses were silently showing no computed profit at all because
+// of exactly this. This pulls the price number out from anywhere in the string instead.
+function extractPriceNumber(price) {
+  if (price === null || price === undefined) return NaN;
+  const m = String(price).match(/[+-]\d+\.?\d*/);
+  return m ? parseFloat(m[0]) : NaN;
+}
 function impliedProb(price) {
-  const p = parseFloat(price);
+  const p = extractPriceNumber(price);
   if (isNaN(p)) return null;
   return p > 0 ? 100 / (p + 100) : -p / (-p + 100);
 }
@@ -1980,7 +1991,7 @@ function addOutrightToTracker(name, price, modelProb) {
 }
 
 function payoutOnWin(price, stake) {
-  const p = parseFloat(price);
+  const p = extractPriceNumber(price);
   if (isNaN(p) || isNaN(stake)) return null;
   return p > 0 ? stake * (p / 100) : stake * (100 / Math.abs(p));
 }
@@ -2136,6 +2147,37 @@ function renderTracker() {
       byEvent.innerHTML = `<div class="section-hd" style="margin-top:14px">BY TOURNAMENT</div>
         <table><thead><tr><th class="player">Event</th><th>Record</th><th>Staked</th><th>Profit</th></tr></thead>
         <tbody>${rows}</tbody></table>`;
+    }
+  }
+
+  // per-type breakdown — same idea as by-tournament, but grouped by bet type (Matchup, Round
+  // Score, Outright) so you can see which market is actually performing, not just which event.
+  const byType = document.getElementById('trackerByType');
+  if (byType) {
+    const types = [...new Set(betTracker.filter(b => b.wagered !== false).map(b => b.type))];
+    if (types.length <= 1) {
+      byType.innerHTML = '';
+    } else {
+      let typeRows = '';
+      types.forEach(ty => {
+        const tyBets = betTracker.filter(b => b.type === ty && b.wagered !== false);
+        let tw=0, tl=0, tp=0, tpend=0, tstaked=0, tprofit=0;
+        tyBets.forEach(b => {
+          const pf = betProfit(b);
+          tstaked += b.stake;
+          if (b.status==='win') tw++; if (b.status==='loss') tl++; if (b.status==='push') tp++;
+          if (b.status==='pending') tpend++; else tprofit += pf;
+        });
+        typeRows += `<tr>
+          <td class="pname">${ty}</td>
+          <td class="cell" style="text-align:center">${tw}-${tl}-${tp}<span style="color:var(--text-faint)"> (${tpend}p)</span></td>
+          <td class="cell">$${tstaked.toFixed(2)}</td>
+          <td class="cell ${tprofit>=0?'val-pos':'val-neg'}">${tprofit>=0?'+':'-'}$${Math.abs(tprofit).toFixed(2)}</td>
+        </tr>`;
+      });
+      byType.innerHTML = `<div class="section-hd" style="margin-top:14px">BY TYPE</div>
+        <table><thead><tr><th class="player">Type</th><th>Record</th><th>Staked</th><th>Profit</th></tr></thead>
+        <tbody>${typeRows}</tbody></table>`;
     }
   }
   renderCalibration(scoped);
