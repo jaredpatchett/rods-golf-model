@@ -3,7 +3,7 @@
   "event": "Rocket Classic",
   "course": "Detroit Golf Club",
   "players": 147,
-  "generated": "2026-07-29 17:48:26",
+  "generated": "2026-07-29 19:18:52",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [tournament_matchups]",
   "draw_bias": null
  },
@@ -1597,6 +1597,18 @@
    2
   ],
   [
+   "Beau Hossler",
+   "William Mouw",
+   "?",
+   0.499,
+   0.49504950495049505,
+   "+102 (pinnacle)",
+   "-121 (pinnacle)",
+   0.4748399295260195,
+   0.0,
+   2
+  ],
+  [
    "Keegan Bradley",
    "Michael Kim",
    "?",
@@ -1633,18 +1645,6 @@
    2
   ],
   [
-   "Beau Hossler",
-   "William Mouw",
-   "?",
-   0.4932,
-   0.49504950495049505,
-   "+102 (pinnacle)",
-   "-121 (pinnacle)",
-   0.4748399295260195,
-   0.0,
-   2
-  ],
-  [
    "Lucas Glover",
    "Chris Kirk",
    "?",
@@ -1669,6 +1669,30 @@
    4
   ],
   [
+   "Hideki Matsuyama",
+   "Russell Henley",
+   "?",
+   0.5042,
+   0.5098039215686274,
+   "-104 (pinnacle)",
+   "-114 (pinnacle)",
+   0.48901388644753035,
+   0.0,
+   2
+  ],
+  [
+   "Sungjae Im",
+   "Michael Kim",
+   "?",
+   0.5181,
+   0.5238095238095238,
+   "-110 (fanduel)",
+   "-120 (fanduel)",
+   0.48987854251012153,
+   0.1,
+   3
+  ],
+  [
    "Kevin Yu",
    "Jesper Svensson",
    "?",
@@ -1681,6 +1705,18 @@
    2
   ],
   [
+   "Wyndham Clark",
+   "Jackson Koivun",
+   "?",
+   0.5188,
+   0.5260663507109005,
+   "-111 (fanduel)",
+   "-111 (fanduel)",
+   0.5,
+   0.1,
+   5
+  ],
+  [
    "Rickie Fowler",
    "Akshay Bhatia",
    "?",
@@ -1689,18 +1725,6 @@
    "+105 (datagolf)",
    "-105 (datagolf)",
    0.4878048780487805,
-   0.1,
-   3
-  ],
-  [
-   "Sungjae Im",
-   "Michael Kim",
-   "?",
-   0.5181,
-   0.5260663507109005,
-   "-111 (fanduel)",
-   "-111 (fanduel)",
-   0.5,
    0.1,
    3
   ],
@@ -1777,18 +1801,6 @@
    3
   ],
   [
-   "Patrick Cantlay",
-   "J.J. Spaun",
-   "?",
-   0.5163,
-   0.5260663507109005,
-   "-111 (pinnacle)",
-   "-107 (pinnacle)",
-   0.5043903938183255,
-   0.1,
-   2
-  ],
-  [
    "Russell Henley",
    "Jackson Koivun",
    "?",
@@ -1813,18 +1825,6 @@
    2
   ],
   [
-   "Jackson Suber",
-   "Johnny Keefer",
-   "?",
-   0.52,
-   0.5305164319248826,
-   "-113 (betcris)",
-   "-117 (betcris)",
-   0.4959548561951377,
-   0.1,
-   3
-  ],
-  [
    "Xander Schauffele",
    "Chris Gotterup",
    "?",
@@ -1835,30 +1835,6 @@
    0.49504950495049505,
    0.1,
    2
-  ],
-  [
-   "Corey Conners",
-   "Jordan Smith",
-   "?",
-   0.5196,
-   0.5305164319248826,
-   "-113 (pinnacle)",
-   "-105 (pinnacle)",
-   0.5087854162090929,
-   0.1,
-   2
-  ],
-  [
-   "Matt Wallace",
-   "Pierceson Coody",
-   "?",
-   0.5504,
-   0.5614035087719298,
-   "-128 (betcris)",
-   "-102 (betcris)",
-   0.5264701091382962,
-   0.3,
-   4
   ],
   [
    "Mac Meissner",
@@ -1885,15 +1861,27 @@
    2
   ],
   [
-   "Hideki Matsuyama",
-   "Jake Knapp",
+   "Matt Wallace",
+   "Pierceson Coody",
    "?",
-   0.5303,
-   0.54337899543379,
-   "-119 (pinnacle)",
-   "+100 (pinnacle)",
-   0.5207877461706784,
-   0.2,
+   0.5504,
+   0.5633187772925764,
+   "-129 (betcris)",
+   "-101 (betcris)",
+   0.528537649313058,
+   0.3,
+   4
+  ],
+  [
+   "Corey Conners",
+   "Davis Thompson",
+   "?",
+   0.5038,
+   0.5169082125603864,
+   "-107 (pinnacle)",
+   "-111 (pinnacle)",
+   0.49560960618167443,
+   0.0,
    2
   ],
   [
@@ -1909,28 +1897,28 @@
    2
   ],
   [
-   "Wyndham Clark",
-   "Jackson Koivun",
+   "Sungjae Im",
+   "Jordan Smith",
    "?",
-   0.512,
-   0.5260663507109005,
-   "-111 (fanduel)",
-   "-111 (fanduel)",
-   0.5,
-   0.1,
-   5
+   0.5007,
+   0.5145631067961165,
+   "-106 (pinnacle)",
+   "-112 (pinnacle)",
+   0.4934129632882487,
+   0.0,
+   2
   ],
   [
-   "Ricky Castillo",
-   "Matt McCarty",
+   "Jackson Suber",
+   "Johnny Keefer",
    "?",
-   0.5228,
-   0.5370370370370371,
-   "-116 (pinnacle)",
-   "-102 (pinnacle)",
-   0.515396797466127,
+   0.52,
+   0.5348837209302325,
+   "-115 (betcris)",
+   "-115 (betcris)",
+   0.5,
    0.1,
-   2
+   3
   ],
   [
    "Nick Taylor",
@@ -1957,6 +1945,30 @@
    4
   ],
   [
+   "Corey Conners",
+   "Jordan Smith",
+   "?",
+   0.515,
+   0.5305164319248826,
+   "-113 (pinnacle)",
+   "-105 (pinnacle)",
+   0.5087854162090929,
+   0.1,
+   2
+  ],
+  [
+   "Patrick Cantlay",
+   "J.J. Spaun",
+   "?",
+   0.515,
+   0.5305164319248826,
+   "-113 (pinnacle)",
+   "-105 (pinnacle)",
+   0.5087854162090929,
+   0.1,
+   2
+  ],
+  [
    "Steven Fisk",
    "William Mouw",
    "?",
@@ -1969,15 +1981,27 @@
    3
   ],
   [
-   "Hideki Matsuyama",
-   "Russell Henley",
+   "J.J. Spaun",
+   "Jake Knapp",
    "?",
-   0.4935,
-   0.5098039215686274,
-   "-104 (pinnacle)",
-   "-114 (pinnacle)",
-   0.48901388644753035,
-   0.0,
+   0.5588,
+   0.574468085106383,
+   "-135 (betcris)",
+   "+105 (betcris)",
+   0.5407914020517831,
+   0.3,
+   4
+  ],
+  [
+   "Hideki Matsuyama",
+   "Jake Knapp",
+   "?",
+   0.527,
+   0.54337899543379,
+   "-119 (pinnacle)",
+   "+100 (pinnacle)",
+   0.5207877461706784,
+   0.2,
    2
   ],
   [
@@ -2017,30 +2041,6 @@
    3
   ],
   [
-   "Sungjae Im",
-   "Jordan Smith",
-   "?",
-   0.497,
-   0.5145631067961165,
-   "-106 (pinnacle)",
-   "-112 (pinnacle)",
-   0.4934129632882487,
-   0.0,
-   2
-  ],
-  [
-   "Corey Conners",
-   "Davis Thompson",
-   "?",
-   0.499,
-   0.5169082125603864,
-   "-107 (pinnacle)",
-   "-111 (pinnacle)",
-   0.49560960618167443,
-   0.0,
-   2
-  ],
-  [
    "Kevin Yu",
    "Doug Ghim",
    "?",
@@ -2053,46 +2053,10 @@
    3
   ],
   [
-   "J.J. Spaun",
-   "Jake Knapp",
-   "?",
-   0.5588,
-   0.5780590717299579,
-   "-137 (betcris)",
-   "+107 (betcris)",
-   0.5447473059413358,
-   0.3,
-   4
-  ],
-  [
-   "Sungjae Im",
-   "Max Greyserman",
-   "?",
-   0.5373,
-   0.5575221238938053,
-   "-126 (pinnacle)",
-   "+106 (pinnacle)",
-   0.5345580360820495,
-   0.2,
-   2
-  ],
-  [
-   "Akshay Bhatia",
-   "Jacob Bridgeman",
-   "?",
-   0.5168,
-   0.5370370370370371,
-   "-116 (pinnacle)",
-   "-102 (pinnacle)",
-   0.515396797466127,
-   0.1,
-   2
-  ],
-  [
    "Taylor Moore",
    "Steven Fisk",
    "?",
-   0.4989,
+   0.5004,
    0.5192307692307693,
    "-108 (pinnacle)",
    "-110 (pinnacle)",
@@ -2111,18 +2075,6 @@
    0.45690151660587436,
    0.2,
    4
-  ],
-  [
-   "Si Woo Kim",
-   "Xander Schauffele",
-   "?",
-   0.4975,
-   0.5192307692307693,
-   "-108 (draftkings)",
-   "-122 (draftkings)",
-   0.48581617766250607,
-   0.0,
-   3
   ],
   [
    "Ryo Hisatsune",
@@ -2159,6 +2111,30 @@
    0.5080942166821806,
    0.1,
    3
+  ],
+  [
+   "Ricky Castillo",
+   "Matt McCarty",
+   "?",
+   0.512,
+   0.5370370370370371,
+   "-116 (pinnacle)",
+   "-102 (pinnacle)",
+   0.515396797466127,
+   0.1,
+   2
+  ],
+  [
+   "Akshay Bhatia",
+   "Jacob Bridgeman",
+   "?",
+   0.5115,
+   0.5370370370370371,
+   "-116 (pinnacle)",
+   "-102 (pinnacle)",
+   0.515396797466127,
+   0.1,
+   2
   ],
   [
    "Ben Griffin",
@@ -2201,12 +2177,24 @@
    "Mac Meissner",
    "?",
    0.4654,
-   0.49504950495049505,
-   "+102 (betcris)",
-   "-132 (betcris)",
-   0.46526552222043954,
+   0.49261083743842365,
+   "+103 (betcris)",
+   "-133 (betcris)",
+   0.46322988528598974,
    0.2,
    3
+  ],
+  [
+   "Sungjae Im",
+   "Max Greyserman",
+   "?",
+   0.5303,
+   0.5575221238938053,
+   "-126 (pinnacle)",
+   "+106 (pinnacle)",
+   0.5345580360820495,
+   0.2,
+   2
   ],
   [
    "Lucas Glover",
@@ -2231,6 +2219,18 @@
    0.4755909035433872,
    0.1,
    3
+  ],
+  [
+   "Cameron Young",
+   "Chris Gotterup",
+   "?",
+   0.5488,
+   0.5798319327731093,
+   "-138 (pinnacle)",
+   "+116 (pinnacle)",
+   0.55603641247575,
+   0.3,
+   2
   ],
   [
    "Emiliano Grillo",
@@ -2305,16 +2305,28 @@
    2
   ],
   [
-   "Cameron Young",
-   "Chris Gotterup",
+   "Si Woo Kim",
+   "Patrick Cantlay",
    "?",
-   0.5463,
-   0.5798319327731093,
-   "-138 (pinnacle)",
-   "+116 (pinnacle)",
-   0.55603641247575,
-   0.3,
+   0.5121,
+   0.5454545454545454,
+   "-120 (pinnacle)",
+   "+101 (pinnacle)",
+   0.5229835212489159,
+   0.1,
    2
+  ],
+  [
+   "Si Woo Kim",
+   "Xander Schauffele",
+   "?",
+   0.4948,
+   0.5283018867924528,
+   "-112 (draftkings)",
+   "-118 (draftkings)",
+   0.4939310568053083,
+   0.0,
+   3
   ],
   [
    "Tony Finau",
@@ -2353,18 +2365,6 @@
    8
   ],
   [
-   "Si Woo Kim",
-   "Patrick Cantlay",
-   "?",
-   0.5115,
-   0.5454545454545454,
-   "-120 (pinnacle)",
-   "+101 (pinnacle)",
-   0.5229835212489159,
-   0.1,
-   2
-  ],
-  [
    "Michael Kim",
    "Aldrich Potgieter",
    "?",
@@ -2401,6 +2401,18 @@
    4
   ],
   [
+   "Davis Thompson",
+   "Michael Brennan",
+   "?",
+   0.5212,
+   0.5575221238938053,
+   "-126 (betcris)",
+   "-104 (betcris)",
+   0.5223540887660543,
+   0.1,
+   4
+  ],
+  [
    "Eric Cole",
    "Jackson Suber",
    "?",
@@ -2411,18 +2423,6 @@
    0.5263157894736842,
    0.1,
    3
-  ],
-  [
-   "Davis Thompson",
-   "Michael Brennan",
-   "?",
-   0.5212,
-   0.5594713656387665,
-   "-127 (betcris)",
-   "-103 (betcris)",
-   0.5244090964566128,
-   0.1,
-   4
   ],
   [
    "Russell Henley",
@@ -2461,6 +2461,18 @@
    2
   ],
   [
+   "Chris Kirk",
+   "Lee Hodges",
+   "?",
+   0.5041,
+   0.5454545454545454,
+   "-120 (pinnacle)",
+   "+101 (pinnacle)",
+   0.5229835212489159,
+   0.0,
+   2
+  ],
+  [
    "Jake Knapp",
    "Akshay Bhatia",
    "?",
@@ -2470,18 +2482,6 @@
    "-105 (bovada)",
    0.5203045685279188,
    0.1,
-   2
-  ],
-  [
-   "Chris Kirk",
-   "Lee Hodges",
-   "?",
-   0.5029,
-   0.5454545454545454,
-   "-120 (pinnacle)",
-   "+101 (pinnacle)",
-   0.5229835212489159,
-   0.0,
    2
   ],
   [
@@ -2495,18 +2495,6 @@
    0.48987854251012153,
    0.1,
    4
-  ],
-  [
-   "Denny McCarthy",
-   "Harry Hall",
-   "?",
-   0.5373,
-   0.5833333333333334,
-   "-140 (pinnacle)",
-   "+118 (pinnacle)",
-   0.5597945707997065,
-   0.2,
-   2
   ],
   [
    "Harris English",
@@ -2530,6 +2518,30 @@
    "-102 (betcris)",
    0.5264701091382962,
    0.1,
+   4
+  ],
+  [
+   "Denny McCarthy",
+   "Harry Hall",
+   "?",
+   0.5331,
+   0.5833333333333334,
+   "-140 (pinnacle)",
+   "+118 (pinnacle)",
+   0.5597945707997065,
+   0.2,
+   2
+  ],
+  [
+   "Akshay Bhatia",
+   "Michael Thorbjornsen",
+   "?",
+   0.4916,
+   0.54337899543379,
+   "-119 (betcris)",
+   "-111 (betcris)",
+   0.5080942166821806,
+   0.0,
    4
   ],
   [
@@ -2557,18 +2569,6 @@
    4
   ],
   [
-   "Patrick Cantlay",
-   "Wyndham Clark",
-   "?",
-   0.5169,
-   0.574468085106383,
-   "-135 (betcris)",
-   "+105 (betcris)",
-   0.5407914020517831,
-   0.1,
-   3
-  ],
-  [
    "Russell Henley",
    "Ben Griffin",
    "?",
@@ -2581,28 +2581,28 @@
    3
   ],
   [
-   "Akshay Bhatia",
-   "Michael Thorbjornsen",
-   "?",
-   0.4916,
-   0.5495495495495496,
-   "-122 (betcris)",
-   "-108 (betcris)",
-   0.5141838223374939,
-   0.0,
-   4
-  ],
-  [
    "Keegan Bradley",
    "Eric Cole",
    "?",
    0.5527,
-   0.6124031007751938,
-   "-158 (betcris)",
-   "+126 (betcris)",
-   0.5805423684723938,
+   0.6153846153846154,
+   "-160 (betcris)",
+   "+127 (betcris)",
+   0.582798459563543,
    0.3,
    4
+  ],
+  [
+   "Patrick Cantlay",
+   "Wyndham Clark",
+   "?",
+   0.5169,
+   0.5815899581589958,
+   "-139 (betcris)",
+   "+109 (betcris)",
+   0.5486393080395082,
+   0.1,
+   3
   ],
   [
    "Akshay Bhatia",
@@ -2633,24 +2633,12 @@
    "Jordan Smith",
    "?",
    0.4504,
-   0.5192307692307693,
-   "-108 (betcris)",
-   "-122 (betcris)",
-   0.48581617766250607,
+   0.5238095238095238,
+   "-110 (betcris)",
+   "-120 (betcris)",
+   0.48987854251012153,
    0.3,
    3
-  ],
-  [
-   "Ryo Hisatsune",
-   "Max Greyserman",
-   "?",
-   0.5291,
-   0.6031746031746031,
-   "-152 (betcris)",
-   "+121 (betcris)",
-   0.5713702544563886,
-   0.2,
-   4
   ],
   [
    "Wyndham Clark",
@@ -2687,6 +2675,18 @@
    0.5326819202524732,
    0.0,
    3
+  ],
+  [
+   "Ryo Hisatsune",
+   "Max Greyserman",
+   "?",
+   0.5291,
+   0.6078431372549019,
+   "-155 (betcris)",
+   "+124 (betcris)",
+   0.5765526403188309,
+   0.2,
+   4
   ],
   [
    "Jordan Spieth",
