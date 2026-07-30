@@ -411,6 +411,13 @@
 <!-- ============ TAB 4: ROUND SCORE ============ -->
 <div class="tabpane" id="tab-rscore">
   <div style="padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;font-size:12px" id="rsCorrectionBadge">No correction active — PROJ is the raw static pre-tournament number.</div>
+  <div style="padding:10px 14px;background:var(--panel);border:1px solid var(--amber);border-radius:6px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer" title="Backtested against real 2026 data (Open Championship + 3M Open) using a formula grounded in cited research, but never tested against real, live bets. Applies uniformly to everyone — does not yet account for AM/PM wave wind differences, confirmed a real factor in backtesting.">
+      <input type="checkbox" id="windAdjustmentToggle" style="width:14px;height:14px;accent-color:var(--amber);cursor:pointer">
+      <b style="color:var(--amber)">WIND ADJUSTMENT</b>
+    </label>
+    <span id="windAdjustmentInfo" style="color:var(--text-dim)">No live wind data yet.</span>
+  </div>
   <div class="form-panel">
     <div class="field wide-field">
       <label>Player</label>
@@ -1148,6 +1155,8 @@ function buildThreeBall(search='') {
 }
 
 let matchFilter='all';
+let windCorrectionEnabled = loadLS('rodsModel_windCorrectionEnabled', false);
+let currentWindMph = null; // set from the live weather fetch, see applyWeatherToUI
 function buildMatch(search=''){
   const body=document.getElementById('matchBody');body.innerHTML='';
   const sourceTag = document.getElementById('matchSourceTag');
@@ -1244,6 +1253,31 @@ document.getElementById('trEventFilter').addEventListener('change',function(){tr
 document.getElementById('rsFilterAll').addEventListener('click',function(){rsFilter='all';setActive(this);renderRoundScore();});
 document.getElementById('rsFilterPlays').addEventListener('click',function(){rsFilter='plays';setActive(this);renderRoundScore();});
 document.getElementById('rsRoundFilter').addEventListener('change', function(){ rsRoundFilterMode = this.value; renderRoundScore(); });
+function recomputeAllRoundScoreProps() {
+  // Standalone version of the same recompute already used after every bulk import --
+  // needed here too since toggling wind adjustment changes what getEffectiveProj returns
+  // for every row, not just new ones.
+  let recomputed = 0;
+  roundScoreProps.forEach(p => {
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
+    if (!prow || prow[1] === null || prow[1] === undefined) return;
+    const effectiveProj = getEffectiveProj(p.name, prow[1]);
+    const roundsCount = p.round === 'T72' ? 4 : 1;
+    p.modelUnder = modelUnderProb(effectiveProj, p.line, roundsCount, p.elevatedRisk || false);
+    p.modelOver = 1 - p.modelUnder;
+    recomputed++;
+  });
+  if (recomputed > 0) saveLS('rodsModel_roundScoreProps', roundScoreProps);
+  return recomputed;
+}
+document.getElementById('windAdjustmentToggle').addEventListener('change', function(){
+  windCorrectionEnabled = this.checked;
+  saveLS('rodsModel_windCorrectionEnabled', windCorrectionEnabled);
+  recomputeAllRoundScoreProps();
+  renderWindAdjustmentUI();
+  renderRoundScore();
+});
+document.getElementById('windAdjustmentToggle').checked = windCorrectionEnabled;
 document.getElementById('rsRoundsCompleted').addEventListener('input', function(){
   const n = parseInt(this.value, 10);
   if (!isNaN(n) && n >= 1) {
@@ -1662,13 +1696,35 @@ function renderCorrectionBadge() {
   el.innerHTML = `Active correction: <b>${sign}${fieldBaselineCorrection.toFixed(2)} strokes</b> — ${sourceLabel}${fieldBaselineCorrectionInfo?.detail ? ` (${fieldBaselineCorrectionInfo.detail})` : ''}`;
 }
 
+// Grounded in real, cited research (golfweatherscore.com, corroborated by GolfWRX): <10mph
+// negligible/baseline, 10-15mph +0.5 to +1.0 strokes (midpoint 0.75), >20mph +1.5 to +3.0
+// strokes (midpoint 2.25 at 20mph, 3.0 at 25mph). The 15-20mph bridge is a linear
+// interpolation between the two real anchors, not itself a cited number. Tested against
+// every cited anchor point and confirmed monotonic before ever being wired in here.
+function windStrokePenalty(windMph) {
+  if (windMph === null || windMph === undefined || isNaN(windMph)) return 0;
+  if (windMph <= 10) return 0.0;
+  if (windMph <= 15) return (windMph - 10) / 5 * 0.75;
+  if (windMph <= 20) return 0.75 + (windMph - 15) / 5 * 1.5;
+  if (windMph <= 25) return 2.25 + (windMph - 20) / 5 * 0.75;
+  return 3.0 + 0.15 * (windMph - 25); // beyond 25mph the research doesn't give a precise number -- low-confidence extrapolation
+}
 function getEffectiveProj(playerName, staticProj) {
   // Confirmed sign bug, fixed: matched players get staticProj + fieldBaselineCorrection
   // (see applyLeaderboardAdjustment) — this fallback for UNMATCHED players was subtracting
   // instead of adding, moving their number the wrong direction relative to everyone else.
   const baselineCorrected = staticProj + fieldBaselineCorrection;
   const adj = formAdjustments[normalizeNameForMatch(playerName)];
-  return adj ? adj.adjustedProj : baselineCorrected;
+  let effective = adj ? adj.adjustedProj : baselineCorrected;
+  // Wind adjustment, OFF by default and only applied if explicitly enabled — this formula is
+  // backtested against real data but has never been tested against real, live bets, unlike
+  // the market-calibration correction above. Applies to everyone uniformly, same as the
+  // field-wide correction; does NOT yet account for AM/PM wave differences (confirmed a real
+  // factor during the 3M Open backtest) — that would need tee-time data this doesn't have.
+  if (windCorrectionEnabled && currentWindMph !== null) {
+    effective += windStrokePenalty(currentWindMph);
+  }
+  return effective;
 }
 
 // ---------------- bulk import: paste DraftKings' round-score slate, parse, add all at once ----------------
@@ -2512,14 +2568,33 @@ function applyWeatherToUI(weather) {
   const condNoteEl = document.getElementById('conditionsNote');
   if (!weather) {
     if (condNoteEl) condNoteEl.textContent = 'no forecast available for this course yet';
+    currentWindMph = null;
     renderWeatherTab(null);
+    renderWindAdjustmentUI();
     return;
   }
   if (windEl && weather.windSpeed) windEl.textContent = weather.windSpeed + (weather.windDirection ? ' ' + weather.windDirection : '');
   if (windNoteEl) windNoteEl.textContent = weather.periodName ? `as of ${weather.periodName}` : '';
   if (condEl && weather.shortForecast) condEl.textContent = weather.shortForecast + (weather.temperature !== null ? ` · ${weather.temperature}°${weather.temperatureUnit}` : '');
   if (condNoteEl) condNoteEl.textContent = 'National Weather Service forecast';
+  // NWS wind text is sometimes a single value ("10 mph") and sometimes a range ("10 to 15
+  // mph") -- use the midpoint of a range, consistent with how the formula's own research
+  // anchors were derived (also from cited midpoints, not endpoints).
+  const nums = (weather.windSpeed || '').match(/\d+(\.\d+)?/g);
+  currentWindMph = nums && nums.length ? nums.reduce((s,n) => s + parseFloat(n), 0) / nums.length : null;
   renderWeatherTab(weather);
+  renderWindAdjustmentUI();
+}
+function renderWindAdjustmentUI() {
+  const el = document.getElementById('windAdjustmentInfo');
+  if (!el) return;
+  if (currentWindMph === null) {
+    el.innerHTML = `<span style="color:var(--text-faint)">No live wind data yet.</span>`;
+    return;
+  }
+  const penalty = windStrokePenalty(currentWindMph);
+  el.innerHTML = `Current wind: <b>${currentWindMph.toFixed(1)} mph</b> → formula penalty: <b>${penalty >= 0 ? '+' : ''}${penalty.toFixed(2)} strokes</b>` +
+    (windCorrectionEnabled ? ` <span style="color:var(--green)">— APPLIED to every Round Score calculation</span>` : ` <span style="color:var(--text-faint)">— not applied (toggle off)</span>`);
 }
 function renderWeatherTab(weather) {
   const alertsEl = document.getElementById('weatherAlerts');
