@@ -618,6 +618,10 @@
       <input class="finput" id="trModelProb" type="number" step="0.1" min="0" max="100" placeholder="62.5" style="min-width:70px">
     </div>
     <div class="field">
+      <label title="Optional — the real edge (Model % minus no-vig market %) shown on the page when you placed this bet. Stored directly instead of reconstructed later, since reconstructing it after the fact needs the opposing side's price too.">Edge % (optional)</label>
+      <input class="finput" id="trEdgePct" type="number" step="0.1" placeholder="3.4" style="min-width:70px">
+    </div>
+    <div class="field">
       <label style="display:flex;align-items:center;gap:5px;cursor:pointer" for="trWagered" title="Uncheck for a play you're tracking purely for model calibration, not an actual bet — keeps it out of Total Staked / Profit / ROI while still counting it for calibration.">
         <input type="checkbox" id="trWagered" checked style="width:13px;height:13px;accent-color:var(--green);cursor:pointer">
         Real wager
@@ -756,7 +760,7 @@ function buildOutrights(search='') {
       <td class="cell" style="color:var(--text-dim)">${r.price}</td>
       <td class="cell" style="text-align:center">
         <span class="pill ${wc.cls}">${wc.call}</span>
-        ${wc.call==='BET'&&r.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r.name.replace(/'/g,"\\'")} (${outMarket})','${r.price.replace(/'/g,"\\'")}',${r.model})">+trk</button>`:''}
+        ${wc.call==='BET'&&r.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r.name.replace(/'/g,"\\'")} (${outMarket})','${r.price.replace(/'/g,"\\'")}',${r.model},${r.edge!==null?r.edge*100:'null'})">+trk</button>`:''}
       </td>
     </tr>`;
   });
@@ -804,7 +808,7 @@ function buildProjections(filter=''){
           <td class="cell">${win.market!==null?(win.market*100).toFixed(1)+'%':'—'}</td>
           <td class="cell" style="text-align:center">
             <span class="pill ${wc.cls}">${wc.call}</span>
-            ${wc.call==='BET'&&win.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r[0].replace(/'/g,"\\'")}','${win.price.replace(/'/g,"\\'")}',${win.model})">+trk</button>`:''}
+            ${wc.call==='BET'&&win.price!=='—'?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addOutrightToTracker('${r[0].replace(/'/g,"\\'")}','${win.price.replace(/'/g,"\\'")}',${win.model},${edge!==null?edge*100:'null'})">+trk</button>`:''}
           </td>`;
       } else {
         html += `<td class="cell nan">nan</td><td class="cell nan">nan</td><td class="cell">—</td>`;
@@ -1148,7 +1152,7 @@ function buildThreeBall(search='') {
       <td class="cell" style="color:var(--text-dim)">${r.price} (draftkings)</td>
       <td class="cell" style="text-align:center">
         <span class="pill ${cls}">${call}</span>
-        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="quickAddToTracker('${r.name.replace(/'/g,"\\'")} 3-Ball (${r.round})','Matchup','${r.price} (draftkings)',${r.model})">+trk</button>`:''}
+        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="quickAddToTracker('${r.name.replace(/'/g,"\\'")} 3-Ball (${r.round})','Matchup','${r.price} (draftkings)',${r.model},${edgePct})">+trk</button>`:''}
       </td>
     </tr>`;
   });
@@ -1219,7 +1223,7 @@ function buildMatch(search=''){
       <td class="cell" style="color:var(--text-dim)">${r.priceA}</td>
       <td class="cell" style="text-align:center">
         <span class="pill ${cls}">${call}</span>${warnIcon}
-        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}',${r.model})">+trk</button>`:''}
+        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}',${r.model},${edgePct})">+trk</button>`:''}
       </td>
     </tr>`;
   });
@@ -2011,7 +2015,7 @@ function renderRoundScore() {
     const playHtml = play
       ? `<span class="pill edge" style="font-size:11px;padding:5px 10px">BET ${play.side.toUpperCase()} ${p.line.toFixed(1)}</span>
          <span class="val-pos" style="margin-left:6px;font-size:11px">+${(play.edge*100).toFixed(1)}%</span>
-         ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}',${play.side==='Under'?p.modelUnder:p.modelOver})">+trk</button>`:''}`
+         ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addRoundScoreToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}',${play.side==='Under'?p.modelUnder:p.modelOver},${play.edge*100})">+trk</button>`:''}`
       : `<span class="pill thin">PASS</span>`;
     body.innerHTML += `<tr>
       <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}${p.elevatedRisk?' <span class="badge push" style="font-size:8px" title="Elevated blow-up risk applied — your manual call, not model-inferred">RISK+</span>':''}${p.formAdjusted?' <span class="badge win" style="font-size:8px" title="Used a live-form-adjusted PROJ, blending real current-week performance with the static pre-tournament number">FORM-ADJ</span>':''}</td>
@@ -2033,8 +2037,8 @@ let betTracker = loadLS('rodsModel_betTracker', []);
 // one-click links from the other tabs — pre-fill description/price/type, ask for
 // stake, push straight into the tracker, then jump to the Tracker tab so you can
 // see it landed.
-function quickAddToTracker(desc, type, price, modelProb) {
-  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}${modelProb!==null&&modelProb!==undefined?`\nModel: ${(modelProb*100).toFixed(1)}%`:''}\n\nStake ($)?`, '50');
+function quickAddToTracker(desc, type, price, modelProb, edgePct) {
+  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}${modelProb!==null&&modelProb!==undefined?`\nModel: ${(modelProb*100).toFixed(1)}%`:''}${edgePct!==null&&edgePct!==undefined?`\nEdge: ${edgePct>=0?'+':''}${edgePct.toFixed(1)}%`:''}\n\nStake ($)?`, '50');
   if (stakeStr === null) return; // cancelled
   const stake = parseFloat(stakeStr);
   if (isNaN(stake) || stake <= 0) { alert('Enter a valid stake to add this bet.'); return; }
@@ -2048,23 +2052,29 @@ function quickAddToTracker(desc, type, price, modelProb) {
     date: new Date().toISOString().slice(0,10),
     desc, type, price, stake, status: 'pending', event: currentEvent,
     modelProb: (modelProb !== null && modelProb !== undefined) ? modelProb : null,
+    // The real, exact edge the app computed at the moment this bet was placed — stored
+    // directly instead of reconstructed later. Confirmed the reconstruction approach is
+    // unreliable: it requires the opposing side's price to properly de-vig, which isn't
+    // available after the fact, and a crude one-sided approximation is biased by however
+    // much vig that specific book/matchup happened to carry -- not a fixed, correctable amount.
+    edgeAtBetTime: (edgePct !== null && edgePct !== undefined && !isNaN(edgePct)) ? edgePct : null,
     wagered,
   });
   saveLS('rodsModel_betTracker', betTracker);
   renderTracker();
   document.querySelector('.tab[data-tab="tracker"]').click();
 }
-function addMatchupToTracker(side, a, b, call, price, modelProbA) {
+function addMatchupToTracker(side, a, b, call, price, modelProbA, edgePct) {
   const other = side === a ? b : a;
   // modelProbA is always P(player A wins) — flip it if the actual bet is on B (a FADE call)
   const modelProb = side === a ? modelProbA : (1 - modelProbA);
-  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price, modelProb);
+  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price, modelProb, edgePct);
 }
-function addRoundScoreToTracker(name, round, line, side, price, modelProb) {
-  quickAddToTracker(`${name} ${round} ${side} ${line}`, 'Round Score', price, modelProb);
+function addRoundScoreToTracker(name, round, line, side, price, modelProb, edgePct) {
+  quickAddToTracker(`${name} ${round} ${side} ${line}`, 'Round Score', price, modelProb, edgePct);
 }
-function addOutrightToTracker(name, price, modelProb) {
-  quickAddToTracker(`${name} to Win`, 'Outright', price, modelProb);
+function addOutrightToTracker(name, price, modelProb, edgePct) {
+  quickAddToTracker(`${name} to Win`, 'Outright', price, modelProb, edgePct);
 }
 
 function payoutOnWin(price, stake) {
@@ -2080,14 +2090,17 @@ function addBet() {
   const stake = parseFloat(document.getElementById('trStake').value);
   const modelProbPct = parseFloat(document.getElementById('trModelProb').value);
   const modelProb = (!isNaN(modelProbPct) && modelProbPct >= 0 && modelProbPct <= 100) ? modelProbPct / 100 : null;
+  const edgePctRaw = parseFloat(document.getElementById('trEdgePct').value);
+  const edgeAtBetTime = !isNaN(edgePctRaw) ? edgePctRaw : null;
   const wagered = document.getElementById('trWagered').checked;
   if (!desc || !price || isNaN(stake) || stake <= 0) { alert('Fill in description, price, and a stake > 0.'); return; }
-  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent, modelProb, wagered });
+  betTracker.push({ id: Date.now()+Math.random(), date, desc, type, price, stake, status: 'pending', event: currentEvent, modelProb, edgeAtBetTime, wagered });
   saveLS('rodsModel_betTracker', betTracker);
   document.getElementById('trDesc').value = '';
   document.getElementById('trPrice').value = '';
   document.getElementById('trStake').value = '';
   document.getElementById('trModelProb').value = '';
+  document.getElementById('trEdgePct').value = '';
   document.getElementById('trWagered').checked = true;
   renderTracker();
 }
@@ -2439,6 +2452,8 @@ function importTrackerCSV(event) {
       const eventName = r.event || currentEvent;
       const modelProbRaw = parseFloat(r['modelprob%'] || r['model%'] || r.modelprob);
       const modelProb = (!isNaN(modelProbRaw) && modelProbRaw >= 0 && modelProbRaw <= 100) ? modelProbRaw / 100 : null;
+      const edgeRaw = parseFloat(r['edge%'] || r.edge);
+      const edgeAtBetTime = !isNaN(edgeRaw) ? edgeRaw : null;
       // missing/blank Wagered column = treat as a real wager (matches pre-this-feature CSVs
       // and the same backward-compat rule used everywhere else this field is read)
       const wagered = (r.wagered || '').trim().toLowerCase() !== 'no';
@@ -2448,10 +2463,10 @@ function importTrackerCSV(event) {
       const existingIdx = betTracker.findIndex(b =>
         b.date === date && b.desc === desc && b.price === price && b.stake === stake);
       if (existingIdx >= 0) {
-        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName, modelProb: modelProb!==null?modelProb:betTracker[existingIdx].modelProb, wagered };
+        betTracker[existingIdx] = { ...betTracker[existingIdx], date, desc, type, price, stake, status: statusVal, event: eventName, modelProb: modelProb!==null?modelProb:betTracker[existingIdx].modelProb, edgeAtBetTime: edgeAtBetTime!==null?edgeAtBetTime:betTracker[existingIdx].edgeAtBetTime, wagered };
         updated++;
       } else {
-        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName, modelProb, wagered });
+        betTracker.push({ id: Date.now() + Math.random(), date, desc, type, price, stake, status: statusVal, event: eventName, modelProb, edgeAtBetTime, wagered });
         added++;
       }
     });
@@ -2471,8 +2486,8 @@ function exportCSV(kind) {
     roundScoreProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
     filename = 'round_score_props.csv';
   } else {
-    rows = [['Date','Event','Description','Type','Price','Stake','Status','ModelProb%','Wagered','Profit']];
-    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,(b.modelProb!==null&&b.modelProb!==undefined)?(b.modelProb*100).toFixed(1):'',b.wagered!==false?'yes':'no',betProfit(b)!==null?betProfit(b).toFixed(2):'']));
+    rows = [['Date','Event','Description','Type','Price','Stake','Status','ModelProb%','Edge%','Wagered','Profit']];
+    betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,(b.modelProb!==null&&b.modelProb!==undefined)?(b.modelProb*100).toFixed(1):'',(b.edgeAtBetTime!==null&&b.edgeAtBetTime!==undefined)?b.edgeAtBetTime.toFixed(1):'',b.wagered!==false?'yes':'no',betProfit(b)!==null?betProfit(b).toFixed(2):'']));
     filename = 'bet_tracker.csv';
   }
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
