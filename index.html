@@ -222,6 +222,57 @@
     .search{width:100%}
     .legend{margin-left:0;width:100%;justify-content:flex-end}
     body{font-size:12px}
+
+    /* Top bar: brand + meta stats were side-by-side, cramped on a narrow screen */
+    .topbar{flex-wrap:wrap;gap:10px}
+    .meta{width:100%;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+    /* Windstrip (Draw Bias / Wind / Conditions) never wrapped at all before -- would
+       squeeze three columns into a phone width. Stack vertically instead. */
+    .windstrip{flex-direction:column}
+    .wblock{border-right:none;border-bottom:1px solid var(--line)}
+    .wblock:last-child{border-bottom:none}
+
+    /* Tracker summary strip (Record/Staked/P&L/ROI) has the same non-wrapping problem,
+       and is one of the specifically-called-out tracker elements. */
+    .summary{flex-direction:column}
+    .sblock{border-right:none;border-bottom:1px solid var(--line)}
+    .sblock:last-child{border-bottom:none}
+
+    /* Tabs: already wrap, but at 11px/9px padding they're well under Apple's 44pt tap
+       target guidance -- easy to mis-tap between two adjacent tabs. */
+    .tab{padding:12px 14px;font-size:12px}
+
+    /* Status buttons (WIN/LOSS/PUSH) are the highest mis-tap risk in the whole app on
+       mobile -- three tiny buttons side by side in the tracker, confirmed too small
+       to tap reliably at the original 4px/9px sizing. */
+    .statusbtn{padding:9px 12px;font-size:11px;margin-right:6px;margin-bottom:4px;display:inline-block}
+    .delbtn{padding:7px 11px;font-size:12px}
+    .toolbtn{padding:9px 14px;font-size:11px}
+    .addbtn{padding:12px 18px;font-size:12px;width:100%}
+    .fbtn{padding:9px 14px;font-size:11px}
+
+    /* Toolrows (Import/Export/Clear CSV, filter buttons) didn't wrap -- would overflow
+       off-screen with 3+ buttons on a narrow phone. */
+    .toolrow{flex-wrap:wrap;justify-content:flex-start}
+
+    /* Form panels already wrap field-by-field, but at their default min-width each field
+       could still end up an awkward in-between size -- full width is easier to read and
+       tap into on a phone keyboard. */
+    .form-panel{padding:12px}
+    .field{flex:1 1 100%}
+    .field .finput,.field .fselect{width:100%;min-width:0;font-size:16px} /* 16px prevents iOS Safari's automatic zoom-on-focus for text inputs */
+
+    /* Wide data tables already scroll horizontally within their own container (.wide has
+       overflow:auto) -- that's the right pattern for 8+ column tables on a phone rather
+       than trying to cram everything into 375px. This just makes that scrolling feel
+       native on iOS instead of the default (sometimes janky) behavior. */
+    .wide{-webkit-overflow-scrolling:touch}
+    table{font-size:11px}
+    td,th{padding:8px 6px !important}
+
+    /* Textareas (bulk import boxes) were sized for a desktop paste workflow */
+    textarea.finput{min-height:70px}
   }
 </style>
 </head>
