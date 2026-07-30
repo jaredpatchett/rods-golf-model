@@ -580,6 +580,15 @@
 
 <!-- ============ TAB 5: OUTRIGHTS ============ -->
 <div class="tabpane" id="tab-outrights">
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Load Fresh Outright Odds — paste a Win/Top5/Top10 board as prices move round to round. Model % stays the static pre-tournament number either way (see note below) — this only refreshes what the market side shows.</label>
+    <textarea id="outBulkText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied outright board here — player name on its own line, followed by Win / Top 5 / Top 10 prices in that order. Longshots with fewer than 3 prices are handled automatically."></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="addbtn" onclick="loadOutrightsBulk()">Load Outright Odds</button>
+      <button class="toolbtn" onclick="clearOutrightsOverride()">Revert to Auto (Pipeline)</button>
+      <span id="outBulkStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+  </div>
   <div class="controls">
     <input class="search" id="outSearch" placeholder="Search player...">
     <div class="filters">
@@ -606,7 +615,7 @@
       <tbody id="outBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Model %</b> comes from the same full-field Monte Carlo as the Win column on Projections — every player simmed together, ranked each trial, tallied for whichever finish threshold you've selected above. <b>Market %</b> is DataGolf's real book odds for that specific market. Switch markets with the buttons above; edge and the BET/FADE call recompute automatically. <b>+trk</b> one-click adds a BET call to the Tracker.</div>
+  <div class="note"><b>Model %</b> comes from the same full-field Monte Carlo as the Win column on Projections — every player simmed together, ranked each trial, tallied for whichever finish threshold you've selected above. This is the static pre-tournament projection and does <b>not</b> update as the leaderboard actually moves round to round — a player running hot or cold today won't move their Model % until the pipeline re-runs with fresh projections. <b>Market %</b> reflects whatever odds you last loaded above (or DataGolf's pipeline data if you haven't loaded anything). Switch markets with the buttons above; edge and the BET/FADE call recompute automatically. <b>+trk</b> one-click adds a BET call to the Tracker.</div>
 </div>
 
 <!-- ============ TAB: WEATHER ============ -->
@@ -786,7 +795,18 @@ function winCallFor(edge) {
 // ---------------- outrights tab: win / top5 / top10 / top20, switchable ----------------
 let outMarket = 'win'; // 'win' | 'top5' | 'top10' | 'top20'
 function outDataFor(marketKey) {
-  return { win: W, top5: W5, top10: W10, top20: W20 }[marketKey] || [];
+  const base = { win: W, top5: W5, top10: W10, top20: W20 }[marketKey] || [];
+  if (!outrightsOverride || Object.keys(outrightsOverride).length === 0) return base;
+  // Merge in fresh market prices where we have them for this market -- model% (r[1]) is
+  // untouched, since it's the static pre-tournament finish sim and a fresh market price
+  // doesn't change what the model itself thinks.
+  return base.map(r => {
+    const [name, model, market, price] = r;
+    const override = outrightsOverride[normalizeNameForMatch(name)];
+    const fresh = override && override[marketKey];
+    if (!fresh) return r;
+    return [name, model, fresh.market, fresh.price];
+  });
 }
 function buildOutrights(search='') {
   const body = document.getElementById('outBody');
@@ -962,6 +982,13 @@ const W20_FALLBACK=[
 // ---------------- Load DraftKings 2-ball matchup odds directly, bypassing the pipeline's
 // book-preference fallback entirely — the price/market% shown is always your real book. ----------------
 let dkMatchupOverride = loadLS('rodsModel_dkMatchupOverride', null); // null = showing auto/pipeline data
+// Fresh outright market prices pasted in as the tournament progresses -- keyed by normalized
+// player name, each holding whichever of {win, top5, top10} markets were present in the
+// paste. Model% is untouched by this (it's the static pre-tournament finish sim, doesn't
+// change round to round -- see the conversation this was built from for why that's a real,
+// separate, bigger problem this override does NOT solve). This only refreshes what the
+// market side shows, same relationship dkMatchupOverride has to the model side for Matchups.
+let outrightsOverride = loadLS('rodsModel_outrightsOverride', {});
 
 function parseDKMatchups(text) {
   // Confirmed real DraftKings page format — the market label varies by event: "2 Ball -
@@ -1057,6 +1084,73 @@ function clearDKMatchups() {
   saveLS('rodsModel_dkMatchupOverride', null);
   document.getElementById('dkMatchStatus').textContent = 'Reverted to auto (pipeline) data.';
   buildMatch(document.getElementById('matchSearch').value);
+}
+
+// Real, tested format (confirmed against Rod's actual paste): player name on its own line,
+// followed by up to 3 price lines in Win / Top 5 / Top 10 order. Longshots often have fewer
+// than 3 -- confirmed live, missing prices drop from the LEFT (Win first, since books
+// commonly stop quoting Win odds on extreme longshots before dropping Top 5/Top 10), so a
+// 2-price player is Top5+Top10, a 1-price player is Top10 only. A trailing name with zero
+// prices after it (paste cut off mid-row) is skipped entirely -- there's nothing to parse.
+function parseOutrightsBulkText(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  // handles both a plain ASCII hyphen and the unicode minus sign (U+2212) some sportsbook
+  // sites paste instead of a regular "-" -- confirmed present in Rod's real paste.
+  const priceRe = /^[+\-\u2212]\d+$/;
+  const entries = [];
+  let i = 0;
+  while (i < lines.length) {
+    const name = lines[i];
+    if (priceRe.test(name)) { i++; continue; } // stray price with no preceding name -- defensive skip
+    i++;
+    const prices = [];
+    while (i < lines.length && priceRe.test(lines[i])) {
+      prices.push(lines[i].replace('\u2212', '-')); // normalize to ascii for parseFloat downstream
+      i++;
+    }
+    if (prices.length === 0) continue; // trailing name with no data -- nothing to parse
+    let win = null, top5 = null, top10 = null;
+    if (prices.length >= 3) [win, top5, top10] = prices;
+    else if (prices.length === 2) [top5, top10] = prices;
+    else if (prices.length === 1) [top10] = prices;
+    entries.push({ name, win, top5, top10 });
+  }
+  return entries;
+}
+function loadOutrightsBulk() {
+  const text = document.getElementById('outBulkText').value;
+  const status = document.getElementById('outBulkStatus');
+  if (!text.trim()) { status.textContent = 'Paste the outright odds board first.'; return; }
+  const parsed = parseOutrightsBulkText(text);
+  if (!parsed.length) { status.textContent = 'Found 0 players — check the paste has a name line followed by price lines.'; return; }
+
+  let matched = 0, threePrice = 0, partialPrice = 0;
+  const notFound = [];
+  parsed.forEach(entry => {
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.name));
+    if (!prow) { notFound.push(entry.name); return; }
+    const key = normalizeNameForMatch(prow[0]);
+    const markets = {};
+    if (entry.win !== null) markets.win = { price: `${entry.win} (draftkings)`, market: impliedProb(entry.win) };
+    if (entry.top5 !== null) markets.top5 = { price: `${entry.top5} (draftkings)`, market: impliedProb(entry.top5) };
+    if (entry.top10 !== null) markets.top10 = { price: `${entry.top10} (draftkings)`, market: impliedProb(entry.top10) };
+    outrightsOverride[key] = { ...outrightsOverride[key], ...markets };
+    matched++;
+    if (entry.win !== null && entry.top5 !== null && entry.top10 !== null) threePrice++; else partialPrice++;
+  });
+
+  saveLS('rodsModel_outrightsOverride', outrightsOverride);
+  document.getElementById('outBulkText').value = '';
+  buildOutrights(document.getElementById('outSearch') ? document.getElementById('outSearch').value : '');
+  status.textContent = `Loaded fresh market prices for ${matched} of ${parsed.length} players ` +
+    `(${threePrice} with all 3 markets, ${partialPrice} with fewer -- longshots often only quote Top 5/Top 10).` +
+    (notFound.length ? ` Not matched against the current field: ${notFound.slice(0,8).join(', ')}${notFound.length>8?'...':''}` : '');
+}
+function clearOutrightsOverride() {
+  outrightsOverride = {};
+  saveLS('rodsModel_outrightsOverride', {});
+  document.getElementById('outBulkStatus').textContent = 'Reverted to auto (pipeline) market prices.';
+  buildOutrights(document.getElementById('outSearch') ? document.getElementById('outSearch').value : '');
 }
 
 // ---------------- 3-Ball Matchups: same idea as the 2-ball loader, extended to three
