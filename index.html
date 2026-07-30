@@ -2451,10 +2451,14 @@ let lastKnownEvent = loadLS('rodsModel_lastKnownEvent', null);
 // everything else this session was. Worth confirming it populates real data once deployed.
 const COURSE_COORDS = {
   'tpc twin cities': { lat: 45.177, lon: -93.213 },
+  'detroit golf club': { lat: 42.4263, lon: -83.1262 }, // Rocket Classic 2026, July 30-Aug 2 -- confirmed real coordinates via search, multiple independent sources agreed within a few hundred meters
 };
 async function fetchWeatherForCourse(courseName) {
   const key = (courseName || '').toLowerCase().trim();
-  const coords = COURSE_COORDS[key];
+  // Partial match, not exact -- the real course_name field from the pipeline may include
+  // extra text (e.g. "Detroit Golf Club (North Course)") that wouldn't match an exact key.
+  const matchedKey = Object.keys(COURSE_COORDS).find(k => key.includes(k));
+  const coords = matchedKey ? COURSE_COORDS[matchedKey] : null;
   if (!coords) return null; // no known coordinates for this course yet -- add one above
   try {
     const pointsRes = await fetch(`https://api.weather.gov/points/${coords.lat},${coords.lon}`);
