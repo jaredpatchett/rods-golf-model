@@ -1297,7 +1297,7 @@ function buildThreeBall(search='') {
       <td class="cell" style="color:var(--text-dim)">${r.price} (draftkings)</td>
       <td class="cell" style="text-align:center">
         <span class="pill ${cls}">${call}</span>
-        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="quickAddToTracker('${r.name.replace(/'/g,"\\'")} 3-Ball (${r.round})','Matchup','${r.price} (draftkings)',${r.model},${edgePct})">+trk</button>`:''}
+        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="quickAddToTracker('${r.name.replace(/'/g,"\\'")} 3-Ball (${r.round})','Matchup','${r.price} (draftkings)',${r.model},${edgePct},true)">+trk</button>`:''}
       </td>
     </tr>`;
   });
@@ -2182,8 +2182,8 @@ let betTracker = loadLS('rodsModel_betTracker', []);
 // one-click links from the other tabs — pre-fill description/price/type, ask for
 // stake, push straight into the tracker, then jump to the Tracker tab so you can
 // see it landed.
-function quickAddToTracker(desc, type, price, modelProb, edgePct) {
-  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}${modelProb!==null&&modelProb!==undefined?`\nModel: ${(modelProb*100).toFixed(1)}%`:''}${edgePct!==null&&edgePct!==undefined?`\nEdge: ${edgePct>=0?'+':''}${edgePct.toFixed(1)}%`:''}\n\nStake ($)?`, '50');
+function quickAddToTracker(desc, type, price, modelProb, edgePct, forceTrackingOnly) {
+  const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}${modelProb!==null&&modelProb!==undefined?`\nModel: ${(modelProb*100).toFixed(1)}%`:''}${edgePct!==null&&edgePct!==undefined?`\nEdge: ${edgePct>=0?'+':''}${edgePct.toFixed(1)}%`:''}${forceTrackingOnly?'\n\n(3-Ball -- tracking-only by default, not counted toward P&L)':''}\n\nStake ($)?`, '50');
   if (stakeStr === null) return; // cancelled
   const stake = parseFloat(stakeStr);
   if (isNaN(stake) || stake <= 0) { alert('Enter a valid stake to add this bet.'); return; }
@@ -2191,7 +2191,12 @@ function quickAddToTracker(desc, type, price, modelProb, edgePct) {
   // would otherwise silently inflate Total Staked/Profit/ROI with money that was never
   // actually risked. Calibration uses every bet either way — this only affects the P&L
   // summary math.
-  const wagered = confirm('Is this a REAL wager?\n\nOK = real money, counts toward Total Staked / Profit / ROI.\nCancel = tracking only (for model calibration), excluded from your P&L summary.');
+  // 3-Ball bets skip the prompt and default to tracking-only automatically -- Rod's own
+  // call, since 3-ball odds run longer/higher-variance than 2-ball and he doesn't want
+  // them counted as real wagers unless he specifically flips one later via the tracker's
+  // own "TRACKING (click to mark real)" toggle.
+  const wagered = forceTrackingOnly ? false :
+    confirm('Is this a REAL wager?\n\nOK = real money, counts toward Total Staked / Profit / ROI.\nCancel = tracking only (for model calibration), excluded from your P&L summary.');
   betTracker.push({
     id: Date.now()+Math.random(),
     date: new Date().toISOString().slice(0,10),
