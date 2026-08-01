@@ -34,7 +34,6 @@ Design notes
 Usage
 -----
     from sim_engine import run_matchup_sim
-
     players = {
         "Tommy Fleetwood": {"mean": 69.0, "sd": None},   # sd=None -> use course sd
         "Xander Schauffele": {"mean": 69.1, "sd": None},
@@ -44,7 +43,6 @@ Usage
                              course_row=course_row, n_rounds=1)
     # -> {("Tommy Fleetwood","Xander Schauffele"): 0.5231}
 """
-
 import random
 
 TOUR_BASELINE_SD = 2.9   # approx per-round skill-adjusted score SD, tour-wide baseline
@@ -63,12 +61,14 @@ def simulate_round(mean, sd, blowup_rate, rng):
     Normal(mean, sd) normally, or Normal(mean+BLOWUP_SHIFT, sd*1.4) on a
     blow-up round — has a TRUE mean of mean + blowup_rate*BLOWUP_SHIFT, not
     `mean` itself. That's an unwanted systematic bias, not intentional skew.
+
     It's invisible in head-to-head matchups (both players get the same
     additive shift, so it cancels in the comparison) but directly distorts
     any comparison against an external fixed number — round-score totals,
     outright win markets, anything compared to a real sportsbook line. There
     it doesn't cancel; it just pushes the whole field toward "Over" (or
     "more likely to win/finish well") by a constant amount every time.
+
     Subtracting blowup_rate*BLOWUP_SHIFT from the input mean before applying
     the mixture keeps the intentional right-skew (blow-up rounds still
     happen, still add tail risk and widen the distribution) while making the
@@ -121,6 +121,7 @@ def run_matchup_sim(players, matchups, course_row=None, n_rounds=1, n_trials=N_T
                 Path B gives you per-player volatility this can be passed via
                 players[name]['sd'] and this course-level fallback is skipped)
     n_rounds:  1 for a single-round 2-ball matchup, 4 for a 72-hole matchup
+
     Returns: dict (p1, p2) -> model_prob_p1, rounded to 4 decimals.
              Pairs missing a projection for either player are silently skipped
              (caller should treat a missing key as "no model number available").
@@ -131,7 +132,6 @@ def run_matchup_sim(players, matchups, course_row=None, n_rounds=1, n_trials=N_T
         blowup = course_row.get("blowup", DEFAULT_BLOWUP)
     else:
         course_sd, var_mult, blowup = TOUR_BASELINE_SD, 1.0, DEFAULT_BLOWUP
-
     out = {}
     for i, (p1, p2) in enumerate(matchups):
         d1, d2 = players.get(p1), players.get(p2)
@@ -156,6 +156,7 @@ def run_finish_sim(players, course_row=None, n_rounds=4, n_trials=10000, top_ns=
              (same shape as run_matchup_sim's players arg)
     course_row: {'scoreSD':, 'blowup':} — same course-level fallback as the
                 matchup sim, applied when a player-level SD isn't known.
+
     Returns: dict name -> {"win": frac, "top5": frac, "top10": frac, "top20": frac}
              Players missing a projection are excluded from the field entirely
              (can't rank someone with no projected score).
@@ -172,7 +173,6 @@ def run_finish_sim(players, course_row=None, n_rounds=4, n_trials=10000, top_ns=
         blowup = course_row.get("blowup", DEFAULT_BLOWUP)
     else:
         course_sd, var_mult, blowup = TOUR_BASELINE_SD, 1.0, DEFAULT_BLOWUP
-
     names, means, sds = [], [], []
     for name, d in players.items():
         if d.get("mean") is None:
@@ -180,16 +180,13 @@ def run_finish_sim(players, course_row=None, n_rounds=4, n_trials=10000, top_ns=
         names.append(name)
         means.append(d["mean"])
         sds.append(d.get("sd") or player_sd(course_sd, var_mult))
-
     n = len(names)
     if n == 0:
         return {}
-
     wins = [0] * n
     top_counts = {k: [0] * n for k in top_ns}
     max_top = max(top_ns)
     rng = random.Random(42)  # fixed seed: reproducible field-sim results across runs
-
     for _ in range(n_trials):
         totals = [
             sum(simulate_round(means[i], sds[i], blowup, rng) for _ in range(n_rounds))
@@ -201,7 +198,6 @@ def run_finish_sim(players, course_row=None, n_rounds=4, n_trials=10000, top_ns=
         for k in top_ns:
             for idx in order[:k]:
                 top_counts[k][idx] += 1
-
     out = {}
     for i, name in enumerate(names):
         row = {"win": wins[i] / n_trials}
