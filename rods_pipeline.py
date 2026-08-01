@@ -2,7 +2,6 @@
 """
 Rod's Golf Model — DataGolf ingestion pipeline (Path A: wrap DataGolf)
 =====================================================================
-
 Run this on YOUR machine (it needs internet + your DataGolf key).
 It pulls the DataGolf feeds, maps them into the shapes Rod's Model expects,
 and writes `rods_data.json` next to the HTML page. The page reads that file.
@@ -15,6 +14,7 @@ Usage:
     python rods_pipeline.py                 # PGA/euro default -> writes rods_data.json
     python rods_pipeline.py --tour euro      # if The Open is under the euro feed
     python rods_pipeline.py --watch 300      # re-pull every 5 min during the round
+    python rods_pipeline.py --ev-threshold 2 # lower/raise the "playable" EV cutoff
 
 Path B migration: everything DataGolf-specific lives in the fetch_* functions and
 the MAP_* mapping dicts. To compute your own Birkdale weights later, replace
@@ -29,12 +29,33 @@ show real edge no matter what the numbers said. "market%" still comes straight o
 DataGolf's book-sourced odds, which is the only side of that comparison that
 should come from them.
 
+EDGE ENGINE (added this session): build_matchups() now grades every matchup
+against DraftKings specifically (the only book Rod actually holds an account
+with) and splits the result into two different kinds of edge instead of one
+blended number:
+  - BOOK EDGE:  DraftKings pricing a side softer than the rest of the market
+                (a multi-book consensus, de-vigged). Structural, book-specific,
+                lower variance — doesn't depend on your model being right.
+  - MODEL EDGE: your sim disagreeing with the whole market, not just DK.
+                Higher variance — you're betting against every book's collective
+                information, not just one soft line.
+The multi-book consensus needed for this ISN'T a new data source — DataGolf's
+matchups feed already returns a full per-book odds dict (the same one
+pick_book_price() walks via BOOK_PREFERENCE), it was just being discarded down
+to a single book's price. See consensus_fair_prob() / matchup_edge() below.
+"datagolf" and "draftkings" are excluded from the consensus average: datagolf
+is a model line, not a market price; draftkings is excluded because it's the
+thing being graded, not part of its own baseline.
+NOTE: matchup_edge() reads the DK price from odds_dict["draftkings"], i.e.
+DataGolf's own rendition of the DK line. If you're now sourcing your actual
+DraftKings price from your own copy-paste parser instead of trusting
+DataGolf's copy of it, that's the one spot to swap in your real price instead.
+
 course_fit_table.json (written by load_course_fit_xlsx.py from
 course_fit_template.xlsx) is now read automatically if present, and used both
 for the F table and as the course-level scoreSD/blowup input to the sim. Falls
 back to the hardcoded Birkdale/Bay Hill rows if that file doesn't exist yet.
 """
-
 import os
 import sys
 import json
@@ -43,7 +64,7 @@ import argparse
 import urllib.request
 import urllib.parse
 import urllib.error
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from sim_engine import run_matchup_sim, run_finish_sim, TOUR_BASELINE_SD, DEFAULT_BLOWUP
 
@@ -163,7 +184,6 @@ def build_skill_ratings(skill_payload):
             if n in row and row[n] is not None:
                 return row[n]
         return None
-
     by_id, by_name = {}, {}
     for r in as_rows(skill_payload):
         vals = {
@@ -186,7 +206,6 @@ def build_projections(decomp_payload, skill_by_id, skill_by_name, baseline_round
     """
     Map DataGolf player-decompositions + skill-ratings -> Rod's `P` rows:
       [name, proj, ttg, ott, app, put, arg, fit]
-
     - name/dg_id/proj/fit come from player-decompositions (confirmed live fields:
       player_name, dg_id, final_pred, total_fit_adjustment)
     - ttg/ott/app/put/arg come from skill-ratings, joined by dg_id (falls back
@@ -201,7 +220,6 @@ def build_projections(decomp_payload, skill_by_id, skill_by_name, baseline_round
             if n in row and row[n] is not None:
                 return row[n]
         return None
-
     rows = as_rows(decomp_payload)
     out = []
     for r in rows:
@@ -213,10 +231,8 @@ def build_projections(decomp_payload, skill_by_id, skill_by_name, baseline_round
         skill = skill_by_id.get(dg_id) if dg_id is not None else None
         if skill is None:
             skill = skill_by_name.get(norm_name, {})
-
         final_pred = pick(r, "final_pred", "baseline_pred")
         proj = num(baseline_round_score - final_pred) if final_pred is not None else None
-
         out.append({
             "name": norm_name,
             "proj": proj,
@@ -245,6 +261,142 @@ BOOK_PREFERENCE = ("draftkings", "bet365", "bovada", "betcris", "fanduel", "pinn
 # shown on the page should be the price he can actually get, not just the first one found.
 # Falls back down the list only when DraftKings hasn't posted a price for that player/market.
 
+# ---- edge engine constants (see module docstring: BOOK EDGE vs MODEL EDGE) ----
+EV_THRESHOLD = 3.0          # Rod's current staking cutoff (matches bet_tracker.csv usage);
+                             # override with --ev-threshold
+EDGE_THRESHOLD_PTS = 1.0    # min percentage-point gap to call a book/model edge "real"
+MIN_CONSENSUS_BOOKS = 2     # need at least this many non-DK, non-datagolf books to trust
+                             # a consensus number rather than one other book's opinion
+
+
+def american_to_decimal(price):
+    """American odds (int, float, or numeric string) -> decimal odds. None on bad input."""
+    try:
+        p = float(price)
+    except (TypeError, ValueError):
+        return None
+    if p > 0:
+        return 1 + p / 100
+    if p < 0:
+        return 1 + 100 / abs(p)
+    return None
+
+
+def devig_pair(price_a, price_b):
+    """Two American prices for the same market -> (fair_a, fair_b), normalized to sum to 1.
+    (None, None) if either price is missing/unparseable. Shares the same math as the
+    no_vig calc in build_matchups() below, factored out so consensus_fair_prob() can
+    reuse it per-book."""
+    ia, ib = implied_prob_from_american(price_a), implied_prob_from_american(price_b)
+    if ia is None or ib is None or (ia + ib) == 0:
+        return None, None
+    fa = ia / (ia + ib)
+    return fa, 1 - fa
+
+
+def consensus_fair_prob(odds_dict, exclude=("draftkings", "datagolf"), min_books=MIN_CONSENSUS_BOOKS):
+    """
+    Average devigged p1 fair probability across every qualifying book in the
+    SAME per-book odds dict pick_book_price() already receives, excluding
+    `exclude` (draftkings — it's the thing being graded; datagolf — it's a
+    model line, not a market price). No new data source: this is the exact
+    dict DataGolf's matchups feed already returns, most of which was
+    previously discarded once one book's price was picked.
+    Returns (consensus_fair_a, book_count). consensus_fair_a is None if fewer
+    than `min_books` qualifying books have a two-sided price — a "consensus"
+    built from one other book isn't a consensus.
+    """
+    if not isinstance(odds_dict, dict):
+        return None, 0
+    fairs = []
+    for book, entry in odds_dict.items():
+        if book in exclude or not isinstance(entry, dict):
+            continue
+        fa, _ = devig_pair(entry.get("p1"), entry.get("p2"))
+        if fa is not None:
+            fairs.append(fa)
+    if len(fairs) < min_books:
+        return None, len(fairs)
+    return sum(fairs) / len(fairs), len(fairs)
+
+
+def matchup_edge(model_prob_p1, odds_dict, threshold=EDGE_THRESHOLD_PTS, min_consensus_books=MIN_CONSENSUS_BOOKS):
+    """
+    Grade one matchup against DraftKings specifically (the only book Rod holds
+    an account with), and split the result into book edge vs model edge.
+
+    Returns None if DraftKings hasn't posted a price for this matchup — nothing
+    to bet, nothing to grade. NOTE: reads odds_dict["draftkings"] as the DK
+    price, i.e. DataGolf's own rendition of the DK line — if that's since been
+    replaced by a separately-sourced copy-paste DK price, swap it in here.
+
+    Otherwise returns:
+      side            'p1' or 'p2' -- whichever side is better at DK's own price
+      dk_price        the American price for that side at DK
+      dk_fair_pct     DK's own de-vigged fair probability for that side (0-100)
+      model_pct       your model's probability for that side (0-100)
+      ev_pct          EV% of betting that side at DK's actual price
+      consensus_pct   multi-book consensus fair probability for that side (0-100),
+                      or None if fewer than min_consensus_books qualified
+      consensus_books how many non-DK, non-datagolf books fed the consensus
+      book_edge       consensus_pct - dk_fair_pct  (+ = DK priced softer than the field)
+      model_edge      model_pct - consensus_pct     (+ = your model vs. the whole market)
+      tag / label     'stack'/'soft'/'model'/'conflict'/'none' classification
+    """
+    if not isinstance(odds_dict, dict):
+        return None
+    dk = odds_dict.get("draftkings")
+    if not isinstance(dk, dict) or dk.get("p1") is None or dk.get("p2") is None:
+        return None
+
+    dk_fair_a, dk_fair_b = devig_pair(dk["p1"], dk["p2"])
+    if dk_fair_a is None:
+        return None
+
+    model_prob_p2 = 1 - model_prob_p1
+    dec_a, dec_b = american_to_decimal(dk["p1"]), american_to_decimal(dk["p2"])
+    ev_a = (model_prob_p1 * dec_a - 1) * 100 if dec_a else None
+    ev_b = (model_prob_p2 * dec_b - 1) * 100 if dec_b else None
+    if ev_a is None and ev_b is None:
+        return None
+
+    if ev_b is None or (ev_a is not None and ev_a >= ev_b):
+        side, ev_pct, dk_fair_pct, model_pct, dk_price = "p1", ev_a, dk_fair_a * 100, model_prob_p1 * 100, dk["p1"]
+    else:
+        side, ev_pct, dk_fair_pct, model_pct, dk_price = "p2", ev_b, dk_fair_b * 100, model_prob_p2 * 100, dk["p2"]
+
+    consensus_a, book_count = consensus_fair_prob(odds_dict, min_books=min_consensus_books)
+    consensus_pct = book_edge = model_edge = None
+    tag, label = "none", "No edge"
+
+    if consensus_a is not None:
+        consensus_side = consensus_a if side == "p1" else (1 - consensus_a)
+        consensus_pct = consensus_side * 100
+        book_edge = consensus_pct - dk_fair_pct
+        model_edge = model_pct - consensus_pct
+        book_sig = abs(book_edge) >= threshold
+        model_sig = abs(model_edge) >= threshold
+        if book_sig and model_sig:
+            tag, label = ("stack", "Stacked (book + model)") if (book_edge > 0) == (model_edge > 0) else ("conflict", "Conflicting")
+        elif book_sig:
+            tag, label = "soft", "Soft-book"
+        elif model_sig:
+            tag, label = "model", "Model vs market"
+
+    return {
+        "side": side,
+        "dk_price": dk_price,
+        "dk_fair_pct": round(dk_fair_pct, 2),
+        "model_pct": round(model_pct, 2),
+        "ev_pct": round(ev_pct, 2),
+        "consensus_pct": round(consensus_pct, 2) if consensus_pct is not None else None,
+        "consensus_books": book_count,
+        "book_edge": round(book_edge, 2) if book_edge is not None else None,
+        "model_edge": round(model_edge, 2) if model_edge is not None else None,
+        "tag": tag,
+        "label": label,
+    }
+
 
 def pick_book_price(odds_dict):
     """
@@ -255,7 +407,6 @@ def pick_book_price(odds_dict):
     sides are needed (not just p1) so a FADE call — which means betting the
     *other* player — can still show the correct real price rather than
     reusing p1's price for a bet that's actually on p2.
-
     Also returns book_count — how many books actually posted a price for this
     matchup at all, not just which one we ended up using. A price backed by
     one thin book deserves less confidence than one where 7 books agree, even
@@ -305,28 +456,29 @@ def pick_single_book_price(row):
     return None, None
 
 
-def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_rounds=1, market_used="round_matchups"):
+def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_rounds=1,
+                    market_used="round_matchups", ev_threshold=EV_THRESHOLD):
     """
     Map DataGolf matchup tool -> Rod's `M` rows:
-      [playerA, playerB, wave, modelPct, marketPct, priceA, priceB]
-
+      [playerA, playerB, wave, modelPct, marketPct, priceA, priceB, noVig, skillGap,
+       bookCount, consensusPct, consensusBooks, evPct, bookEdge, modelEdge, edgeTag, edgeLabel]
     Pulls the two players and the book price/market number from DataGolf, but
     the model% comes from sim_engine.py (projected scores + this event's
     course variance/blowup), NOT from DataGolf's own matchup probability —
     see the module docstring for why that swap matters.
-
     priceB (player B's own price) is captured alongside priceA so a FADE call
     — which means betting player B, not A — can show a real, correct price
     instead of reusing A's price for a bet that's actually on B.
+    The last 7 columns are the edge-engine grade against DraftKings specifically
+    (see matchup_edge() above) — None across the board if DK hasn't posted a
+    price for that matchup.
     """
     def pick(row, *names):
         for n in names:
             if n in row and row[n] is not None:
                 return row[n]
         return None
-
     raw_rows = as_rows(matchup_payload)
-
     # DataGolf posts the SAME pairing as two separate entries when a book offers both a
     # standard 2-way market (ties refunded — "ties": "void") and a 3-way market (ties as
     # their own outcome — "ties": "separate bet offered"). Confirmed live: the 3-way variant
@@ -351,7 +503,6 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
     #     first place — any two players is a legitimate market — so this market just needs
     #     simple dedup, not the stricter round_matchups filter.
     require_dual_tie_types = (market_used == "round_matchups")
-
     by_pair = defaultdict(list)
     for r in raw_rows:
         p1_raw = pick(r, "p1_player_name", "player1", "p1")
@@ -359,7 +510,6 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         if not p1_raw or not p2_raw:
             continue
         by_pair[(p1_raw, p2_raw)].append(r)
-
     rows = []
     for key, entries in by_pair.items():
         if require_dual_tie_types:
@@ -368,7 +518,6 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
                 continue  # alternate/cross-group pairing (round_matchups only) — drop it
         void_entry = next((e for e in entries if e.get("ties") == "void"), None)
         rows.append(void_entry if void_entry is not None else entries[0])
-
     pairs = []
     meta = []
     for r in rows:
@@ -409,16 +558,16 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         meta.append({"a": p1, "b": p2, "wave": wave, "market": market_prob,
                       "price": priceA_display, "priceB": priceB_display, "noVig": no_vig,
                       "skillGap": round(skill_gap, 2) if skill_gap is not None else None,
-                      "bookCount": book_count})
-
+                      "bookCount": book_count, "odds_dict": r.get("odds")})
     # one batched sim call for every matchup on the slate
     model_probs = run_matchup_sim(proj_by_name, pairs, course_row=course_row, n_rounds=n_rounds)
-
     out = []
     for (p1, p2), m in zip(pairs, meta):
         m["model"] = model_probs.get((p1, p2))  # None if either player had no projection to sim from
+        # edge-engine grade against DraftKings specifically — None if DK has no line here,
+        # or if the model has no probability to grade against in the first place.
+        m["edge"] = matchup_edge(m["model"], m["odds_dict"], threshold=ev_threshold) if m["model"] is not None else None
         out.append(m)
-
     # sort by edge desc; unsimmed/unmarketed rows sink to the bottom
     def edge(m):
         if m["model"] is None or m["market"] is None:
@@ -442,7 +591,6 @@ def build_outrights_market(outrights_payload):
             if n in row and row[n] is not None:
                 return row[n]
         return None
-
     out = {}
     for r in as_rows(outrights_payload):
         name = pick(r, "player_name", "name")
@@ -573,7 +721,6 @@ def load_course_fit(target_course_name):
     target_row is a {'scoreSD':, 'blowup':} dict for whichever row matches
     target_course_name (the REAL current event's course, from DataGolf's own
     event payload — see build()) — used to seed the sim's course-level variance.
-
     Falls back to TOUR-WIDE baseline defaults (not to whatever row happens to
     be first in the table) when no course-specific data exists for the current
     event. This matters: the hardcoded reference rows below are Royal Birkdale
@@ -583,7 +730,6 @@ def load_course_fit(target_course_name):
     """
     def neutral_fallback():
         return {"scoreSD": TOUR_BASELINE_SD, "blowup": DEFAULT_BLOWUP}
-
     if os.path.exists(COURSE_FIT_TABLE):
         with open(COURSE_FIT_TABLE) as f:
             data = json.load(f)
@@ -616,7 +762,6 @@ def fetch_matchups_with_fallback(key, tour):
         print("   tournament_matchups not posted yet — falling back to round_matchups")
     except SystemExit as e:
         print(f"   tournament_matchups failed ({e}) — falling back to round_matchups")
-
     try:
         payload = fetch(EP["matchups"], key, tour=tour, market="round_matchups", odds_format="american")
         rows = as_rows(payload)
@@ -626,7 +771,8 @@ def fetch_matchups_with_fallback(key, tour):
         return [], None, 1
 
 
-def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=DEFAULT_BASELINE_ROUND_SCORE):
+def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=DEFAULT_BASELINE_ROUND_SCORE,
+          ev_threshold=EV_THRESHOLD):
     key = get_key()
     print(f"[1/6] player decompositions ({tour}) ...")
     decomp = fetch(EP["decomp"], key, tour=tour)
@@ -654,17 +800,14 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
         except SystemExit as e:
             print(f"   {dg_market} unavailable ({e}) — that market will be model-only")
             outrights_markets[sim_key] = {}
-
     # explicit --matchup-rounds always wins if the caller passed one; otherwise
     # use whatever round count matches the market that actually had data
     n_rounds = matchup_rounds if matchup_rounds is not None else auto_rounds
-
     skill_by_id, skill_by_name = build_skill_ratings(skill)
     print(f"   using baseline round score: {baseline_round_score} (converts final_pred to an absolute PROJ number — "
           f"set this to roughly this course's par, not the 71.0 major-tuned default, for a regular tour stop)")
     proj = build_projections(decomp, skill_by_id, skill_by_name, baseline_round_score=baseline_round_score)
     waves = build_waves(field)
-
     # Confirmed live (decompositions payload top-level keys): DataGolf's own response already
     # carries the real event_name and course_name — no reason to hardcode a specific
     # tournament's name here, which would silently mislabel every future event (and, worse,
@@ -672,15 +815,21 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
     # into the sim). Falls back to generic labels only if DataGolf's payload is missing them.
     event_name = decomp.get("event_name") or "Unknown Event"
     course_name = decomp.get("course_name") or event_name
-
     F, target_course_row = load_course_fit(course_name)
     proj_by_name = {r["name"]: {"mean": r["proj"], "sd": None} for r in proj}
     # NOTE: n_rounds sums that many simulated rounds per player in the sim, matched
     # automatically to whichever market actually had data (4 for tournament_matchups,
     # 1 for round_matchups). This ignores cuts/WDs on the 4-round path — a real 72-hole
     # matchup settles on made-cut rounds only, which this sim doesn't model yet.
-    match = build_matchups(matchup_rows, waves, proj_by_name, target_course_row, n_rounds=n_rounds, market_used=market_used)
-
+    match = build_matchups(matchup_rows, waves, proj_by_name, target_course_row, n_rounds=n_rounds,
+                            market_used=market_used, ev_threshold=ev_threshold)
+    # edge-engine summary: how thin/thick is today's playable slate, and what kind of
+    # edge is it (soft-book vs model-vs-market)? See module docstring.
+    graded = [m["edge"] for m in match if m.get("edge")]
+    playable = [g for g in graded if g["ev_pct"] is not None and g["ev_pct"] >= ev_threshold]
+    print(f"   {len(playable)} of {len(match)} matchups clear {ev_threshold:.1f}% EV at DraftKings")
+    if graded:
+        print(f"   edge split: {dict(Counter(g['tag'] for g in graded))}")
     print(f"   running full-field finish sim ({finish_trials} trials) ...")
     finish_sim_results = run_finish_sim(proj_by_name, course_row=target_course_row,
                                          n_rounds=4, n_trials=finish_trials)
@@ -688,20 +837,27 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
     W5 = build_outrights(finish_sim_results, outrights_markets["top5"], "top5")
     W10 = build_outrights(finish_sim_results, outrights_markets["top10"], "top10")
     W20 = build_outrights(finish_sim_results, outrights_markets["top20"], "top20")
-
-    # convert to the compact array shapes the page's JS already expects
+    # convert to the compact array shapes the page's JS already expects.
+    # Edge-engine columns are appended at the END of each M row (consensusPct,
+    # consensusBooks, evPct, bookEdge, modelEdge, edgeTag, edgeLabel) so existing
+    # code reading the first 10 fields by index is unaffected.
     P = [[r["name"], r["proj"], r["ttg"], r["ott"], r["app"], r["put"], r["arg"], r["fit"]] for r in proj]
-    M = [[m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"], m["priceB"], m["noVig"],
-          m["skillGap"], m["bookCount"]] for m in match]
-
+    M = []
+    for m in match:
+        e = m.get("edge") or {}
+        M.append([m["a"], m["b"], m["wave"], m["model"], m["market"], m["price"], m["priceB"], m["noVig"],
+                  m["skillGap"], m["bookCount"],
+                  e.get("consensus_pct"), e.get("consensus_books"), e.get("ev_pct"),
+                  e.get("book_edge"), e.get("model_edge"), e.get("tag"), e.get("label")])
     data = {
         "meta": {
             "event": event_name,
             "course": course_name,
             "players": len(P),
             "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "source": f"DataGolf projections (Path A) + sim_engine.py for model% [{market_used}]",
+            "source": f"DataGolf projections (Path A) + sim_engine.py for model% [{market_used}] + edge_engine (in-pipeline)",
             "draw_bias": None,   # fill when you add forecast/results logic
+            "ev_threshold": ev_threshold,
         },
         "P": P, "F": F, "M": M, "W": W, "W5": W5, "W10": W10, "W20": W20,
     }
@@ -733,19 +889,25 @@ def main():
                           "event you're running (e.g. --baseline-score 71 for a par-71 course), "
                           "and correct further with the Live Form Adjustment panel once real "
                           "scores exist.")
+    ap.add_argument("--ev-threshold", type=float, default=EV_THRESHOLD,
+                     help=f"Minimum EV%% at DraftKings for a matchup to count as 'playable' in "
+                          f"the console summary and for book/model edge classification. "
+                          f"Defaults to {EV_THRESHOLD} to match how bet_tracker.csv is already "
+                          f"being scored. Doesn't filter rows out of rods_data.json — every "
+                          f"matchup is still written, just graded against this cutoff.")
     args = ap.parse_args()
     if args.watch:
         print(f"watch mode: every {args.watch}s (ctrl-C to stop)")
         while True:
             try:
                 build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials,
-                      baseline_round_score=args.baseline_score)
+                      baseline_round_score=args.baseline_score, ev_threshold=args.ev_threshold)
             except SystemExit as e:
                 print(e)
             time.sleep(args.watch)
     else:
         build(args.tour, matchup_rounds=args.matchup_rounds, finish_trials=args.finish_trials,
-              baseline_round_score=args.baseline_score)
+              baseline_round_score=args.baseline_score, ev_threshold=args.ev_threshold)
 
 
 if __name__ == "__main__":
