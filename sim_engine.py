@@ -13,6 +13,10 @@ derives:
     DG's model to a DG-derived market number tells you nothing about your edge,
     it just tells you whether DG agrees with itself)
   - make-cut / top-N probabilities (stubbed for future use, same simulation core)
+  - Round Score Over/Under probabilities (round_total_prob() — added when Rod's
+    round-score bets turned out to be fully manual, no DataGolf feed for this
+    market at all; same simulate_round() core, tallied against a fixed line
+    instead of another player's score)
 
 Design notes
 ------------
@@ -143,6 +147,31 @@ def run_matchup_sim(players, matchups, course_row=None, n_rounds=1, n_trials=N_T
                           n_rounds=n_rounds, n_trials=n_trials, seed=1000 + i)
         out[(p1, p2)] = round(p, 4)
     return out
+
+
+def round_total_prob(mean, sd, blowup_rate, line, n_trials=N_TRIALS, seed=None):
+    """
+    Monte Carlo P(single simulated round < line) — i.e. probability of
+    clearing the UNDER side of a Round Score O/U at `line`. P(Over) = 1 - this.
+
+    Same simulate_round() core as matchup_prob(), just tallied against a fixed
+    number instead of another player's simulated score. No DataGolf feed exists
+    for this market (checked live against their API docs — Betting Tools only
+    covers Outrights and Matchups) so there's no consensus/market% to compare
+    against here, only whatever price the sportsbook itself is offering.
+
+    Half-point lines (68.5, 69.5, etc. — standard for this market since golf
+    scores are integers) mean an exact tie is structurally impossible, so
+    there's no push/void case to handle the way matchup_prob() handles exact
+    ties. If a book ever posts a whole-number line, that's a real push
+    possibility this function doesn't account for.
+    """
+    rng = random.Random(seed)
+    under = 0
+    for _ in range(n_trials):
+        if simulate_round(mean, sd, blowup_rate, rng) < line:
+            under += 1
+    return under / n_trials
 
 
 def run_finish_sim(players, course_row=None, n_rounds=4, n_trials=10000, top_ns=(5, 10, 20)):
