@@ -51,12 +51,26 @@ DataGolf's own rendition of the DK line. If you're now sourcing your actual
 DraftKings price from your own copy-paste parser instead of trusting
 DataGolf's copy of it, that's the one spot to swap in your real price instead.
 
+ROUND SCORE O/U (added this session): DataGolf's API has no feed for this
+market at all — confirmed directly against their docs (datagolf.com/api-access);
+Betting Tools only covers Outrights and Matchups. So this was, and still is,
+graded from whatever you paste in from DraftKings directly — no auto-fetch is
+possible here the way it is for matchups/outrights. What changed: instead of
+eyeballing a model number, drop DraftKings' Round Score board (raw copy-paste,
+no reformatting) into round_score_paste.txt next to this script, and build()
+will parse it, run sim_engine.round_total_prob() for each player using this
+event's course variance (same inputs already used for everything else), and
+grade DK's actual price against it. No multi-book split here — model vs. DK
+only, same as the matchup grade minus the consensus half, because there's no
+second book to compare against. See MAP 5 / build_round_scores() below.
+
 course_fit_table.json (written by load_course_fit_xlsx.py from
 course_fit_template.xlsx) is now read automatically if present, and used both
 for the F table and as the course-level scoreSD/blowup input to the sim. Falls
 back to the hardcoded Birkdale/Bay Hill rows if that file doesn't exist yet.
 """
 import os
+import re
 import sys
 import json
 import time
@@ -66,11 +80,13 @@ import urllib.parse
 import urllib.error
 from collections import defaultdict, Counter
 
-from sim_engine import run_matchup_sim, run_finish_sim, TOUR_BASELINE_SD, DEFAULT_BLOWUP
+from sim_engine import (run_matchup_sim, run_finish_sim, round_total_prob,
+                         TOUR_BASELINE_SD, DEFAULT_BLOWUP, N_TRIALS as SIM_N_TRIALS)
 
 BASE = "https://feeds.datagolf.com"
 OUT  = "rods_data.json"
 COURSE_FIT_TABLE = "course_fit_table.json"   # written by load_course_fit_xlsx.py, optional
+ROUND_SCORE_PASTE_FILE = "round_score_paste.txt"   # optional — see MAP 5 below
 
 # ---- endpoints we use for Path A ----
 EP = {
@@ -624,6 +640,119 @@ def build_outrights(finish_sim_results, outrights_market, sim_key):
     return out
 
 
+# ------------------------------------------------------------------
+# MAP 5: Round Score O/U (the `RS` array) — NOT a DataGolf feed
+# ------------------------------------------------------------------
+# Confirmed against DataGolf's own API docs (datagolf.com/api-access): Betting
+# Tools only covers Outrights (win/top5/top10/top20/make_cut/frl) and Matchups
+# (tournament_matchups/round_matchups/3_balls). There is no Round Score O/U
+# endpoint, live or historical — this market isn't tracked by DataGolf at all,
+# from any book. So unlike matchups, there's no multi-book consensus possible
+# here; it's model (sim_engine) vs. whatever single price Rod pastes in from
+# DraftKings.
+#
+# Input is a raw copy-paste straight off DraftKings' Round Score O/U board —
+# no reformatting needed. Read from ROUND_SCORE_PASTE_FILE if it exists next
+# to this script; skipped entirely (no error) if it doesn't, same convention
+# as course_fit_table.json being optional.
+DK_ROUND_SCORE_RE = re.compile(
+    r"([A-Za-z][A-Za-z.’'\-\ ]*?)\s+Round Score\s*-\s*Round\s*\d+\s*O/U\s*\n"
+    r"Over\s*([\d.]+)\s*\n"
+    r"([+−\-]\s*\d+)\s*\n"
+    r"Under\s*([\d.]+)\s*\n"
+    r"([+−\-]\s*\d+)"
+)
+
+
+def parse_dk_round_score_paste(raw_text):
+    """
+    Pulls every "<Player> Round Score - Round N O/U / OverX.5 / <price> /
+    UnderX.5 / <price>" block out of a raw DraftKings copy-paste, ignoring
+    the tee-group headers and "Tomorrow H:MM AM" lines interspersed between
+    them (those aren't matched by the pattern, so they're skipped for free —
+    no separate strip step needed).
+    DraftKings renders negative prices with a real minus sign (U+2212), not
+    ASCII hyphen — normalized to '-' here since nothing downstream (float(),
+    american_to_decimal-style parsing) understands U+2212.
+    Returns a list of {"player":, "line":, "over_price":, "under_price":}.
+    """
+    out = []
+    for m in DK_ROUND_SCORE_RE.finditer(raw_text):
+        player, line, over_price, under_price = m.group(1), m.group(2), m.group(3), m.group(5)
+        out.append({
+            "player": player.strip(),
+            "line": float(line),
+            "over_price": over_price.replace("−", "-").replace(" ", ""),
+            "under_price": under_price.replace("−", "-").replace(" ", ""),
+        })
+    return out
+
+
+def resolve_player_name(name, proj_by_name):
+    """
+    DraftKings' board sometimes shortens a first name (e.g. 'Kris Ventura' for
+    'Kristoffer Ventura') where DataGolf's feeds use the full version proj_by_name
+    is keyed on. Exact match first; falls back to a last-name match ONLY if
+    exactly one player in the field shares that last name — an ambiguous
+    last-name match (two Kims, two Johnsons) returns None rather than guessing
+    wrong, same philosophy as the rest of this pipeline preferring a visible
+    "skipped" over a silent bad join.
+    """
+    if name in proj_by_name:
+        return name
+    last = name.strip().split()[-1].lower()
+    candidates = [full for full in proj_by_name if full.strip().split()[-1].lower() == last]
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def build_round_scores(raw_text, proj_by_name, course_row, ev_threshold=EV_THRESHOLD, n_trials=None):
+    """
+    Parse a raw DraftKings Round Score O/U paste, grade each line against
+    sim_engine.round_total_prob() using the SAME projections/course variance
+    already computed for everything else this run, and return Rod's `RS` rows:
+      [player, line, side, price, modelPct, evPct]
+    side is whichever of Over/Under is the better bet at DK's actual price.
+    Entries whose player can't be resolved against proj_by_name (see
+    resolve_player_name) or who have no projection to sim from are skipped
+    and reported to stdout rather than silently dropped — see build().
+    """
+    n_trials = n_trials or SIM_N_TRIALS
+    course_sd = (course_row or {}).get("scoreSD") or TOUR_BASELINE_SD
+    var_mult = course_sd / TOUR_BASELINE_SD
+    blowup = (course_row or {}).get("blowup", DEFAULT_BLOWUP)
+
+    entries = parse_dk_round_score_paste(raw_text)
+    rows, skipped = [], []
+    for i, e in enumerate(entries):
+        resolved = resolve_player_name(e["player"], proj_by_name)
+        proj = proj_by_name.get(resolved) if resolved else None
+        if not proj or proj.get("mean") is None:
+            skipped.append(e["player"])
+            continue
+        sd = proj.get("sd") or (course_sd * var_mult)
+        p_under = round_total_prob(proj["mean"], sd, blowup, e["line"], n_trials=n_trials, seed=2000 + i)
+        p_over = 1 - p_under
+
+        dec_over, dec_under = american_to_decimal(e["over_price"]), american_to_decimal(e["under_price"])
+        ev_over = (p_over * dec_over - 1) * 100 if dec_over else None
+        ev_under = (p_under * dec_under - 1) * 100 if dec_under else None
+        if ev_over is None and ev_under is None:
+            skipped.append(e["player"])
+            continue
+
+        if ev_under is None or (ev_over is not None and ev_over >= ev_under):
+            side, price, model_pct, ev_pct = "over", e["over_price"], p_over * 100, ev_over
+        else:
+            side, price, model_pct, ev_pct = "under", e["under_price"], p_under * 100, ev_under
+
+        rows.append([resolved, e["line"], side, price, round(model_pct, 2), round(ev_pct, 2)])
+
+    if skipped:
+        print(f"   round score: skipped {len(skipped)} unresolved/unmodeled name(s): {', '.join(skipped)}")
+    rows.sort(key=lambda r: -r[5])
+    return rows
+
+
 def as_prob(x):
     """Coerce a probability that might be 0-1 or 0-100 into a 0-1 float."""
     if x is None or x == "":
@@ -774,20 +903,20 @@ def fetch_matchups_with_fallback(key, tour):
 def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=DEFAULT_BASELINE_ROUND_SCORE,
           ev_threshold=EV_THRESHOLD):
     key = get_key()
-    print(f"[1/6] player decompositions ({tour}) ...")
+    print(f"[1/7] player decompositions ({tour}) ...")
     decomp = fetch(EP["decomp"], key, tour=tour)
-    print(f"[2/6] skill ratings ...")
+    print(f"[2/7] skill ratings ...")
     skill = fetch(EP["skill"], key)  # not tour-specific — season-level skill ratings
-    print(f"[3/6] pre-tournament predictions ({tour}) ...")
+    print(f"[3/7] pre-tournament predictions ({tour}) ...")
     pretourn = fetch(EP["pretourn"], key, tour=tour, odds_format="percent")  # win/top-N/make-cut probs;
     # not used directly — no projected-score field exists here (confirmed live). Kept in
     # case you want to sanity-check the finish sim against DataGolf's own probabilities.
-    print(f"[4/6] field / tee times ({tour}) ...")
+    print(f"[4/7] field / tee times ({tour}) ...")
     field = fetch(EP["field"], key, tour=tour)
-    print(f"[5/6] matchups ({tour}) ...")
+    print(f"[5/7] matchups ({tour}) ...")
     matchup_rows, market_used, auto_rounds = fetch_matchups_with_fallback(key, tour)
     print(f"   using market: {market_used} ({len(matchup_rows)} matchups)")
-    print(f"[6/6] outrights (win/top5/top10/top20, {tour}) ...")
+    print(f"[6/7] outrights (win/top5/top10/top20, {tour}) ...")
     # market param values per DataGolf's docs: win, top_5, top_10, top_20 (also make_cut/frl exist,
     # not pulled here — not asked for, and make_cut needs real cut-line modeling this sim doesn't do yet)
     FINISH_MARKETS = [("win", "win"), ("top_5", "top5"), ("top_10", "top10"), ("top_20", "top20")]
@@ -837,6 +966,23 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
     W5 = build_outrights(finish_sim_results, outrights_markets["top5"], "top5")
     W10 = build_outrights(finish_sim_results, outrights_markets["top10"], "top10")
     W20 = build_outrights(finish_sim_results, outrights_markets["top20"], "top20")
+
+    # Round Score O/U (see MAP 5) — optional, only runs if a paste file is present.
+    # No DataGolf feed for this market exists (checked live against their API docs),
+    # so this grades model vs. whatever single DK price is in the file — no
+    # consensus/book-edge split like matchups get, same limitation Rod described.
+    RS = []
+    if os.path.exists(ROUND_SCORE_PASTE_FILE):
+        with open(ROUND_SCORE_PASTE_FILE, encoding="utf-8") as f:
+            raw_paste = f.read()
+        print(f"[7/7] round score O/U (from {ROUND_SCORE_PASTE_FILE}) ...")
+        RS = build_round_scores(raw_paste, proj_by_name, target_course_row, ev_threshold=ev_threshold)
+        playable_rs = [r for r in RS if r[5] >= ev_threshold]
+        print(f"   {len(playable_rs)} of {len(RS)} round-score lines clear {ev_threshold:.1f}% EV at DraftKings")
+    else:
+        print(f"[7/7] round score O/U — no {ROUND_SCORE_PASTE_FILE} found, skipping (paste DK's board into that "
+              f"file next to this script to grade it each run)")
+
     # convert to the compact array shapes the page's JS already expects.
     # Edge-engine columns are appended at the END of each M row (consensusPct,
     # consensusBooks, evPct, bookEdge, modelEdge, edgeTag, edgeLabel) so existing
@@ -859,12 +1005,12 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
             "draw_bias": None,   # fill when you add forecast/results logic
             "ev_threshold": ev_threshold,
         },
-        "P": P, "F": F, "M": M, "W": W, "W5": W5, "W10": W10, "W20": W20,
+        "P": P, "F": F, "M": M, "W": W, "W5": W5, "W10": W10, "W20": W20, "RS": RS,
     }
     with open(OUT, "w") as f:
         json.dump(data, f, indent=1)
     print(f"\nWrote {OUT}: event='{event_name}' course='{course_name}' — {len(P)} players, {len(M)} matchups, "
-          f"{len(W)}/{len(W5)}/{len(W10)}/{len(W20)} win/top5/top10/top20 rows.")
+          f"{len(W)}/{len(W5)}/{len(W10)}/{len(W20)} win/top5/top10/top20 rows, {len(RS)} round-score rows.")
     return data
 
 
