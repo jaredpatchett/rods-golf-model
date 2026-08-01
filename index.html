@@ -1949,9 +1949,15 @@ function normalizeNameForMatch(s) {
 // duplicates — this is what was inflating "49 plays" with the same Sepp Straka R4 69.5 line
 // showing up five times with slightly different numbers.
 function upsertRoundScoreProp(entry) {
+  // Confirmed real bug: rows were never tagged with which tournament they belonged to --
+  // only a round label like "R3", which every tournament reuses. Last week's already-
+  // finished 3M Open rows were still sitting here, and once a new tournament also reached
+  // "R3", they silently merged into the current board under the round filter. Tagging with
+  // event here, and matching on it too, is the actual fix -- not just hiding it in the UI.
+  entry = { ...entry, event: entry.event || currentEvent };
   const existingIdx = roundScoreProps.findIndex(p =>
     normalizeNameForMatch(p.name) === normalizeNameForMatch(entry.name) &&
-    p.round === entry.round && p.line === entry.line);
+    p.round === entry.round && p.line === entry.line && (p.event || null) === (entry.event || null));
   if (existingIdx >= 0) {
     roundScoreProps[existingIdx] = { ...roundScoreProps[existingIdx], ...entry, id: roundScoreProps[existingIdx].id };
     return false; // updated, not newly added
@@ -2148,7 +2154,11 @@ function renderRoundScore() {
 
   if (rsFilter === 'plays') rows = rows.filter(r => r.play !== null);
   const totalBeforeRoundFilter = rows.length;
-  if (rsRoundFilterMode === 'current' && lastImportedRound) rows = rows.filter(r => r.p.round === lastImportedRound);
+  // Filter by round AND event -- round labels like "R3" repeat every tournament, so a round
+  // match alone isn't enough to guarantee this row is even from the current event. Rows
+  // without an event tag at all (from before this fix) are treated as NOT current, on the
+  // side of hiding ambiguous old data rather than risking another cross-tournament mixup.
+  if (rsRoundFilterMode === 'current' && lastImportedRound) rows = rows.filter(r => r.p.round === lastImportedRound && r.p.event === currentEvent);
   const hiddenByRound = totalBeforeRoundFilter - rows.length;
   rows.sort((a, b) => b.bestEdge - a.bestEdge); // strongest edge first, PASS rows sink to the bottom
 
@@ -2810,37 +2820,36 @@ function applyMeta(meta){
     // against a DIFFERENT tournament's players and static PROJ values, and silently
     // reapplying them to a new event's field would corrupt every Round Score calculation
     // without any visible sign why. dkMatchupOverride is equally stale once the event
-    // changes. roundScoreProps/betTracker are NOT touched here — those are real records,
-    // not calculation aids, and Tracker specifically is meant to accumulate across events.
+    // changes. betTracker is NOT touched here — that's a real settled-bet record, meant to
+    // accumulate across events, unlike everything else in this block.
+    //
+    // CONFIRMED REAL BUG, FIXED: roundScoreProps was previously left alone here too, on the
+    // theory it was also a persistent record like betTracker. It isn't — it's a live board
+    // of CURRENT, actionable prop lines, and round labels like "R3" repeat every tournament.
+    // The old code tried to "recompute" old rows against the new field, but a departed
+    // player (e.g. last week's field) simply isn't found there, so the lookup silently
+    // bailed out and left their stale numbers exactly as they were — fully rendered, still
+    // looking legitimate, and exactly what caused real players from an already-finished
+    // tournament to show up as live plays for the new one. Clearing it outright, rather than
+    // trying to recompute rows that don't belong to this event at all, is the actual fix.
     if (lastKnownEvent !== null && lastKnownEvent !== meta.event) {
-      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length);
+      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length) || (roundScoreProps && roundScoreProps.length);
       formAdjustments = {};
       fieldBaselineCorrection = 0;
       dkMatchupOverride = null;
       dk3BallData = null;
+      roundScoreProps = [];
+      lastImportedRound = null;
       saveLS('rodsModel_formAdjustments', formAdjustments);
       saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
       saveLS('rodsModel_dkMatchupOverride', null);
       saveLS('rodsModel_dk3BallData', null);
+      saveLS('rodsModel_roundScoreProps', roundScoreProps);
+      saveLS('rodsModel_lastImportedRound', null);
       if (hadStaleData) {
-        console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, and DraftKings matchup overrides from the previous tournament.`);
-        alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, and DraftKings matchup data from the previous event — these were still being applied to this event's calculations. Existing Round Score lines have been recomputed without the stale correction.`);
-        // existing Round Score rows already had their model% computed and saved using the
-        // now-cleared (stale) correction — clearing the override alone doesn't fix rows
-        // already sitting in the table, same reason the Live Form Adjustment feature needed
-        // its own retroactive recompute when it was first built.
-        let recomputed = 0;
-        roundScoreProps.forEach(p => {
-          const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
-          if (!prow || prow[1] === null || prow[1] === undefined) return;
-          const effectiveProj = getEffectiveProj(p.name, prow[1]);
-          const roundsCount = p.round === 'T72' ? 4 : 1;
-          p.modelUnder = modelUnderProb(effectiveProj, p.line, roundsCount, p.elevatedRisk || false);
-          p.modelOver = 1 - p.modelUnder;
-          p.formAdjusted = false;
-          recomputed++;
-        });
-        if (recomputed > 0) { saveLS('rodsModel_roundScoreProps', roundScoreProps); renderRoundScore(); }
+        console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, DraftKings matchup overrides, and Round Score lines from the previous tournament.`);
+        alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, DraftKings matchup data, and Round Score lines from the previous event — these belonged to a different tournament's field and were no longer valid. Re-import this event's Round Score lines when you have them.`);
+        renderRoundScore();
       }
     }
     lastKnownEvent = meta.event;
