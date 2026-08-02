@@ -410,6 +410,7 @@
           <th>Model %</th>
           <th>Market %</th>
           <th>No-Vig %</th>
+          <th>Consensus %</th>
           <th>Edge</th>
           <th>Price</th>
           <th>Call</th>
@@ -418,7 +419,7 @@
       <tbody id="matchBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books (only shown for auto/pipeline data — DraftKings-loaded matchups always show your real book). Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
+  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. <b>Consensus %</b> is the de-vigged fair probability from the wider multi-book market (2+ books, excluding DraftKings and DataGolf) for whichever side cleared DraftKings' own price — it's what splits a "soft-book" edge (DK priced worse than the field, low-variance, book-specific) from a "model vs. market" edge (your model disagreeing with the whole market, higher variance, the real signal). A colored badge next to Call shows <b>Soft-book</b>, <b>Model vs market</b>, <b>Stacked</b> (both agree), or <b>Conflicting</b> (they don't) when 2+ books were behind the price; hover it for the exact book/model edge in points. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books (only shown for auto/pipeline data — DraftKings-loaded matchups always show your real book). Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
 
   <div class="section-hd" style="margin-top:22px">3-BALL MATCHUPS</div>
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
@@ -1312,17 +1313,36 @@ function buildMatch(search=''){
   let rows;
   if (dkMatchupOverride && dkMatchupOverride.length) {
     if (sourceTag) sourceTag.textContent = 'SOURCE: DRAFTKINGS (LOADED)';
-    rows = dkMatchupOverride.map(r => ({ ...r, skillGap: null, bookCount: null }));
+    // Manual DK paste has no multi-book consensus behind it (it's a single-book price you
+    // typed in yourself) — edge-engine fields come back null and the row just shows "—".
+    rows = dkMatchupOverride.map(r => ({
+      ...r, skillGap: null, bookCount: null,
+      consensusPct: null, consensusBooks: null, evPct: null, bookEdge: null, modelEdge: null,
+      edgeTag: null, edgeLabel: null,
+    }));
   } else {
     if (sourceTag) sourceTag.textContent = 'SOURCE: AUTO (PIPELINE)';
     rows=M.map(m=>{
-      const [a,b,wave,model,market,priceA,priceB,noVig,skillGap,bookCount]=m;
+      const [a,b,wave,model,market,priceA,priceB,noVig,skillGap,bookCount,
+             consensusPct,consensusBooks,evPct,bookEdge,modelEdge,edgeTag,edgeLabel]=m;
       // real no-vig: computed pipeline-side from BOTH sides' actual prices (impliedA /
       // (impliedA+impliedB)), removing the book's overround. Falls back to raw market% only
       // for old cached data from before this fix (noVig undefined) or when priceB was missing.
       const nv = (noVig !== undefined && noVig !== null) ? noVig : market;
       const edge=model-nv;
-      return {a,b,wave,model,market,nv,priceA,priceB,edge,skillGap,bookCount};
+      // consensusPct/edgeTag/etc are undefined (not null) on any M row built before the
+      // edge-engine columns were added to rods_pipeline.py -- normalize to null so the
+      // render code below only has one "no data" case to check for, not two.
+      return {
+        a,b,wave,model,market,nv,priceA,priceB,edge,skillGap,bookCount,
+        consensusPct: consensusPct ?? null,
+        consensusBooks: consensusBooks ?? null,
+        evPct: evPct ?? null,
+        bookEdge: bookEdge ?? null,
+        modelEdge: modelEdge ?? null,
+        edgeTag: edgeTag ?? null,
+        edgeLabel: edgeLabel ?? null,
+      };
     });
   }
   if(matchFilter==='edge')rows=rows.filter(r=>Math.abs(r.edge)>=0.03);
@@ -1358,16 +1378,39 @@ function buildMatch(search=''){
     const warnIcon = warnings.length
       ? `<span style="color:var(--amber);cursor:help;margin-left:4px;font-size:11px" title="${warnings.join(' | ').replace(/"/g,'&quot;')}">⚠</span>`
       : '';
+    // Consensus % / book-edge / model-edge — de-vigged multi-book fair probability for
+    // whichever side cleared DK's own price, vs. DK's price split into "book edge" (DK
+    // priced softer/tighter than the field) and "model edge" (your model vs. the whole
+    // market, not just DK). Only present for auto/pipeline rows with >=2 qualifying books
+    // behind them; manual DK-paste rows and thin markets show "—".
+    const hasConsensus = r.consensusPct !== null && r.consensusPct !== undefined;
+    const consensusCell = hasConsensus
+      ? `${r.consensusPct.toFixed(1)}%${r.consensusBooks?`<span style="color:var(--text-faint);font-size:9px"> (${r.consensusBooks}bk)</span>`:''}`
+      : '<span style="color:var(--text-faint)">—</span>';
+    const tagColors = {
+      stack:   { bg:'rgba(57,211,83,.14)',  fg:'var(--green)' },
+      conflict:{ bg:'rgba(220,122,108,.14)', fg:'#DC7A6C' },
+      soft:    { bg:'rgba(217,164,65,.14)', fg:'var(--amber)' },
+      model:   { bg:'rgba(226,194,76,.14)', fg:'var(--gold-bright)' },
+    };
+    const tc = r.edgeTag ? tagColors[r.edgeTag] : null;
+    const edgeBadgeTip = hasConsensus
+      ? `book edge ${r.bookEdge>=0?'+':''}${r.bookEdge?.toFixed(1)}pts (DK vs. consensus) | model edge ${r.modelEdge>=0?'+':''}${r.modelEdge?.toFixed(1)}pts (model vs. consensus)`.replace(/"/g,'&quot;')
+      : '';
+    const edgeBadge = (tc && r.edgeLabel)
+      ? `<span class="pill" style="margin-left:4px;background:${tc.bg};color:${tc.fg};cursor:help" title="${edgeBadgeTip}">${r.edgeLabel}</span>`
+      : '';
     body.innerHTML+=`<tr>
       <td class="pname"><b>${r.a}</b><span class="vs">vs</span><span style="color:var(--text-dim)">${r.b}</span></td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${r.wave}</td>
       <td class="cell heat" style="background:${heat((r.model-0.44)/0.24)}">${(r.model*100).toFixed(1)}%</td>
       <td class="cell">${(r.market*100).toFixed(1)}%</td>
       <td class="cell">${(r.nv*100).toFixed(1)}%</td>
+      <td class="cell" style="color:var(--text-dim)">${consensusCell}</td>
       <td class="cell ${edgeCls}">${edgePct>=0?'+':''}${edgePct.toFixed(1)}%<span class="bar-wrap"><span class="bar" style="width:${Math.min(100,Math.abs(edgePct)*8)}%;background:${edgePct>=0?'var(--green)':'#DC7A6C'}"></span></span></td>
       <td class="cell" style="color:var(--text-dim)">${r.priceA}</td>
       <td class="cell" style="text-align:center">
-        <span class="pill ${cls}">${call}</span>${warnIcon}
+        <span class="pill ${cls}">${call}</span>${warnIcon}${edgeBadge}
         ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}',${r.model},${edgePct})">+trk</button>`:''}
       </td>
     </tr>`;
