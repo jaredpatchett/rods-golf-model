@@ -651,6 +651,14 @@
       <label>Viewing</label>
       <select class="fselect" id="trEventFilter" style="min-width:220px"></select>
     </div>
+    <div class="field" style="margin:0">
+      <label title="EV% is the true expected value of the price you got, computed from the model probability you stored on the bet and the actual American odds — (modelProb × decimal odds − 1) × 100. Not the same as Edge%, which is just a probability-point gap and ignores the payout.">Sort By</label>
+      <select class="fselect" id="trSort" style="min-width:170px" onchange="setTrackerSort(this.value)">
+        <option value="date">Date (newest first)</option>
+        <option value="ev_desc">EV % (highest first)</option>
+        <option value="ev_asc">EV % (lowest first)</option>
+      </select>
+    </div>
   </div>
   <div class="summary" id="trackerSummary"></div>
   <div id="trackerByEvent"></div>
@@ -710,6 +718,7 @@
           <th>Date</th>
           <th>Type</th>
           <th>Price</th>
+          <th title="True expected value: (model probability × decimal odds − 1) × 100, computed from this bet's stored price and model %. Needs both to show a number.">EV %</th>
           <th>Stake</th>
           <th>Status</th>
           <th>Profit</th>
@@ -1654,6 +1663,20 @@ function impliedProb(price) {
   if (isNaN(p)) return null;
   return p > 0 ? 100 / (p + 100) : -p / (-p + 100);
 }
+// True expected value, NOT the same thing as "Edge" shown elsewhere in the app — Edge is a
+// probability-point gap (model% − no-vig market%) and ignores the actual payout; EV% is what
+// that gap is actually worth in dollars at the real price you got: (modelProb × decimalOdds
+// − 1) × 100. Same formula rods_pipeline.py's matchup_edge() already uses for ev_pct — kept
+// identical here so a play graded by the pipeline and one added by hand mean the same thing.
+// Derived at render time from each bet's own stored price + modelProb rather than stored as
+// its own field — works retroactively on every bet already in the tracker, not just new ones.
+function computeBetEV(price, modelProb) {
+  if (modelProb === null || modelProb === undefined || isNaN(modelProb)) return null;
+  const americanOdds = extractPriceNumber(price);
+  if (isNaN(americanOdds)) return null;
+  const decimalOdds = americanOdds > 0 ? 1 + americanOdds / 100 : 1 + 100 / Math.abs(americanOdds);
+  return (modelProb * decimalOdds - 1) * 100;
+}
 function rsCallFor(edge) {
   if (edge === null) return { call: '—', cls: 'thin' };
   const pct = edge * 100;
@@ -2310,6 +2333,12 @@ function renderRoundScore() {
 
 // ---------------- tracker: real bets, win/loss, running P&L ----------------
 let betTracker = loadLS('rodsModel_betTracker', []);
+let trackerSort = loadLS('rodsModel_trackerSort', 'date');
+function setTrackerSort(v) {
+  trackerSort = v;
+  saveLS('rodsModel_trackerSort', v);
+  renderTracker();
+}
 
 // Bulk-track support: each tab's render function repopulates its own array with every
 // currently-visible, actionable (canBet) row, in whatever shape pushTrackerBet expects —
@@ -2486,9 +2515,30 @@ function renderTracker() {
 
   const scoped = trackerEventFilter === 'all' ? betTracker : betTracker.filter(b => b.event === trackerEventFilter);
 
+  const sortSel = document.getElementById('trSort');
+  if (sortSel) sortSel.value = trackerSort;
+
+  // EV% (true expected value, price-adjusted) needs both a stored price AND a stored model% —
+  // bets missing either (most manually-added bets without the optional Model % field, or any
+  // bet added before that field existed) sink to the bottom under either EV sort rather than
+  // being treated as 0%, which would misleadingly rank them alongside genuinely bad plays.
+  let sorted = scoped.slice();
+  if (trackerSort === 'ev_desc' || trackerSort === 'ev_asc') {
+    const dir = trackerSort === 'ev_desc' ? -1 : 1;
+    sorted.sort((a, b) => {
+      const evA = computeBetEV(a.price, a.modelProb), evB = computeBetEV(b.price, b.modelProb);
+      if (evA === null && evB === null) return 0;
+      if (evA === null) return 1; // no-EV bets always sink to the bottom, either direction
+      if (evB === null) return -1;
+      return (evA - evB) * dir;
+    });
+  } else {
+    sorted.sort((a,b)=>b.date.localeCompare(a.date));
+  }
+
   body.innerHTML = '';
   let totalStaked = 0, totalStakedSettled = 0, totalProfit = 0, wins = 0, losses = 0, pushes = 0, pending = 0, trackingOnlyCount = 0;
-  scoped.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(b => {
+  sorted.forEach(b => {
     const profit = betProfit(b);
     // backward compatible: bets added before this feature existed have no `wagered` field
     // at all — treat that as a real wager (the only kind that existed before), not silently
@@ -2506,6 +2556,9 @@ function renderTracker() {
     const badgeCls = b.status;
     const profitDisp = profit === null ? '—' : (profit>=0?'+$':'-$')+Math.abs(profit).toFixed(2);
     const profitCls = profit === null ? '' : (profit>=0?'val-pos':'val-neg');
+    const evPct = computeBetEV(b.price, b.modelProb);
+    const evDisp = evPct === null ? '—' : `${evPct>=0?'+':''}${evPct.toFixed(1)}%`;
+    const evCls = evPct === null ? '' : (evPct>=0?'val-pos':'val-neg');
     body.innerHTML += `<tr>
       <td class="pname">${b.desc}${!isWagered
           ? ` <span class="badge push" style="font-size:8px;cursor:pointer" onclick="toggleWagered(${b.id})" title="Tracking only — excluded from Total Staked / Profit / ROI, still counted for calibration either way. Click to mark as a real wager.">TRACKING (click to mark real)</span>`
@@ -2514,6 +2567,7 @@ function renderTracker() {
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.date}</td>
       <td class="cell" style="text-align:center;color:var(--text-dim)">${b.type}</td>
       <td class="cell">${b.price}</td>
+      <td class="cell ${evCls}" title="${b.modelProb===null||b.modelProb===undefined?'No Model % stored on this bet — can’t compute EV.':''}">${evDisp}</td>
       <td class="cell">$${b.stake.toFixed(2)}</td>
       <td class="cell" style="text-align:center">
         ${b.status==='pending' ? `
