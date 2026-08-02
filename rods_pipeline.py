@@ -499,26 +499,19 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
     # standard 2-way market (ties refunded — "ties": "void") and a 3-way market (ties as
     # their own outcome — "ties": "separate bet offered"). Confirmed live: the 3-way variant
     # carries far fewer books and never includes DraftKings, so keeping both just duplicates
-    # every such pairing with a worse, less-actionable price. This part applies to BOTH
-    # market types — always prefer the void (2-way) entry's price when both exist.
+    # every such pairing with a worse, less-actionable price — always prefer the void (2-way)
+    # entry's price when both exist.
     #
-    # The DUAL-TIE-STRUCTURE REQUIREMENT (a pair only counts as "real" if it has BOTH tie
-    # types) is market-SPECIFIC and does NOT generalize — confirmed with two separate live
-    # pulls:
-    #   - round_matchups (single-round 2-ball, tied to actual tee groups): every genuine
-    #     tee-group pairing appeared under BOTH tie structures; "alternate" cross-group
-    #     pairings (not real tee groups — e.g. "McIlroy vs Schauffele" when their real groups
-    #     were McIlroy/Bridgeman and Fox/Schauffele) only ever had "void", no sibling. The
-    #     dual-structure check correctly separated real from fabricated here.
-    #   - tournament_matchups (72-hole, NOT tied to tee groups at all — any two named players
-    #     can have a legitimate full-tournament head-to-head): confirmed live, 116 of 128 real
-    #     pairs had ONLY "void", no "separate" sibling — ties are near-impossible over 72
-    #     holes, so books mostly skip offering the 3-way variant at all. Applying the
-    #     round_matchups-derived dual-structure rule here wrongly dropped 128 real matchups
-    #     down to 12. There's no "fabricated pairing" concept for tournament matchups in the
-    #     first place — any two players is a legitimate market — so this market just needs
-    #     simple dedup, not the stricter round_matchups filter.
-    require_dual_tie_types = (market_used == "round_matchups")
+    # REVERSED (previous version required round_matchups pairs to have BOTH tie types before
+    # counting them as "real", on the theory that fabricated cross-group pairings only ever
+    # got a "void" entry). Confirmed against a live round_matchups pull with ~90 real,
+    # book-backed pairings (multiple books deep, including cross-3-ball-group pairs like
+    # Blanchet/Sargent + Blanchet/Keefer + Sargent/Keefer all posted separately off the same
+    # tee group — completely normal, not fabricated) where only 2 pairs had a "separate bet
+    # offered" sibling at all. The dual-tie-type filter was dropping ~98% of genuine matchups
+    # on a heuristic that doesn't hold in general — a pairing having only "void" is the
+    # NORMAL case, not a red flag. Removed; round_matchups and tournament_matchups now get
+    # the same simple dedup (prefer void, else take whatever's there).
     by_pair = defaultdict(list)
     for r in raw_rows:
         p1_raw = pick(r, "p1_player_name", "player1", "p1")
@@ -528,10 +521,6 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         by_pair[(p1_raw, p2_raw)].append(r)
     rows = []
     for key, entries in by_pair.items():
-        if require_dual_tie_types:
-            tie_types = {e.get("ties") for e in entries}
-            if "separate bet offered" not in tie_types:
-                continue  # alternate/cross-group pairing (round_matchups only) — drop it
         void_entry = next((e for e in entries if e.get("ties") == "void"), None)
         rows.append(void_entry if void_entry is not None else entries[0])
     pairs = []
