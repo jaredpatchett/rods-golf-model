@@ -558,6 +558,7 @@
     <span style="flex:1"></span>
     <span style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;align-self:center">sorted by best edge</span>
   </div>
+  <div id="rsSweepWarning"></div>
   <div class="wide">
     <table id="rscoreTable">
       <thead>
@@ -1411,7 +1412,7 @@ function buildMatch(search=''){
       <td class="cell" style="color:var(--text-dim)">${r.priceA}</td>
       <td class="cell" style="text-align:center">
         <span class="pill ${cls}">${call}</span>${warnIcon}${edgeBadge}
-        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}',${r.model},${edgePct})">+trk</button>`:''}
+        ${canBet?`<button class="delbtn" style="margin-left:4px;border-color:var(--green);color:var(--green)" onclick="addMatchupToTracker('${betSide.replace(/'/g,"\\'")}','${r.a.replace(/'/g,"\\'")}','${r.b.replace(/'/g,"\\'")}','${call}','${betPrice.replace(/'/g,"\\'")}',${r.model},${edgePct},${r.edgeTag?`'${r.edgeTag}'`:'null'})">+trk</button>`:''}
       </td>
     </tr>`;
   });
@@ -2015,6 +2016,17 @@ function upsertRoundScoreProp(entry) {
 // silently go missing (that was the original "Unknown" book bug) or get mislabeled onto the
 // wrong book (a risk once a second format existed).
 function processRoundScoreImport(parsed, bookName) {
+  // Wind double-count fix: DraftKings/Fanatics prices are quoted with full knowledge of
+  // TODAY's actual wind, so a residual computed against raw staticProj already has today's
+  // wind effect baked into it. If the wind toggle is also on, getEffectiveProj() would add
+  // windStrokePenalty() a SECOND time on top of a correction that already captured it —
+  // confirmed live: this produced a uniform +0.27-stroke field-wide shift and every single
+  // Round Score line landed on the same side (Over). Netting the same wind-formula estimate
+  // out of the residual here means the correction only captures what the market knows
+  // BEYOND wind, so it and getEffectiveProj's wind term compose instead of double-counting —
+  // the wind toggle can now stay on permanently without needing to be remembered/disabled
+  // every time a fresh market correction gets imported.
+  const windAtImportTime = (windCorrectionEnabled && currentWindMph !== null) ? windStrokePenalty(currentWindMph) : 0;
   const residuals = [];
   const matchedRows = [];
   parsed.forEach(entry => {
@@ -2026,7 +2038,7 @@ function processRoundScoreImport(parsed, bookName) {
     const marketNoVig = noVigRoundScore(taggedUnder, taggedOver);
     if (marketNoVig === null) return;
     const fairProj = solveForFairProj(entry.line, marketNoVig, roundsCount);
-    residuals.push(fairProj - prow[1]);
+    residuals.push(fairProj - (prow[1] + windAtImportTime));
     matchedRows.push({ entry, prow, roundsCount, taggedUnder, taggedOver });
   });
   if (residuals.length > 0) {
@@ -2036,7 +2048,8 @@ function processRoundScoreImport(parsed, bookName) {
     formAdjustments = {};
     saveLS('rodsModel_formAdjustments', formAdjustments);
     const roundsInBatch = [...new Set(matchedRows.map(r => r.entry.round))].join('/');
-    fieldBaselineCorrectionInfo = { source: 'market', detail: `${residuals.length} ${bookName} lines, ${roundsInBatch}` };
+    fieldBaselineCorrectionInfo = { source: 'market', detail: `${residuals.length} ${bookName} lines, ${roundsInBatch}` +
+      (windAtImportTime > 0 ? `, wind (+${windAtImportTime.toFixed(2)}) netted out` : '') };
     saveLS('rodsModel_fieldBaselineCorrectionInfo', fieldBaselineCorrectionInfo);
     renderCorrectionBadge();
   }
@@ -2161,6 +2174,32 @@ function deleteRoundScoreProp(id) {
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
 }
+// A real, diversified slate of edges should be a genuine mix of Overs and Unders — different
+// players, different lines, different books, no reason they'd all break the same way. When
+// almost every graded play lands on the same side, that's the signature of a SYSTEMATIC bias
+// (a stale/duplicated correction, a double-counted wind adjustment, a wrong rounds-completed
+// number, etc.) rather than real diversified edge — confirmed live, this exact pattern (38 of
+// 38 Round Score plays all BET OVER) was how the wind double-count bug got caught. This makes
+// that check automatic instead of relying on eyeballing the table every time.
+function checkOneSidedSweep(sides, minN = 8, threshold = 0.85) {
+  if (sides.length < minN) return null; // too few plays for a "sweep" to mean anything yet
+  const counts = {};
+  sides.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
+  const [topSide, topCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  const frac = topCount / sides.length;
+  if (frac < threshold) return null;
+  return { side: topSide, frac, n: sides.length, topCount };
+}
+function renderSweepWarning(elId, sweep, contextLabel) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!sweep) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="note" style="border:1px solid var(--amber);background:rgba(217,164,65,.1);margin:8px 0">
+    <span style="color:var(--amber);font-weight:700">⚠ ${sweep.topCount} of ${sweep.n} ${contextLabel} (${(sweep.frac*100).toFixed(0)}%) are ${sweep.side}</span> —
+    that's the signature of a systematic bias (stale or duplicated correction, double-counted wind adjustment, wrong rounds-completed number),
+    not real diversified edge. Check your Active Correction badge and Wind Adjustment toggle above before betting any of these.
+  </div>`;
+}
 function renderRoundScore() {
   const body = document.getElementById('rscoreBody');
   if (!body) return;
@@ -2208,6 +2247,11 @@ function renderRoundScore() {
   document.getElementById('rsCount').textContent = `${rows.length} line${rows.length===1?'':'s'}` +
     (hiddenByRound > 0 ? ` (${hiddenByRound} from other rounds hidden — showing ${lastImportedRound})` : '');
 
+  // Checked on the actionable plays only (PASS rows aren't "a side"), regardless of whether
+  // the ALL or PLAYS ONLY filter is active — a sweep is just as real either way.
+  const playSides = rows.map(r => r.play).filter(Boolean).map(pl => pl.side);
+  renderSweepWarning('rsSweepWarning', checkOneSidedSweep(playSides), 'plays');
+
   rows.forEach(({ p, play }) => {
     const canBet = play && play.price;
     const playHtml = play
@@ -2235,7 +2279,7 @@ let betTracker = loadLS('rodsModel_betTracker', []);
 // one-click links from the other tabs — pre-fill description/price/type, ask for
 // stake, push straight into the tracker, then jump to the Tracker tab so you can
 // see it landed.
-function quickAddToTracker(desc, type, price, modelProb, edgePct, forceTrackingOnly) {
+function quickAddToTracker(desc, type, price, modelProb, edgePct, forceTrackingOnly, edgeTag) {
   const stakeStr = prompt(`Add to tracker:\n${desc}\nPrice: ${price}${modelProb!==null&&modelProb!==undefined?`\nModel: ${(modelProb*100).toFixed(1)}%`:''}${edgePct!==null&&edgePct!==undefined?`\nEdge: ${edgePct>=0?'+':''}${edgePct.toFixed(1)}%`:''}${forceTrackingOnly?'\n\n(3-Ball -- tracking-only by default, not counted toward P&L)':''}\n\nStake ($)?`, '50');
   if (stakeStr === null) return; // cancelled
   const stake = parseFloat(stakeStr);
@@ -2261,17 +2305,24 @@ function quickAddToTracker(desc, type, price, modelProb, edgePct, forceTrackingO
     // available after the fact, and a crude one-sided approximation is biased by however
     // much vig that specific book/matchup happened to carry -- not a fixed, correctable amount.
     edgeAtBetTime: (edgePct !== null && edgePct !== undefined && !isNaN(edgePct)) ? edgePct : null,
+    // Book-edge/model-edge classification (Soft-book / Model vs market / Stacked / Conflicting)
+    // from the multi-book consensus engine, captured at bet time same as edgeAtBetTime — lets
+    // CALIBRATION BY EDGE TYPE below show whether one kind of edge is actually more trustworthy
+    // than another instead of lumping every 3%+ EV number together. null for anything not
+    // sourced from the Matchups tab's auto/pipeline row (Round Score, Outrights, manual entries,
+    // or a DK-override matchup with no consensus behind it) — shows up as "Untagged" there.
+    edgeTag: edgeTag || null,
     wagered,
   });
   saveLS('rodsModel_betTracker', betTracker);
   renderTracker();
   document.querySelector('.tab[data-tab="tracker"]').click();
 }
-function addMatchupToTracker(side, a, b, call, price, modelProbA, edgePct) {
+function addMatchupToTracker(side, a, b, call, price, modelProbA, edgePct, edgeTag) {
   const other = side === a ? b : a;
   // modelProbA is always P(player A wins) — flip it if the actual bet is on B (a FADE call)
   const modelProb = side === a ? modelProbA : (1 - modelProbA);
-  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price, modelProb, edgePct);
+  quickAddToTracker(`${call} ${side} vs ${other} (2-Ball)`, 'Matchup', price, modelProb, edgePct, false, edgeTag);
 }
 function addRoundScoreToTracker(name, round, line, side, price, modelProb, edgePct) {
   quickAddToTracker(`${name} ${round} ${side} ${line}`, 'Round Score', price, modelProb, edgePct);
@@ -2508,6 +2559,33 @@ function computeCalibrationByBook(bets) {
     return { book, n, avgPredicted, actualWinRate, gap: avgPredicted - actualWinRate, brier };
   }).sort((a,b) => b.n - a.n);
 }
+const EDGE_TAG_LABELS = {
+  stack: 'Stacked (book + model)', conflict: 'Conflicting', soft: 'Soft-book',
+  model: 'Model vs market', none: 'No edge (below threshold)',
+};
+function computeCalibrationByTag(bets) {
+  // Same predicted-vs-actual breakdown as computeCalibrationByBook, grouped by the
+  // book-edge/model-edge classification instead of by book. This is the actual point of
+  // building the consensus engine in the first place — "model vs market" (your model
+  // disagreeing with the WHOLE market) is a much bigger claim than "soft-book" (one book
+  // priced worse than the field), and should earn separate trust once there's enough settled
+  // data to check: if Brier score is worse on "model" tags than "soft-book" tags, that's a
+  // concrete, data-backed reason to size them differently, not just a guess.
+  const byTag = {};
+  bets.forEach(b => {
+    const tag = b.edgeTag || 'untagged';
+    if (!byTag[tag]) byTag[tag] = [];
+    byTag[tag].push(b);
+  });
+  return Object.keys(byTag).map(tag => {
+    const tagBets = byTag[tag];
+    const n = tagBets.length;
+    const avgPredicted = tagBets.reduce((s,b) => s + b.modelProb, 0) / n;
+    const actualWinRate = tagBets.reduce((s,b) => s + b.outcome, 0) / n;
+    const brier = tagBets.reduce((s,b) => s + Math.pow(b.modelProb - b.outcome, 2), 0) / n;
+    return { tag, label: tag === 'untagged' ? 'Untagged (not from Matchups auto data)' : (EDGE_TAG_LABELS[tag] || tag), n, avgPredicted, actualWinRate, gap: avgPredicted - actualWinRate, brier };
+  }).sort((a,b) => b.n - a.n);
+}
 function computeCalibration(bets) {
   const buckets = CALIBRATION_BUCKETS.map(([lo,hi]) => ({ lo, hi, bets: [] }));
   bets.forEach(b => {
@@ -2528,7 +2606,7 @@ function renderCalibration(scopedBets) {
   if (!container) return;
   const usable = scopedBets
     .filter(b => (b.status === 'win' || b.status === 'loss') && b.modelProb !== null && b.modelProb !== undefined)
-    .map(b => ({ modelProb: b.modelProb, outcome: b.status === 'win' ? 1 : 0, book: extractBook(b.price) }));
+    .map(b => ({ modelProb: b.modelProb, outcome: b.status === 'win' ? 1 : 0, book: extractBook(b.price), edgeTag: b.edgeTag || null }));
 
   if (usable.length < 5) {
     container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
@@ -2565,6 +2643,21 @@ function renderCalibration(scopedBets) {
     </tr>`;
   });
 
+  const byTag = computeCalibrationByTag(usable);
+  let tagRows = '';
+  byTag.forEach(t => {
+    const gapPct = t.gap * 100;
+    const gapCls = Math.abs(gapPct) < 5 ? '' : (gapPct > 0 ? 'val-neg' : 'val-pos');
+    tagRows += `<tr>
+      <td class="pname">${t.label}</td>
+      <td class="cell" style="text-align:center">${t.n}</td>
+      <td class="cell">${(t.avgPredicted*100).toFixed(1)}%</td>
+      <td class="cell">${(t.actualWinRate*100).toFixed(1)}%</td>
+      <td class="cell ${gapCls}">${gapPct>=0?'+':''}${gapPct.toFixed(1)}pp</td>
+      <td class="cell">${t.brier.toFixed(3)}</td>
+    </tr>`;
+  });
+
   container.innerHTML = `<div class="section-hd" style="margin-top:14px">MODEL CALIBRATION</div>
     <div class="summary" style="margin-bottom:10px">
       <div class="sblock"><div class="slbl">Settled Bets w/ Model %</div><div class="sval">${n}</div></div>
@@ -2578,7 +2671,12 @@ function renderCalibration(scopedBets) {
     <div class="section-hd" style="margin-top:18px">CALIBRATION BY BOOK</div>
     <table><thead><tr><th class="player">Book</th><th># Bets</th><th>Avg Predicted</th><th>Actual Win Rate</th><th>Gap</th><th>Brier</th></tr></thead>
     <tbody>${bookRows}</tbody></table>
-    <div class="note">Parsed straight from the price you already store on each bet (e.g. "-138 (fanduel)") — no extra tagging needed. Different books can genuinely have different line sharpness; this lets the data show whether edges sourced from one book are holding up differently than another, rather than guessing from one day's results. Same small-sample caution applies — a book with 1-3 bets tells you almost nothing yet.</div>`;
+    <div class="note">Parsed straight from the price you already store on each bet (e.g. "-138 (fanduel)") — no extra tagging needed. Different books can genuinely have different line sharpness; this lets the data show whether edges sourced from one book are holding up differently than another, rather than guessing from one day's results. Same small-sample caution applies — a book with 1-3 bets tells you almost nothing yet.</div>
+
+    <div class="section-hd" style="margin-top:18px">CALIBRATION BY EDGE TYPE</div>
+    <table><thead><tr><th class="player">Edge Type</th><th># Bets</th><th>Avg Predicted</th><th>Actual Win Rate</th><th>Gap</th><th>Brier</th></tr></thead>
+    <tbody>${tagRows}</tbody></table>
+    <div class="note">Captured automatically from the Matchups tab's consensus badge at the moment you hit +trk. <b>Soft-book</b> = DraftKings priced worse than the wider field (low-variance, book-specific). <b>Model vs market</b> = your model disagreeing with the WHOLE multi-book market, not just DK (a bigger claim, worth watching separately). <b>Stacked</b> = both agree. <b>Untagged</b> = Round Score, Outrights, manual entries, or a matchup with fewer than 2 books behind the consensus. If Brier score comes back worse on "Model vs market" than "Soft-book" once there's enough of each, that's a real, data-backed reason to trust/size them differently instead of treating every 3%+ EV number the same.</div>`;
 }
 
 // ---------------- shared: localStorage + CSV export ----------------
