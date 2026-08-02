@@ -5,6 +5,14 @@ on:
   schedule:
     - cron: "*/30 12-23 * * *"
 
+# Prevents two runs of THIS workflow from racing each other on the final git push — e.g. a
+# scheduled run firing while you also click "Run workflow" by hand. cancel-in-progress is
+# false on purpose: a run in the middle of "Deploy to Cloudflare" should be allowed to finish,
+# not get killed mid-deploy by a second run starting. A second run just waits in queue instead.
+concurrency:
+  group: update-golf-data-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -40,6 +48,19 @@ jobs:
             echo "No changes to rods_data.json — skipping commit."
           else
             git commit -m "Auto-update rods_data.json"
-            git pull --rebase origin main
-            git push
+            # Retry loop covers the race concurrency: can't fully rule out — e.g. you pushing a
+            # commit (like an index.html update) to main at the same moment this step runs.
+            # Each attempt re-pulls/rebases onto whatever main actually is right now before
+            # retrying the push, instead of failing outright on the first collision.
+            attempt=1
+            max_attempts=5
+            until git pull --rebase origin main && git push; do
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                echo "Push failed after $max_attempts attempts — giving up."
+                exit 1
+              fi
+              echo "Push attempt $attempt failed (likely a concurrent push to main) — retrying..."
+              sleep $(( (RANDOM % 10) + 5 ))
+              attempt=$((attempt + 1))
+            done
           fi
