@@ -420,7 +420,7 @@
       <tbody id="matchBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. <b>Consensus %</b> is the de-vigged fair probability from the wider multi-book market (2+ books, excluding DraftKings and DataGolf) for whichever side cleared DraftKings' own price — it's what splits a "soft-book" edge (DK priced worse than the field, low-variance, book-specific) from a "model vs. market" edge (your model disagreeing with the whole market, higher variance, the real signal). A colored badge next to Call shows <b>Soft-book</b>, <b>Model vs market</b>, <b>Stacked</b> (both agree), or <b>Conflicting</b> (they don't) when 2+ books were behind the price; hover it for the exact book/model edge in points. Only bet when edge clears your threshold; same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books (only shown for auto/pipeline data — DraftKings-loaded matchups always show your real book). Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
+  <div class="note"><b>Model %</b> is the simulated win probability for the listed (first) player. <b>Edge</b> = Model % − No-Vig market %. <b>Consensus %</b> is the de-vigged fair probability from the wider multi-book market (2+ books, excluding DraftKings and DataGolf) for whichever side cleared DraftKings' own price — it's what splits a "soft-book" edge (DK priced worse than the field, low-variance, book-specific) from a "model vs. market" edge (your model disagreeing with the whole market, higher variance, the real signal). A colored badge next to Call shows <b>Soft-book</b>, <b>Model vs market</b>, <b>Stacked</b> (both agree), or <b>Conflicting</b> (they don't) when 2+ books were behind the price; hover it for the exact book/model edge in points. A BET/FADE call needs Edge% ≥3% <b>and</b> positive true EV% at the actual price for that side — Edge alone can clear 3% against the fair market while the specific price's vig has already eaten the whole thing, confirmed live on a real line, so both have to hold before it counts as a play. Same-wave matchups cancel most weather/draw noise, cross-wave edges lean on the weather module. <span style="color:var(--amber)">⚠</span> flags a matchup worth a second look before betting — either a large PROJ skill gap (where the model's flat variance assumption is most likely to overstate edge, same issue that made Molinari/Scheffler look better than it was) or a price backed by only 1-2 books (only shown for auto/pipeline data — DraftKings-loaded matchups always show your real book). Flagged, not filtered — the call stays on the board, the judgment stays with you.</div>
 
   <div class="section-hd" style="margin-top:22px">3-BALL MATCHUPS</div>
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
@@ -580,7 +580,7 @@
       <tbody id="rscoreBody"></tbody>
     </table>
   </div>
-  <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. Pick <b>Tournament (72)</b> in the Round dropdown for a 72-hole total-strokes line instead of a single round — it sums 4 simulated rounds per trial rather than 1. There's no DataGolf feed for either round-score or tournament-total O/U (confirmed — their live betting tools only cover Outright and Match-Up/3-Ball markets), so market% only appears once you type in the price from your sportsbook. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
+  <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. Pick <b>Tournament (72)</b> in the Round dropdown for a 72-hole total-strokes line instead of a single round — it sums 4 simulated rounds per trial rather than 1. There's no DataGolf feed for either round-score or tournament-total O/U (confirmed — their live betting tools only cover Outright and Match-Up/3-Ball markets), so market% only appears once you type in the price from your sportsbook. A line only calls BET when Edge% (Model% − no-vig market%) clears 3% <b>and</b> true EV% at the actual price is positive — confirmed live that Edge% alone can clear 3% against the fair market while the specific price's vig has already eaten the whole thing, so both have to hold. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
 </div>
 
 <!-- ============ TAB 5: OUTRIGHTS ============ -->
@@ -799,10 +799,20 @@ function norm(ci,v){
 function fmt(v){return v===null?'nan':(v>0&&![1].includes(arguments[1])?'':'')+v.toFixed(1);}
 function initials(name){const p=name.split(' ');return (p[0][0]+(p[p.length-1][0]||'')).toUpperCase();}
 
-function winCallFor(edge) {
+// Edge% (model vs. market probability) and EV% (true value at the actual price, vig
+// included) answer different questions -- confirmed live with a real example (Doug Ghim's
+// Round Score line: +3.9% Edge but -0.1% EV once the vig on that specific price was
+// accounted for). Edge% alone was letting plays through that looked real against the fair
+// market but had nothing left once you priced in the vig. Now requires BOTH: Edge% clearing
+// the threshold (a real, non-trivial model disagreement) AND EV% > 0 at the actual price
+// you'd bet (the disagreement hasn't already been eaten by the book's juice). FADE has no
+// EV gate here -- there's no literal opposing price to "fade" an outright win market at
+// (it's informational only; no +trk button ever appears for a FADE call in this tab).
+function winCallFor(edge, price, model) {
   if (edge === null) return { call: '—', cls: 'thin' };
   const pct = edge * 100;
-  if (pct >= 1.5) return { call: 'BET', cls: 'edge' };   // tighter threshold than matchups —
+  const ev = computeBetEV(price, model);
+  if (pct >= 1.5 && ev !== null && ev > 0) return { call: 'BET', cls: 'edge' };   // tighter threshold than matchups —
   if (pct <= -1.5) return { call: 'FADE', cls: 'fade' }; // outright win% swings are small in absolute terms
   return { call: 'PASS', cls: 'thin' };
 }
@@ -838,7 +848,7 @@ function buildOutrights(search='') {
   rows.sort((a,b) => (b.edge ?? -999) - (a.edge ?? -999));
   lastOutrightPlays = []; // repopulated below — scoped to whichever market tab (Win/Top5/Top10/Top20) is currently selected
   rows.forEach(r => {
-    const wc = winCallFor(r.edge);
+    const wc = winCallFor(r.edge, r.price, r.model);
     const canBetOut = wc.call === 'BET' && r.price !== '—';
     if (canBetOut) {
       lastOutrightPlays.push({
@@ -897,7 +907,7 @@ function buildProjections(filter=''){
       const win = winByName[r[0]];
       if (win) {
         const edge = win.market !== null ? win.model - win.market : null;
-        const wc = winCallFor(edge);
+        const wc = winCallFor(edge, win.price, win.model);
         html += `<td class="cell heat" style="background:${heat(win.model/0.15)}">${(win.model*100).toFixed(1)}%</td>
           <td class="cell">${win.market!==null?(win.market*100).toFixed(1)+'%':'—'}</td>
           <td class="cell" style="text-align:center">
@@ -1306,8 +1316,13 @@ function buildThreeBall(search='') {
   lastThreeBallPlays = []; // repopulated below — 3-ball bulk-adds are always tracking-only, same rule as the individual +trk here
   rows.forEach(r => {
     const edgePct = r.edge * 100;
-    const call = edgePct >= 3 ? 'BET' : 'PASS'; // FADE doesn't cleanly apply to a 3-way market — "the other two combined" isn't one bettable side
-    const cls = edgePct >= 3 ? 'edge' : 'thin';
+    // Edge% ≥ 3% alone isn't enough -- also requires positive EV% at the actual price (vig
+    // included), same principle as Matchups/Round Score/Outrights. r.price has no book suffix
+    // yet here, but computeBetEV only needs the number, so that's fine.
+    const evTb = computeBetEV(r.price, r.model);
+    const qualifies = edgePct >= 3 && evTb !== null && evTb > 0;
+    const call = qualifies ? 'BET' : 'PASS'; // FADE doesn't cleanly apply to a 3-way market — "the other two combined" isn't one bettable side
+    const cls = qualifies ? 'edge' : 'thin';
     const edgeCls = edgePct >= 0 ? 'val-pos' : 'val-neg';
     const canBet = call === 'BET' && r.price;
     if (canBet) {
@@ -1382,9 +1397,18 @@ function buildMatch(search=''){
   lastMatchPlays = []; // repopulated below with exactly what's rendered — "Track All Plays" tracks this view, not the unfiltered full slate
   rows.forEach(r=>{
     const edgePct=(r.edge*100);
+    // Edge% (model vs. no-vig market) alone isn't enough to call a play -- confirmed live on
+    // a real Round Score line (Doug Ghim, +3.9% Edge but -0.1% EV once the vig on the actual
+    // price was priced in) that Edge% can clear the bar while there's nothing left at the real
+    // price. Now requires EV% > 0 too, computed fresh from whichever side/price the call would
+    // actually bet at (priceA for BET, priceB for FADE) -- not the pipeline's own DK-specific
+    // evPct, which can be null (thin consensus) or aligned to a different "side" than this
+    // no-vig-based call logic uses. Same gate as Round Score/Outrights/3-Ball.
+    const evA = computeBetEV(r.priceA, r.model);
+    const evB = computeBetEV(r.priceB, (r.model !== null && r.model !== undefined) ? 1 - r.model : null);
     let call,cls;
-    if(edgePct>=3){call='BET';cls='edge';}
-    else if(edgePct<=-3){call='FADE';cls='fade';}
+    if(edgePct>=3 && evA!==null && evA>0){call='BET';cls='edge';}
+    else if(edgePct<=-3 && evB!==null && evB>0){call='FADE';cls='fade';}
     else{call='PASS';cls='thin';}
     const edgeCls=edgePct>=0?'val-pos':'val-neg';
     // FADE means the value is on player B, not A — use B's own price, not A's, so the
@@ -2277,8 +2301,15 @@ function renderRoundScore() {
     // the BET threshold, is "the play" — this is what actually gets shown/highlighted,
     // instead of parsing two separate Call columns to figure out which side (if either) to bet
     let play = null;
-    const uQualifies = edgeU !== null && edgeU * 100 >= 3;
-    const oQualifies = edgeO !== null && edgeO * 100 >= 3;
+    // Edge% alone isn't enough -- confirmed live that a line can clear 3% Edge against the
+    // fair market and still have nothing left once the actual price's vig is priced in (e.g.
+    // Doug Ghim's R4 Under 68.5: +3.9% Edge but -0.1% true EV at the real -124 price). Now
+    // requires EV% > 0 too, computed straight from the stored price for that side -- same gate
+    // as Matchups/Outrights/3-Ball.
+    const evU = computeBetEV(p.underPrice, p.modelUnder);
+    const evO = computeBetEV(p.overPrice, p.modelOver);
+    const uQualifies = edgeU !== null && edgeU * 100 >= 3 && evU !== null && evU > 0;
+    const oQualifies = edgeO !== null && edgeO * 100 >= 3 && evO !== null && evO > 0;
     if (uQualifies && (!oQualifies || edgeU >= edgeO)) play = { side: 'Under', edge: edgeU, price: p.underPrice };
     else if (oQualifies) play = { side: 'Over', edge: edgeO, price: p.overPrice };
     const bestEdge = Math.max(edgeU ?? -Infinity, edgeO ?? -Infinity);
@@ -2948,6 +2979,7 @@ let lastKnownEvent = loadLS('rodsModel_lastKnownEvent', null);
 const COURSE_COORDS = {
   'tpc twin cities': { lat: 45.177, lon: -93.213 },
   'detroit golf club': { lat: 42.4263, lon: -83.1262 }, // Rocket Classic 2026, July 30-Aug 2 -- confirmed real coordinates via search, multiple independent sources agreed within a few hundred meters
+  'sedgefield': { lat: 36.0147, lon: -79.8867 }, // Wyndham Championship 2026, Aug 6-9 -- Sedgefield Country Club, Greensboro NC -- confirmed via search (PGA Tour course overview + Wikipedia)
 };
 async function fetchWeatherForCourse(courseName) {
   const key = (courseName || '').toLowerCase().trim();
