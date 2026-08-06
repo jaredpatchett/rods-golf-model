@@ -31,7 +31,14 @@ jobs:
       - name: Run pipeline
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
-        run: python3 rods_pipeline.py --baseline-score 69.5
+        # Wyndham Championship, Aug 6-9 2026 -- Sedgefield Country Club, par 70, birdie-friendly
+        # (recent winners -18 to -22). 69.5 was tuned for Rocket Classic -- leaving it as-is here
+        # risks the exact "everything says bet the Over" bug this constant has already caused
+        # once before (see the DEFAULT_BASELINE_ROUND_SCORE comment in rods_pipeline.py, from
+        # the 3M Open incident). 68.0 is a rough estimate (par 70, -2), not derived from real
+        # Sedgefield scoring history -- update this once you've got real data or a couple of
+        # rounds in to check it against.
+        run: python3 rods_pipeline.py --baseline-score 68.0
 
       - name: Deploy to Cloudflare
         env:
