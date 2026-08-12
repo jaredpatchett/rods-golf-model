@@ -31,14 +31,17 @@ jobs:
       - name: Run pipeline
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
-        # Wyndham Championship, Aug 6-9 2026 -- Sedgefield Country Club, par 70, birdie-friendly
-        # (recent winners -18 to -22). 69.5 was tuned for Rocket Classic -- leaving it as-is here
-        # risks the exact "everything says bet the Over" bug this constant has already caused
-        # once before (see the DEFAULT_BASELINE_ROUND_SCORE comment in rods_pipeline.py, from
-        # the 3M Open incident). 68.0 is a rough estimate (par 70, -2), not derived from real
-        # Sedgefield scoring history -- update this once you've got real data or a couple of
-        # rounds in to check it against.
-        run: python3 rods_pipeline.py --baseline-score 68.0
+        # FedEx St. Jude Championship, Aug 13-16 2026 -- TPC Southwind, Memphis TN, par 70.
+        # Unlike Wyndham (Sedgefield, birdie-friendly, -18 to -22 winners), TPC Southwind plays
+        # close to tour-average difficulty -- narrow tree-lined fairways, thick Bermuda rough,
+        # firm/fast greens -- with a confirmed real scoring average of 69.56 (2020, ranked 14th
+        # toughest of 41 courses that year). Winning scores run -15 to -17, but that's the
+        # champion, not the field average, so it's not usable directly as a baseline. 69.5 is
+        # grounded in that real recorded scoring average -- more solid than a par-based guess --
+        # though this is now a limited/elite ~70-player FedExCup Playoff field rather than a
+        # full field, which could shift the true average slightly; no clean way to quantify
+        # that without real per-event data. Check against real rounds once R1 is in.
+        run: python3 rods_pipeline.py --baseline-score 69.5
 
       - name: Deploy to Cloudflare
         env:
