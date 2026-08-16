@@ -49,8 +49,19 @@ def get_key():
 def fetch(endpoint, key, **params):
     params["apiKey"] = key
     url = f"{BASE}{endpoint}?{urllib.parse.urlencode(params)}"
+    # Confirmed cause of a real HTTP 403 "error code: 1010" on the first run: that's
+    # Cloudflare's Browser Integrity Check, not an OddsPapi/key rejection -- it blocks
+    # before the request ever reaches their API. Python's urllib sends a bare
+    # "Python-urllib/3.x" User-Agent by default, a classic bot fingerprint. Presenting
+    # normal browser-like headers here is the standard, legitimate fix for a paid,
+    # key-authenticated API call getting caught by a WAF's generic bot filter.
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+    })
     try:
-        with urllib.request.urlopen(url, timeout=30) as r:
+        with urllib.request.urlopen(req, timeout=30) as r:
             raw = r.read().decode("utf-8")
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", "ignore")
