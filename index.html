@@ -528,6 +528,20 @@
       <span id="rsFanaticsStatus" style="font-size:10px;color:var(--text-dim)"></span>
     </div>
   </div>
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px;border-color:var(--green)">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--green);text-transform:uppercase">Bulk Import (PrizePicks) — paste the JSON output from the Apify "PrizePicks Player Props Scraper" run (Table view → JSON toggle, or Export). Covers Strokes, Birdies Or Better, Bogeys or Worse (all modeled), plus Greens In Regulation / Pars / Fairways Hit (shown, no model yet). No two-sided price exists for PrizePicks picks — the MORE/LESS call below assumes a standard 2-pick Power Play breakeven (~58%), not a real priced edge.</label>
+    <textarea id="ppBulkText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder='Paste the raw JSON array here, e.g. [{"player_name":"J.J. Spaun","stat":"Birdies Or Better","line":3.5,"odds_tier":"goblin","description":"TPC Southwind - RD 4",...}, ...]'></textarea>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="field" style="margin:0">
+        <label title="Only used as a fallback — PrizePicks' own description field carries the round for some stat types (e.g. 'TPC Southwind - RD 4') but not others (plain 'TPC Southwind'), confirmed live in the same payload.">Round (fallback)</label>
+        <select class="finput" id="ppRound" style="min-width:70px">
+          <option value="R1">R1</option><option value="R2">R2</option><option value="R3">R3</option><option value="R4">R4</option><option value="T72">Tournament (T72)</option>
+        </select>
+      </div>
+      <button class="addbtn" onclick="bulkImportPrizePicks()">Parse &amp; Add All</button>
+      <span id="ppBulkStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+  </div>
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px;border-color:var(--amber)">
     <label style="font-size:8px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase">Live Form Adjustment (leaderboard-based) — ⚠ superseded by automatic market calibration below. Real Round 2+ market lines already reflect Round 1 results (books update dynamically) — correcting from a leaderboard on top of that risks double-counting the same information against a target that's already moved. Bulk Import (below) now computes a market-grounded correction automatically from your real pasted prices every time — that one can't double-count, since it's measuring the gap to today's actual market, not re-deriving what the market already knows. Only use this leaderboard panel early in a round before real market lines exist yet.</label>
     <textarea id="rsLeaderboardText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the leaderboard — needs a player name and their current score-to-par on each line (e.g. 'Scottie Scheffler -12', or a full copy-pasted leaderboard with position/rounds mixed in, that's fine too). Round scores without a +/- sign are ignored automatically."></textarea>
@@ -581,6 +595,32 @@
     </table>
   </div>
   <div class="note"><b>Model Under%</b> is a client-side Monte Carlo (same mixture-of-normals logic as sim_engine.py — mean from this player's PROJ, variance/blowup from the Royal Birkdale course-fit row) run in your browser against the line you enter. Pick <b>Tournament (72)</b> in the Round dropdown for a 72-hole total-strokes line instead of a single round — it sums 4 simulated rounds per trial rather than 1. There's no DataGolf feed for either round-score or tournament-total O/U (confirmed — their live betting tools only cover Outright and Match-Up/3-Ball markets), so market% only appears once you type in the price from your sportsbook. A line only calls BET when Edge% (Model% − no-vig market%) clears 3% <b>and</b> true EV% at the actual price is positive — confirmed live that Edge% alone can clear 3% against the fair market while the specific price's vig has already eaten the whole thing, so both have to hold. Entries save to this browser only (localStorage) — use Export CSV as a backup, especially before clearing browser data.</div>
+
+  <div class="toolrow" style="justify-content:flex-start;gap:8px;margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+    <b style="color:var(--green);font-size:11px;letter-spacing:.08em;text-transform:uppercase;align-self:center">PrizePicks Props</b>
+    <span id="ppCount" style="font-size:10px;color:var(--text-dim);align-self:center"></span>
+    <button class="toolbtn" style="border-color:var(--green);color:var(--green)" onclick="bulkAddPlaysToTracker(lastPrizePicksPlays, 'PrizePicks')">Track All Plays</button>
+    <span style="flex:1"></span>
+    <span style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;align-self:center">sorted by confidence away from 50%</span>
+  </div>
+  <div class="wide">
+    <table id="ppTable">
+      <thead>
+        <tr>
+          <th class="player">Player</th>
+          <th>Rd</th>
+          <th>Stat</th>
+          <th>Line</th>
+          <th>Tier</th>
+          <th>Model %</th>
+          <th>Call</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="ppBody"></tbody>
+    </table>
+  </div>
+  <div class="note">Birdies Or Better / Bogeys or Worse use a new Binomial(18, p) engine (<code>birdie_bogey_engine.py</code>, ported here in JS) — p starts from a rough Tour-average baseline and shifts with the player's projected strokes-gained vs. the field average, <b>not</b> fit from real historical birdie/bogey data yet (that needs DataGolf's raw round-level hole-score-count field, unconfirmed — <code>discover_round_shape.py</code> checks for it but hasn't found real access yet). Strokes reuses the same round-score model as the table above. Greens In Regulation / Pars / Fairways Hit have no model behind them — shown for reference only, never call MORE/LESS. PrizePicks has no two-sided price, so Edge%/EV% don't apply — MORE/LESS instead checks whether Model % clears an assumed ~58% breakeven (a standard 2-pick Power Play; your actual slip may need more or less edge than that, and goblin/demon tiers pay different, undisclosed multipliers this doesn't account for at all).</div>
 </div>
 
 <!-- ============ TAB 5: OUTRIGHTS ============ -->
@@ -1530,6 +1570,7 @@ document.getElementById('windAdjustmentToggle').addEventListener('change', funct
   recomputeAllRoundScoreProps();
   renderWindAdjustmentUI();
   renderRoundScore();
+  renderPrizePicks();
 });
 document.getElementById('windAdjustmentToggle').checked = windCorrectionEnabled;
 document.getElementById('rsRoundsCompleted').addEventListener('input', function(){
@@ -1707,6 +1748,240 @@ function rsCallFor(edge) {
   if (pct >= 3) return { call: 'BET', cls: 'edge' };
   if (pct <= -3) return { call: 'FADE', cls: 'fade' };
   return { call: 'PASS', cls: 'thin' };
+}
+
+// ---------------- PrizePicks: birdie/bogey count engine + real-lines import ----------------
+// Ported from birdie_bogey_engine.py (module 2) -- same constants, same formulas, kept in
+// sync deliberately so a Python-side recalibration (once real DataGolf hole-score-count data
+// exists) is a mechanical copy-over, not a re-derivation. See that file's docstring for the
+// full reasoning: Binomial(18,p) per round, p shifted from a rough Tour-average baseline by
+// the player's own projected strokes-gained-vs-field. Not fit from real data yet -- flagged,
+// not hidden.
+const PP_BASELINE_BIRDIES_PER_ROUND = 3.75;
+const PP_BASELINE_BOGEYS_PER_ROUND = 2.75;
+const PP_BASELINE_BIRDIE_RATE = PP_BASELINE_BIRDIES_PER_ROUND / 18;
+const PP_BASELINE_BOGEY_RATE = PP_BASELINE_BOGEYS_PER_ROUND / 18;
+const PP_STROKES_PER_BIRDIE_SHIFT = 0.55;
+const PP_STROKES_PER_BOGEY_SHIFT = 0.45;
+
+function ppClamp01(p) { return Math.max(0.0005, Math.min(0.9995, p)); }
+
+// nCr -- n is always 18 here (holes per round), cheap regardless of implementation.
+function ppChoose(n, k) {
+  if (k < 0 || k > n) return 0;
+  k = Math.min(k, n - k);
+  let result = 1;
+  for (let i = 0; i < k; i++) result = result * (n - i) / (i + 1);
+  return result;
+}
+// P(X > k) for X ~ Binomial(n, p) -- i.e. P(X >= k+1). Used for lines like
+// 'Birdies Or Better 3.5' -> P(count >= 4). Same as binomial_sf() in the Python engine.
+function ppBinomialSf(k, n, p) {
+  p = ppClamp01(p);
+  if (k >= n) return 0;
+  if (k < 0) return 1;
+  let total = 0;
+  for (let i = k + 1; i <= n; i++) total += ppChoose(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i);
+  return total;
+}
+function ppBirdieRate(sgVsField, holes) {
+  holes = holes || 18;
+  const expected = PP_BASELINE_BIRDIE_RATE * holes + sgVsField * PP_STROKES_PER_BIRDIE_SHIFT;
+  return ppClamp01(expected / holes);
+}
+function ppBogeyRate(sgVsField, holes) {
+  holes = holes || 18;
+  const expected = PP_BASELINE_BOGEY_RATE * holes - sgVsField * PP_STROKES_PER_BOGEY_SHIFT;
+  return ppClamp01(expected / holes);
+}
+function birdiesOrBetterProb(line, sgVsField, holes) {
+  return ppBinomialSf(Math.floor(line), holes || 18, ppBirdieRate(sgVsField, holes));
+}
+function bogeysOrWorseProb(line, sgVsField, holes) {
+  return ppBinomialSf(Math.floor(line), holes || 18, ppBogeyRate(sgVsField, holes));
+}
+
+// Field-average effective projection -- the baseline "strokes gained vs field" is measured
+// against, computed live from whoever's actually in P right now rather than a fixed guess, so
+// it adapts automatically per event/course instead of needing its own manual constant.
+function ppFieldAvgEffectiveProj() {
+  const vals = P.map(r => (r[1] !== null && r[1] !== undefined) ? getEffectiveProj(r[0], r[1]) : null).filter(v => v !== null);
+  if (!vals.length) return null;
+  return vals.reduce((s, v) => s + v, 0) / vals.length;
+}
+
+// No two-sided vig price exists for a PrizePicks pick -- payout comes from the whole slip
+// (Power Play pays a fixed multiplier only if every leg hits; Flex Play pays smaller amounts
+// for partial hits), not a priced individual line. Real per-leg breakeven depends on how many
+// picks are in the slip: a 2-pick Power Play at 3x needs >57.7% per leg (p^2 > 1/3), a 3-pick
+// at 5x needs >58.5% (p^3 > 1/5) -- it gets MORE demanding, not less, as slip size grows.
+// This assumes the simplest, most common case (2-pick Power Play) as a default breakeven --
+// an approximation, not a fact about your actual slip, and doesn't attempt to model
+// goblin/demon's different (undisclosed) multipliers at all. Flag, don't silently decide.
+const PP_QUALIFY_THRESHOLD = 0.58; // ~57.7% breakeven for a 2-pick Power Play at 3x, rounded up slightly
+
+function ppCallFor(modelProb) {
+  if (modelProb === null || modelProb === undefined) return { call: '—', cls: 'thin' };
+  if (modelProb >= PP_QUALIFY_THRESHOLD) return { call: 'MORE', cls: 'edge' };
+  if ((1 - modelProb) >= PP_QUALIFY_THRESHOLD) return { call: 'LESS', cls: 'edge' };
+  return { call: 'PASS', cls: 'thin' };
+}
+
+// Maps PrizePicks' real stat names (confirmed live via the Apify scraper -- "PrizePicks
+// Player Props Scraper - Real-Time Lines", run eD3YvU2FGDinUMpI3) to what this app can
+// actually model. Only Strokes / Birdies Or Better / Bogeys or Worse have a real model behind
+// them right now -- GIR/Pars/Fairways Hit are stored and shown, but with no prediction, rather
+// than silently guessing.
+const PP_STAT_MAP = {
+  'strokes': 'strokes',
+  'birdies or better': 'birdies',
+  'bogeys or worse': 'bogeys',
+  'greens in regulation': 'gir',
+  'pars': 'pars',
+  'fairways hit': 'fairways',
+};
+
+// PrizePicks' description field sometimes carries the round (e.g. "TPC Southwind - RD 4" on
+// Birdies Or Better props) and sometimes doesn't (plain "TPC Southwind" on Strokes props in
+// the same real payload) -- confirmed live, not a parsing bug. Prefer whatever's actually in
+// the description; fall back to the Round dropdown otherwise, same pattern as the Fanatics
+// import (which has no round info in its text at all).
+function ppExtractRound(description) {
+  if (!description) return null;
+  const m = String(description).match(/RD\s*(\d)/i);
+  return m ? 'R' + m[1] : null;
+}
+
+function parsePrizePicksJSON(text) {
+  let data;
+  try { data = JSON.parse(text); }
+  catch (e) { return { entries: [], error: 'Could not parse as JSON — paste the raw array exactly as shown in the Apify console (Table or JSON view).' }; }
+  const rows = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+  if (!rows.length) return { entries: [], error: 'No rows found in that JSON.' };
+  const entries = [];
+  rows.forEach(r => {
+    const player = r.player_name;
+    const statRaw = (r.stat || r.stat_short || '').toString().trim().toLowerCase();
+    const statKey = PP_STAT_MAP[statRaw];
+    if (!player || !statKey || r.line === undefined || r.line === null) return;
+    entries.push({
+      player: String(player).trim(),
+      statKey,
+      statLabel: r.stat || r.stat_short,
+      line: parseFloat(r.line),
+      tier: (r.odds_tier || 'standard').toString().trim().toLowerCase(),
+      description: r.description || '',
+      round: ppExtractRound(r.description),
+      startTime: r.start_time || null,
+      projectionId: r.projection_id || null,
+    });
+  });
+  return { entries, error: null };
+}
+
+let prizePicksProps = loadLS('rodsModel_prizePicksProps', []);
+
+function upsertPrizePicksProp(entry) {
+  entry = { ...entry, event: entry.event || currentEvent };
+  const existingIdx = prizePicksProps.findIndex(p =>
+    normalizeNameForMatch(p.name) === normalizeNameForMatch(entry.name) &&
+    p.statKey === entry.statKey && p.round === entry.round && (p.event || null) === (entry.event || null));
+  if (existingIdx >= 0) {
+    prizePicksProps[existingIdx] = { ...prizePicksProps[existingIdx], ...entry, id: prizePicksProps[existingIdx].id };
+    return false;
+  }
+  prizePicksProps.push(entry);
+  return true;
+}
+
+function bulkImportPrizePicks() {
+  const text = document.getElementById('ppBulkText').value;
+  const status = document.getElementById('ppBulkStatus');
+  const fallbackRound = document.getElementById('ppRound').value;
+  if (!text.trim()) { status.textContent = 'Paste the JSON output first.'; return; }
+  const { entries, error } = parsePrizePicksJSON(text);
+  if (error) { status.textContent = error; return; }
+  if (!entries.length) { status.textContent = 'Parsed 0 usable rows — check the paste includes player_name, stat, and line fields.'; return; }
+
+  const fieldAvg = ppFieldAvgEffectiveProj();
+  let added = 0, updated = 0, unmatched = [], unmodeled = [];
+  entries.forEach(entry => {
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
+    if (!prow || prow[1] === null || prow[1] === undefined) { unmatched.push(entry.player); return; }
+    const round = entry.round || fallbackRound;
+    const roundsCount = round === 'T72' ? 4 : 1;
+    const effectiveProj = getEffectiveProj(prow[0], prow[1]);
+
+    let modelProb = null; // "Over"/"More" probability -- null means no model exists for this stat yet
+    if (entry.statKey === 'strokes') {
+      modelProb = 1 - modelUnderProb(effectiveProj, entry.line, roundsCount);
+    } else if ((entry.statKey === 'birdies' || entry.statKey === 'bogeys') && fieldAvg !== null) {
+      const sgVsField = fieldAvg - effectiveProj; // positive = better than the field average
+      modelProb = entry.statKey === 'birdies' ? birdiesOrBetterProb(entry.line, sgVsField) : bogeysOrWorseProb(entry.line, sgVsField);
+    } else {
+      unmodeled.push(`${entry.player} (${entry.statLabel})`);
+    }
+
+    const isNew = upsertPrizePicksProp({
+      id: Date.now() + Math.random(), name: prow[0], statKey: entry.statKey, statLabel: entry.statLabel,
+      line: entry.line, tier: entry.tier, round, description: entry.description, modelProb,
+    });
+    if (isNew) added++; else updated++;
+  });
+
+  saveLS('rodsModel_prizePicksProps', prizePicksProps);
+  document.getElementById('ppBulkText').value = '';
+  status.textContent = `Added ${added} new, updated ${updated} existing (of ${entries.length} parsed).` +
+    (unmatched.length ? ` Not matched to the field: ${unmatched.join(', ')}.` : '') +
+    (unmodeled.length ? ` No model yet for: ${unmodeled.join(', ')}.` : '');
+  renderPrizePicks();
+}
+
+let lastPrizePicksPlays = [];
+
+function renderPrizePicks() {
+  const body = document.getElementById('ppBody');
+  if (!body) return;
+  body.innerHTML = '';
+  lastPrizePicksPlays = [];
+
+  const rows = prizePicksProps.filter(p => (p.event || null) === (currentEvent || null) || !p.event);
+  rows.sort((a, b) => {
+    const am = a.modelProb === null ? -1 : Math.max(a.modelProb, 1 - a.modelProb);
+    const bm = b.modelProb === null ? -1 : Math.max(b.modelProb, 1 - b.modelProb);
+    return bm - am;
+  });
+
+  const countEl = document.getElementById('ppCount');
+  if (countEl) countEl.textContent = `${rows.length} line${rows.length === 1 ? '' : 's'}`;
+
+  rows.forEach(p => {
+    const { call, cls } = ppCallFor(p.modelProb);
+    const displayProb = p.modelProb === null ? null : (p.modelProb >= 0.5 ? p.modelProb : 1 - p.modelProb);
+    const side = p.modelProb === null ? '' : (p.modelProb >= 0.5 ? 'MORE' : 'LESS');
+    if (call !== '—' && call !== 'PASS') {
+      lastPrizePicksPlays.push({
+        desc: `${p.name} ${p.round || ''} ${p.statLabel} ${side} ${p.line} (PrizePicks ${p.tier})`.replace(/\s+/g, ' ').trim(),
+        type: 'PrizePicks', price: `PrizePicks (${p.tier})`, modelProb: displayProb,
+        edgePct: displayProb !== null ? (displayProb - 0.5) * 100 : null, edgeTag: 'prizepicks',
+      });
+    }
+    body.innerHTML += `<tr>
+      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}</td>
+      <td class="cell">${p.round || '—'}</td>
+      <td class="cell">${p.statLabel}</td>
+      <td class="cell"><b>${p.line}</b></td>
+      <td class="cell" style="text-align:center"><span class="badge ${p.tier==='goblin'?'win':(p.tier==='demon'?'push':'')}" style="font-size:9px;text-transform:uppercase">${p.tier}</span></td>
+      <td class="cell heat" style="background:${displayProb!==null?heat((displayProb-0.5)/0.5):'transparent'}">${displayProb!==null?(displayProb*100).toFixed(1)+'% '+side:'no model'}</td>
+      <td class="cell" style="text-align:center"><span class="pill ${cls}" style="font-size:11px;padding:5px 10px">${call}</span></td>
+      <td class="cell"><button class="delbtn" onclick="deletePrizePicksProp(${p.id})">✕</button></td>
+    </tr>`;
+  });
+}
+function deletePrizePicksProp(id) {
+  prizePicksProps = prizePicksProps.filter(p => p.id !== id);
+  saveLS('rodsModel_prizePicksProps', prizePicksProps);
+  renderPrizePicks();
 }
 
 let roundScoreProps = loadLS('rodsModel_roundScoreProps', []);
@@ -1930,6 +2205,7 @@ function applyLeaderboardAdjustment() {
   });
   if (recomputed > 0) saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
+  renderPrizePicks();
 
   status.textContent = `Field-wide correction: ${fieldBaselineCorrection>=0?'+':''}${fieldBaselineCorrection.toFixed(2)} strokes (from ${matchedResiduals.length} matched players' own residuals, not a flat par comparison). ` +
     `Individual blend (weight=${blendWeight}) applied to ${applied} players` +
@@ -2167,6 +2443,7 @@ function processRoundScoreImport(parsed, bookName) {
 
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
+  renderPrizePicks();
   return { added, updated, notFound, correction: residuals.length > 0 ? fieldBaselineCorrection : null, correctionN: residuals.length, recomputedOthers, totalParsed: parsed.length };
 }
 function bulkImportRoundScore() {
@@ -2188,6 +2465,7 @@ function bulkImportRoundScore() {
   const topRound = Object.keys(roundCounts).sort((a,b) => roundCounts[b]-roundCounts[a])[0];
   if (topRound) { lastImportedRound = topRound; saveLS('rodsModel_lastImportedRound', lastImportedRound); }
   renderRoundScore();
+  renderPrizePicks();
 }
 function bulkImportFanaticsRoundScore() {
   const text = document.getElementById('rsFanaticsText').value;
@@ -2205,6 +2483,7 @@ function bulkImportFanaticsRoundScore() {
   lastImportedRound = round;
   saveLS('rodsModel_lastImportedRound', lastImportedRound);
   renderRoundScore();
+  renderPrizePicks();
 }
 
 function addRoundScoreProp() {
@@ -2243,11 +2522,13 @@ function addRoundScoreProp() {
   lastImportedRound = round;
   saveLS('rodsModel_lastImportedRound', lastImportedRound);
   renderRoundScore();
+  renderPrizePicks();
 }
 function deleteRoundScoreProp(id) {
   roundScoreProps = roundScoreProps.filter(p => p.id !== id);
   saveLS('rodsModel_roundScoreProps', roundScoreProps);
   renderRoundScore();
+  renderPrizePicks();
 }
 // A real, diversified slate of edges should be a genuine mix of Overs and Unders — different
 // players, different lines, different books, no reason they'd all break the same way. When
@@ -2845,7 +3126,7 @@ function saveLS(key, val) {
 }
 function clearAll(kind) {
   if (!confirm('Clear all saved entries for this tab? This cannot be undone (export CSV first if you want a backup).')) return;
-  if (kind === 'roundscore') { roundScoreProps = []; saveLS('rodsModel_roundScoreProps', roundScoreProps); renderRoundScore(); }
+  if (kind === 'roundscore') { roundScoreProps = []; prizePicksProps = []; saveLS('rodsModel_roundScoreProps', roundScoreProps); saveLS('rodsModel_prizePicksProps', prizePicksProps); renderRoundScore(); renderPrizePicks(); }
   if (kind === 'tracker') { betTracker = []; saveLS('rodsModel_betTracker', betTracker); renderTracker(); }
 }
 // ---------------- tracker: import bets from a CSV file (round-trips with Export CSV, also
@@ -2957,6 +3238,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const d = document.getElementById('trDate');
   if (d) d.value = new Date().toISOString().slice(0,10);
   renderRoundScore();
+  renderPrizePicks();
   renderTracker();
 });
 
@@ -3131,23 +3413,26 @@ function applyMeta(meta){
     // tournament to show up as live plays for the new one. Clearing it outright, rather than
     // trying to recompute rows that don't belong to this event at all, is the actual fix.
     if (lastKnownEvent !== null && lastKnownEvent !== meta.event) {
-      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length) || (roundScoreProps && roundScoreProps.length);
+      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length) || (roundScoreProps && roundScoreProps.length) || (prizePicksProps && prizePicksProps.length);
       formAdjustments = {};
       fieldBaselineCorrection = 0;
       dkMatchupOverride = null;
       dk3BallData = null;
       roundScoreProps = [];
+      prizePicksProps = []; // same stale-data class as roundScoreProps -- current, actionable lines, not a persistent record
       lastImportedRound = null;
       saveLS('rodsModel_formAdjustments', formAdjustments);
       saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
       saveLS('rodsModel_dkMatchupOverride', null);
       saveLS('rodsModel_dk3BallData', null);
       saveLS('rodsModel_roundScoreProps', roundScoreProps);
+      saveLS('rodsModel_prizePicksProps', prizePicksProps);
       saveLS('rodsModel_lastImportedRound', null);
       if (hadStaleData) {
         console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, DraftKings matchup overrides, and Round Score lines from the previous tournament.`);
         alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, DraftKings matchup data, and Round Score lines from the previous event — these belonged to a different tournament's field and were no longer valid. Re-import this event's Round Score lines when you have them.`);
         renderRoundScore();
+  renderPrizePicks();
       }
     }
     lastKnownEvent = meta.event;
