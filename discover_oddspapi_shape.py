@@ -6,42 +6,33 @@ Path C, step 1: OddsPapi (oddspapi.io) claims coverage of PrizePicks odds
 alongside 300+ other bookmakers, including player props. This script does
 NOT assume anything about golf's sportId, market IDs, or PrizePicks' exact
 bookmaker key in their system -- every one of those needs to be confirmed
-live before any of it gets wired into rods_pipeline.py. Same discipline as
-discover_round_shape.py: guessing field shapes has broken this app before --
-the matchup dedup bug, the EV%/Edge% swap, the wind double-count -- all three
-came from trusting an assumed shape instead of a confirmed one.
+live before any of it gets wired into rods_pipeline.py.
 
 CONFIRMED from real runs so far:
   - Golf sportId = 67
   - "prizepicks" is a real, valid bookmaker key (351 total bookmakers)
-  - /v4/tournaments?sportId=67 returns 1300+ rows -- the ENTIRE historical
-    catalog, and every row shows futureFixtures/upcomingFixtures/liveFixtures
-    = 0 regardless of whether the event is live -- filtering by name/slug is
-    the only reliable way to find "this week's event."
-  - Even after filtering tournaments down to just EVENT_KEYWORD matches, the
-    full run STILL blew past 10k lines -- meaning /v4/markets?sportId=67
-    (the full golf market catalog, every market * every outcome, printed as
-    nested JSON) is almost certainly the real source of the bloat, not the
-    tournament list.
+  - /v4/tournaments?sportId=67 returns 1300+ rows, the entire historical
+    catalog -- filtering by keyword is required.
+  - TWO rounds of "print less per entry" (full JSON -> one-line-per-entry)
+    both still blew past 10k lines. That means the guess-and-shrink approach
+    was wrong -- something is returning a payload far bigger than a golf
+    market/tournament catalog should reasonably be, and guessing which one
+    a third time isn't a real fix.
 
-Fix this round: steps 3 and 4 now print ONE COMPACT LINE per entry
-(id | name | key flags) instead of full indented JSON with nested arrays.
-Full JSON detail is kept ONLY for playerProp=true markets in step 4 (there
-should be relatively few of those) and for the final odds payload in step 5,
-which was already capped at 8000 chars.
+What changed this round -- a hard cap instead of another guess:
+  1. Every fetch() call now prints its RAW response size (bytes + line count)
+     the instant it comes back, before any processing. This is not capped,
+     and there are only 5 fetch calls total, so this alone is at most 5 lines
+     and will tell us definitively which endpoint is actually huge.
+  2. A global output budget (400 lines) wraps every other print in this
+     script. Once hit, it stops printing further detail and says so --
+     it CANNOT blow past the budget regardless of what any endpoint
+     returns, full stop.
+  3. Every list-printing loop is hard-capped at 25 entries with a
+     "+N more not shown" note, regardless of the list's real length.
 
-Update EVENT_KEYWORD each week to whatever event is current.
-
-What this script does, in order:
-  1. GET /v4/sports              -> confirm golf's sportId (already known: 67)
-  2. GET /v4/bookmakers          -> confirm "prizepicks" (already known: real)
-  3. GET /v4/tournaments         -> find EVENT_KEYWORD's tournamentId(s), one line each
-  4. GET /v4/markets             -> one line per market; full detail only for playerProp ones
-  5. GET /v4/odds-by-tournaments -> pull real PrizePicks-tagged odds, capped at 8000 chars
-
-Run this (locally or via the matching discover-oddspapi.yml workflow), paste
-the full output back, and the real pipeline/engine integration gets built
-against what's actually there -- not against a guess.
+Run this, paste the FULL output (it will now be well under a thousand
+lines no matter what), and the real integration gets built from there.
 """
 import os
 import sys
@@ -51,10 +42,28 @@ import urllib.parse
 import urllib.error
 
 BASE = "https://api.oddspapi.io"
+EVENT_KEYWORD = "fedex-st-jude"  # update each week
+MAX_LINES = 400
+MAX_LIST_ENTRIES = 25
 
-# Change this each week to whatever event is current. Matches against both
-# tournamentSlug and categorySlug, case-insensitive substring.
-EVENT_KEYWORD = "fedex-st-jude"
+_line_count = [0]
+_budget_hit = [False]
+
+
+def out(*args, **kwargs):
+    """Print, but stop once the global line budget is spent. Unlike a plain
+    print(), this cannot be individually forgotten in some new section added
+    later -- every printed line in this script (except the raw-size lines,
+    which are separately unbounded and always show) goes through this."""
+    if _line_count[0] >= MAX_LINES:
+        if not _budget_hit[0]:
+            print(f"\n[[ OUTPUT BUDGET HIT: {MAX_LINES} lines. Suppressing further detail. "
+                  f"Check the '[raw]' size lines above -- whichever endpoint has the "
+                  f"biggest byte count is the one actually driving the output size. ]]")
+            _budget_hit[0] = True
+        return
+    print(*args, **kwargs)
+    _line_count[0] += 1
 
 
 def get_key():
@@ -67,9 +76,6 @@ def get_key():
 def fetch(endpoint, key, **params):
     params["apiKey"] = key
     url = f"{BASE}{endpoint}?{urllib.parse.urlencode(params)}"
-    # Confirmed cause of the original HTTP 403 "error code: 1010": Cloudflare's Browser
-    # Integrity Check reacting to urllib's bare "Python-urllib/3.x" User-Agent, not an
-    # OddsPapi/key rejection. Normal browser-like headers fixed it.
     req = urllib.request.Request(url, headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -83,6 +89,10 @@ def fetch(endpoint, key, **params):
         raise SystemExit(f"HTTP {e.code} on {endpoint}: {body[:500]}")
     except urllib.error.URLError as e:
         raise SystemExit(f"Network error on {endpoint}: {e.reason}")
+    # Always printed, never suppressed by the budget -- this is the diagnostic
+    # that actually answers "which endpoint is huge", independent of anything
+    # downstream doing with the data.
+    print(f"[raw] {endpoint} ({params}) -> {len(raw)} bytes, {raw.count(chr(10)) + 1} lines of raw JSON")
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
@@ -101,66 +111,72 @@ def as_list(payload):
     return []
 
 
+def print_capped(items, formatter):
+    for item in items[:MAX_LIST_ENTRIES]:
+        out(formatter(item))
+    if len(items) > MAX_LIST_ENTRIES:
+        out(f"  ... +{len(items) - MAX_LIST_ENTRIES} more not shown (raise MAX_LIST_ENTRIES if needed)")
+
+
 def section(title):
-    print(f"\n{'='*70}\n{title}\n{'='*70}")
+    out(f"\n{'=' * 70}\n{title}\n{'=' * 70}")
 
 
 def main():
     key = get_key()
 
-    # ---- Step 1: confirm golf's sportId ----
-    section("STEP 1 -- GET /v4/sports (confirming golf sportId, already known: 67)")
+    section("STEP 1 -- GET /v4/sports")
     sports = as_list(fetch("/v4/sports", key))
     golf_matches = [s for s in sports if "golf" in json.dumps(s).lower() or "pga" in json.dumps(s).lower()]
-    print(f"Total sports returned: {len(sports)}  |  golf matches: {golf_matches}")
+    out(f"Total sports: {len(sports)}  |  golf matches: {golf_matches}")
     if not golf_matches:
-        print("\nNo golf match found this time -- stopping here.")
+        out("No golf match -- stopping.")
         return
     golf_sport_id = golf_matches[0].get("sportId")
 
-    # ---- Step 2: confirm "prizepicks" is a real bookmaker key ----
-    section("STEP 2 -- GET /v4/bookmakers (confirming PrizePicks key, already known: real)")
+    section("STEP 2 -- GET /v4/bookmakers")
     bookmakers = as_list(fetch("/v4/bookmakers", key))
     pp_matches = [b for b in bookmakers if "priz" in json.dumps(b).lower()]
-    print(f"Total bookmakers returned: {len(bookmakers)}  |  PrizePicks match: {pp_matches}")
+    out(f"Total bookmakers: {len(bookmakers)}  |  PrizePicks match: {pp_matches}")
 
-    # ---- Step 3: find ONLY this event's tournament(s) -- compact, one line each ----
     section(f"STEP 3 -- GET /v4/tournaments?sportId={golf_sport_id}, filtered to '{EVENT_KEYWORD}'")
     all_tournaments = as_list(fetch("/v4/tournaments", key, sportId=golf_sport_id))
     kw = EVENT_KEYWORD.lower()
     matches = [t for t in all_tournaments
                if kw in (t.get("tournamentSlug") or "").lower()
                or kw in (t.get("categorySlug") or "").lower()]
-    print(f"Total golf tournaments in catalog: {len(all_tournaments)}  |  matches for '{EVENT_KEYWORD}': {len(matches)}")
-    for t in matches:
-        print(f"  id={t.get('tournamentId'):<8} slug={t.get('tournamentSlug'):<35} name={t.get('tournamentName')!r:<45} category={t.get('categorySlug')}")
+    out(f"Total tournaments in catalog: {len(all_tournaments)}  |  matches: {len(matches)}")
+    print_capped(matches, lambda t: f"  id={t.get('tournamentId')} slug={t.get('tournamentSlug')} name={t.get('tournamentName')!r}")
     if not matches:
-        print(f"\nNo match for '{EVENT_KEYWORD}' -- update EVENT_KEYWORD at the top of this script and re-run.")
+        out(f"No match for '{EVENT_KEYWORD}' -- update EVENT_KEYWORD and re-run.")
         return
     main_match = next((t for t in matches if "round" not in (t.get("tournamentName") or "").lower()), matches[0])
     target_id = main_match.get("tournamentId")
-    print(f"\nUsing tournamentId={target_id} ({main_match.get('tournamentName')}) for step 5.")
+    out(f"Using tournamentId={target_id} ({main_match.get('tournamentName')}) for step 5.")
 
-    # ---- Step 4: see every real golf market -- compact, one line each ----
     section(f"STEP 4 -- GET /v4/markets?sportId={golf_sport_id}")
     markets = as_list(fetch("/v4/markets", key, sportId=golf_sport_id))
-    print(f"Total golf markets returned: {len(markets)}")
-    print("\nCompact list (marketId | playerProp | marketType | period | handicap | marketName):")
-    for m in markets:
-        print(f"  {m.get('marketId'):<8} prop={str(m.get('playerProp')):<5} type={m.get('marketType','')!s:<12} "
-              f"period={m.get('period','')!s:<10} handicap={m.get('handicap')!s:<6} name={m.get('marketName')}")
+    out(f"Total markets: {len(markets)}")
+    print_capped(markets, lambda m: f"  {m.get('marketId')} prop={m.get('playerProp')} type={m.get('marketType')} "
+                                     f"handicap={m.get('handicap')} name={m.get('marketName')}")
     prop_markets = [m for m in markets if m.get("playerProp")]
-    section(f"STEP 4b -- Full detail for the {len(prop_markets)} playerProp=true markets")
-    print(json.dumps(prop_markets, indent=1)[:8000])
+    section(f"STEP 4b -- {len(prop_markets)} playerProp=true markets, full detail")
+    print_capped(prop_markets, lambda m: json.dumps(m))
 
-    # ---- Step 5: pull real PrizePicks odds for the matched tournament ----
-    section(f"STEP 5 -- GET /v4/odds-by-tournaments?bookmaker=prizepicks&tournamentIds={target_id}&oddsFormat=american")
+    section(f"STEP 5 -- GET /v4/odds-by-tournaments?bookmaker=prizepicks&tournamentIds={target_id}")
     odds = fetch("/v4/odds-by-tournaments", key, bookmaker="prizepicks",
                  tournamentIds=target_id, oddsFormat="american")
+    odds_list = as_list(odds) if isinstance(odds, (list, dict)) else []
+    out(f"Fixtures returned for this tournament: {len(odds_list) if odds_list else 'N/A (see raw size above)'}")
     dumped = json.dumps(odds, indent=1)
-    print(dumped[:8000])
-    if len(dumped) > 8000:
-        print(f"\n(...truncated -- full response was {len(dumped)} chars. Paste what printed above, that's enough to see the shape.)")
+    # Print in a bounded number of chunks so it counts against the same line
+    # budget as everything else, rather than dumping thousands of lines raw.
+    for line in dumped.splitlines()[:MAX_LIST_ENTRIES * 4]:
+        out(line)
+    total_lines = len(dumped.splitlines())
+    if total_lines > MAX_LIST_ENTRIES * 4:
+        out(f"  ... +{total_lines - MAX_LIST_ENTRIES * 4} more lines not shown "
+            f"(full payload was {len(dumped)} chars / {total_lines} lines -- the [raw] size line above has the real total)")
 
 
 if __name__ == "__main__":
