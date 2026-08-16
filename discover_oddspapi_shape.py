@@ -11,36 +11,33 @@ discover_round_shape.py: guessing field shapes has broken this app before --
 the matchup dedup bug, the EV%/Edge% swap, the wind double-count -- all three
 came from trusting an assumed shape instead of a confirmed one.
 
-CONFIRMED from the first real run:
+CONFIRMED from real runs so far:
   - Golf sportId = 67
-  - "prizepicks" is a real, valid bookmaker key in this system (351 total
-    bookmakers, PrizePicks among them)
+  - "prizepicks" is a real, valid bookmaker key (351 total bookmakers)
   - /v4/tournaments?sportId=67 returns 1300+ rows -- the ENTIRE historical
-    golf catalog, not just current events, and every row shows
-    futureFixtures/upcomingFixtures/liveFixtures = 0 regardless of whether
-    the event is actually live -- so those fields can't be used to find
-    "this week's event." Filtering by name/slug is the only reliable way.
+    catalog, and every row shows futureFixtures/upcomingFixtures/liveFixtures
+    = 0 regardless of whether the event is live -- filtering by name/slug is
+    the only reliable way to find "this week's event."
+  - Even after filtering tournaments down to just EVENT_KEYWORD matches, the
+    full run STILL blew past 10k lines -- meaning /v4/markets?sportId=67
+    (the full golf market catalog, every market * every outcome, printed as
+    nested JSON) is almost certainly the real source of the bloat, not the
+    tournament list.
 
-This version fixes two problems the first run exposed: (1) it no longer
-dumps the full 1300+ tournament catalog -- that's most of what blew past
-10k lines of output -- it only prints tournaments matching EVENT_KEYWORD
-below; (2) step 5 no longer blindly grabs tournaments[0] (which pulled some
-old Dubai Desert Classic entry) -- it now uses the keyword-matched
-tournament instead.
+Fix this round: steps 3 and 4 now print ONE COMPACT LINE per entry
+(id | name | key flags) instead of full indented JSON with nested arrays.
+Full JSON detail is kept ONLY for playerProp=true markets in step 4 (there
+should be relatively few of those) and for the final odds payload in step 5,
+which was already capped at 8000 chars.
 
 Update EVENT_KEYWORD each week to whatever event is current.
 
 What this script does, in order:
   1. GET /v4/sports              -> confirm golf's sportId (already known: 67)
   2. GET /v4/bookmakers          -> confirm "prizepicks" (already known: real)
-  3. GET /v4/tournaments         -> find EVENT_KEYWORD's tournamentId(s) only
-  4. GET /v4/markets             -> see every real golf market OddsPapi has
-                                     -- this is where "Total Birdies",
-                                     "Round Score O/U", "2-Ball Matchup" etc
-                                     either show up under real names/IDs, or
-                                     don't exist at all
-  5. GET /v4/odds-by-tournaments -> pull real PrizePicks-tagged odds for the
-                                     matched tournament and print the raw shape
+  3. GET /v4/tournaments         -> find EVENT_KEYWORD's tournamentId(s), one line each
+  4. GET /v4/markets             -> one line per market; full detail only for playerProp ones
+  5. GET /v4/odds-by-tournaments -> pull real PrizePicks-tagged odds, capped at 8000 chars
 
 Run this (locally or via the matching discover-oddspapi.yml workflow), paste
 the full output back, and the real pipeline/engine integration gets built
@@ -70,13 +67,9 @@ def get_key():
 def fetch(endpoint, key, **params):
     params["apiKey"] = key
     url = f"{BASE}{endpoint}?{urllib.parse.urlencode(params)}"
-    # Confirmed cause of a real HTTP 403 "error code: 1010" on the very first run: that's
-    # Cloudflare's Browser Integrity Check, not an OddsPapi/key rejection -- it blocks
-    # before the request ever reaches their API. Python's urllib sends a bare
-    # "Python-urllib/3.x" User-Agent by default, a classic bot fingerprint. Presenting
-    # normal browser-like headers here is the standard, legitimate fix for a paid,
-    # key-authenticated API call getting caught by a WAF's generic bot filter -- and it
-    # worked: the second run got real data back.
+    # Confirmed cause of the original HTTP 403 "error code: 1010": Cloudflare's Browser
+    # Integrity Check reacting to urllib's bare "Python-urllib/3.x" User-Agent, not an
+    # OddsPapi/key rejection. Normal browser-like headers fixed it.
     req = urllib.request.Request(url, headers={
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -97,10 +90,6 @@ def fetch(endpoint, key, **params):
 
 
 def as_list(payload):
-    """OddsPapi's docs show bare JSON arrays for these endpoints, but handle a
-    dict-wrapped response too in case a given endpoint nests it (e.g. under
-    'data') -- don't want a shape assumption breaking this probe script
-    itself."""
     if isinstance(payload, list):
         return payload
     if isinstance(payload, dict):
@@ -123,10 +112,9 @@ def main():
     section("STEP 1 -- GET /v4/sports (confirming golf sportId, already known: 67)")
     sports = as_list(fetch("/v4/sports", key))
     golf_matches = [s for s in sports if "golf" in json.dumps(s).lower() or "pga" in json.dumps(s).lower()]
-    print(f"Total sports returned: {len(sports)}")
-    print(json.dumps(golf_matches, indent=1))
+    print(f"Total sports returned: {len(sports)}  |  golf matches: {golf_matches}")
     if not golf_matches:
-        print("\nNo golf match found this time -- that's a real problem, stopping here.")
+        print("\nNo golf match found this time -- stopping here.")
         return
     golf_sport_id = golf_matches[0].get("sportId")
 
@@ -134,38 +122,36 @@ def main():
     section("STEP 2 -- GET /v4/bookmakers (confirming PrizePicks key, already known: real)")
     bookmakers = as_list(fetch("/v4/bookmakers", key))
     pp_matches = [b for b in bookmakers if "priz" in json.dumps(b).lower()]
-    print(f"Total bookmakers returned: {len(bookmakers)}")
-    print(json.dumps(pp_matches, indent=1))
+    print(f"Total bookmakers returned: {len(bookmakers)}  |  PrizePicks match: {pp_matches}")
 
-    # ---- Step 3: find ONLY this event's tournament(s) -- not the full catalog ----
+    # ---- Step 3: find ONLY this event's tournament(s) -- compact, one line each ----
     section(f"STEP 3 -- GET /v4/tournaments?sportId={golf_sport_id}, filtered to '{EVENT_KEYWORD}'")
     all_tournaments = as_list(fetch("/v4/tournaments", key, sportId=golf_sport_id))
-    print(f"Total golf tournaments in catalog: {len(all_tournaments)} (not printed -- filtered below)")
     kw = EVENT_KEYWORD.lower()
     matches = [t for t in all_tournaments
                if kw in (t.get("tournamentSlug") or "").lower()
                or kw in (t.get("categorySlug") or "").lower()]
-    print(f"Matches for '{EVENT_KEYWORD}': {len(matches)}")
-    print(json.dumps(matches, indent=1))
+    print(f"Total golf tournaments in catalog: {len(all_tournaments)}  |  matches for '{EVENT_KEYWORD}': {len(matches)}")
+    for t in matches:
+        print(f"  id={t.get('tournamentId'):<8} slug={t.get('tournamentSlug'):<35} name={t.get('tournamentName')!r:<45} category={t.get('categorySlug')}")
     if not matches:
         print(f"\nNo match for '{EVENT_KEYWORD}' -- update EVENT_KEYWORD at the top of this script and re-run.")
         return
-    # Prefer the entry that looks like the main/aggregate tournament (no "round" in the
-    # name) over a round-specific sub-fixture, since that's more likely to carry the full
-    # outright/matchup odds rather than just one round's props.
     main_match = next((t for t in matches if "round" not in (t.get("tournamentName") or "").lower()), matches[0])
     target_id = main_match.get("tournamentId")
     print(f"\nUsing tournamentId={target_id} ({main_match.get('tournamentName')}) for step 5.")
 
-    # ---- Step 4: see every real golf market ----
+    # ---- Step 4: see every real golf market -- compact, one line each ----
     section(f"STEP 4 -- GET /v4/markets?sportId={golf_sport_id}")
     markets = as_list(fetch("/v4/markets", key, sportId=golf_sport_id))
     print(f"Total golf markets returned: {len(markets)}")
-    print(json.dumps(markets, indent=1))
+    print("\nCompact list (marketId | playerProp | marketType | period | handicap | marketName):")
+    for m in markets:
+        print(f"  {m.get('marketId'):<8} prop={str(m.get('playerProp')):<5} type={m.get('marketType','')!s:<12} "
+              f"period={m.get('period','')!s:<10} handicap={m.get('handicap')!s:<6} name={m.get('marketName')}")
     prop_markets = [m for m in markets if m.get("playerProp")]
-    print(f"\nOf those, {len(prop_markets)} are flagged playerProp=true:")
-    for m in prop_markets:
-        print(f"  marketId={m.get('marketId')}  marketName={m.get('marketName')}  handicap={m.get('handicap')}")
+    section(f"STEP 4b -- Full detail for the {len(prop_markets)} playerProp=true markets")
+    print(json.dumps(prop_markets, indent=1)[:8000])
 
     # ---- Step 5: pull real PrizePicks odds for the matched tournament ----
     section(f"STEP 5 -- GET /v4/odds-by-tournaments?bookmaker=prizepicks&tournamentIds={target_id}&oddsFormat=american")
