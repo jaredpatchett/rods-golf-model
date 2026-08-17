@@ -1,9 +1,9 @@
 {
  "meta": {
-  "event": "FedEx St. Jude Championship",
-  "course": "TPC Southwind",
-  "players": 69,
-  "generated": "2026-08-17 17:34:58",
+  "event": "BMW Championship",
+  "course": "Bellerive Country Club",
+  "players": 50,
+  "generated": "2026-08-17 18:41:04",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups] + edge_engine (in-pipeline)",
   "draw_bias": null,
   "ev_threshold": 3.0
@@ -11,13 +11,33 @@
  "P": [
   [
    "Scottie Scheffler",
-   66.8,
+   66.6,
    null,
    0.8,
    1.2,
    0.6,
    0.3,
-   -0.1
+   0.0
+  ],
+  [
+   "Xander Schauffele",
+   67.6,
+   null,
+   0.8,
+   0.7,
+   0.2,
+   0.1,
+   0.1
+  ],
+  [
+   "Ludvig Aberg",
+   67.6,
+   null,
+   0.8,
+   0.8,
+   0.2,
+   0.1,
+   0.1
   ],
   [
    "Rory McIlroy",
@@ -27,7 +47,7 @@
    0.5,
    0.2,
    0.1,
-   -0.2
+   0.1
   ],
   [
    "Tommy Fleetwood",
@@ -40,26 +60,6 @@
    -0.0
   ],
   [
-   "Cameron Young",
-   67.7,
-   null,
-   0.7,
-   0.8,
-   0.1,
-   0.2,
-   -0.1
-  ],
-  [
-   "Xander Schauffele",
-   67.7,
-   null,
-   0.8,
-   0.7,
-   0.2,
-   0.1,
-   -0.1
-  ],
-  [
    "Matt Fitzpatrick",
    67.8,
    null,
@@ -70,24 +70,24 @@
    -0.0
   ],
   [
-   "Justin Thomas",
-   67.9,
+   "Cameron Young",
+   67.8,
    null,
+   0.7,
+   0.8,
+   0.1,
    0.2,
-   0.3,
-   0.3,
-   0.5,
-   -0.1
+   0.1
   ],
   [
    "Sam Burns",
-   67.9,
+   67.8,
    null,
    0.3,
    0.7,
    0.6,
    0.1,
-   -0.1
+   0.0
   ],
   [
    "Si Woo Kim",
@@ -97,7 +97,17 @@
    0.8,
    0.1,
    0.2,
-   0.0
+   -0.0
+  ],
+  [
+   "Chris Gotterup",
+   67.9,
+   null,
+   0.7,
+   0.5,
+   0.3,
+   0.0,
+   0.1
   ],
   [
    "Hideki Matsuyama",
@@ -117,11 +127,21 @@
    0.8,
    0.2,
    0.2,
-   -0.1
+   0.0
+  ],
+  [
+   "Viktor Hovland",
+   68.0,
+   null,
+   0.3,
+   0.8,
+   0.2,
+   0.2,
+   0.0
   ],
   [
    "Collin Morikawa",
-   68.0,
+   68.2,
    null,
    0.4,
    0.8,
@@ -130,64 +150,44 @@
    0.0
   ],
   [
-   "Ludvig Aberg",
-   68.0,
+   "Justin Thomas",
+   68.2,
    null,
-   0.8,
-   0.8,
    0.2,
-   0.1,
-   -0.1
-  ],
-  [
-   "Viktor Hovland",
-   68.1,
-   null,
    0.3,
-   0.8,
-   0.2,
-   0.2,
+   0.3,
+   0.5,
    -0.0
   ],
   [
-   "Russell Henley",
-   68.1,
+   "Min Woo Lee",
+   68.3,
    null,
+   0.5,
    0.3,
-   0.3,
-   0.4,
-   0.1,
+   0.2,
+   0.2,
    0.1
   ],
   [
-   "Chris Gotterup",
-   68.2,
-   null,
-   0.7,
-   0.5,
-   0.3,
-   0.0,
-   -0.2
-  ],
-  [
-   "Ben Griffin",
-   68.2,
+   "Wyndham Clark",
+   68.3,
    null,
    0.1,
+   0.4,
    0.5,
    0.3,
-   0.3,
-   -0.1
+   -0.0
   ],
   [
    "Ryan Gerard",
-   68.2,
+   68.3,
    null,
    0.4,
    0.4,
    0.3,
    0.1,
-   -0.0
+   0.0
   ],
   [
    "Tom Kim",
@@ -196,26 +196,6 @@
    0.1,
    0.7,
    0.2,
-   0.2,
-   0.0
-  ],
-  [
-   "Jackson Koivun",
-   68.3,
-   null,
-   0.5,
-   0.4,
-   0.2,
-   0.0,
-   -0.0
-  ],
-  [
-   "Robert MacIntyre",
-   68.3,
-   null,
-   0.2,
-   0.2,
-   0.4,
    0.2,
    -0.0
   ],
@@ -227,126 +207,116 @@
    0.1,
    0.6,
    0.3,
-   -0.1
-  ],
-  [
-   "Aaron Rai",
-   68.3,
-   null,
-   0.1,
-   0.4,
-   -0.1,
-   0.1,
-   0.1
-  ],
-  [
-   "J.J. Spaun",
-   68.3,
-   null,
-   0.4,
-   0.6,
-   -0.1,
-   0.2,
-   0.0
+   -0.0
   ],
   [
    "Michael Thorbjornsen",
-   68.4,
+   68.3,
    null,
    0.5,
    0.4,
    0.1,
    0.2,
-   -0.1
+   0.0
   ],
   [
-   "Min Woo Lee",
-   68.4,
-   null,
-   0.5,
-   0.3,
-   0.2,
-   0.2,
-   -0.2
-  ],
-  [
-   "Alex Fitzpatrick",
-   68.5,
-   null,
-   0.5,
-   0.6,
-   -0.2,
-   0.0,
-   -0.0
-  ],
-  [
-   "Wyndham Clark",
-   68.5,
+   "Ben Griffin",
+   68.3,
    null,
    0.1,
-   0.4,
    0.5,
    0.3,
-   -0.1
-  ],
-  [
-   "Shane Lowry",
-   68.5,
-   null,
    0.3,
-   0.6,
-   -0.0,
-   0.0,
-   0.0
-  ],
-  [
-   "Sungjae Im",
-   68.5,
-   null,
-   0.2,
-   -0.0,
-   0.4,
-   0.3,
-   -0.0
-  ],
-  [
-   "Corey Conners",
-   68.6,
-   null,
-   0.3,
-   0.5,
-   -0.0,
-   -0.0,
-   0.0
-  ],
-  [
-   "Harris English",
-   68.6,
-   null,
-   0.2,
-   -0.0,
-   0.3,
-   0.2,
    -0.0
   ],
   [
    "Kurt Kitayama",
-   68.6,
+   68.4,
    null,
    0.5,
    0.6,
    0.1,
    0.0,
-   -0.1
+   0.0
   ],
   [
-   "Rickie Fowler",
-   68.6,
+   "Russell Henley",
+   68.4,
    null,
    0.3,
    0.3,
+   0.4,
+   0.1,
+   -0.0
+  ],
+  [
+   "J.J. Spaun",
+   68.4,
+   null,
+   0.4,
+   0.6,
+   -0.1,
+   0.2,
+   0.0
+  ],
+  [
+   "Jake Knapp",
+   68.4,
+   null,
+   0.5,
+   0.4,
+   0.2,
+   -0.1,
+   0.1
+  ],
+  [
+   "Nicolai Hojgaard",
+   68.6,
+   null,
+   0.4,
+   0.4,
+   0.1,
+   0.1,
+   0.1
+  ],
+  [
+   "Michael Brennan",
+   68.6,
+   null,
+   0.6,
    0.3,
+   0.1,
+   -0.2,
+   0.1
+  ],
+  [
+   "Adam Scott",
+   68.6,
+   null,
+   0.4,
+   0.5,
+   0.0,
    -0.0,
+   0.0
+  ],
+  [
+   "Robert MacIntyre",
+   68.6,
+   null,
+   0.2,
+   0.2,
+   0.4,
+   0.2,
+   -0.0
+  ],
+  [
+   "Sungjae Im",
+   68.6,
+   null,
+   0.2,
+   -0.0,
+   0.4,
+   0.3,
    -0.0
   ],
   [
@@ -357,17 +327,7 @@
    0.5,
    0.2,
    0.0,
-   -0.0
-  ],
-  [
-   "Alex Noren",
-   68.6,
-   null,
-   0.1,
-   0.3,
-   0.4,
-   0.2,
-   0.1
+   0.0
   ],
   [
    "Bud Cauley",
@@ -377,57 +337,47 @@
    0.4,
    -0.0,
    0.2,
+   0.0
+  ],
+  [
+   "Rickie Fowler",
+   68.7,
+   null,
+   0.3,
+   0.3,
+   0.3,
+   -0.0,
    -0.0
   ],
   [
    "Justin Rose",
-   68.6,
+   68.7,
    null,
    0.2,
    0.5,
    0.1,
    0.0,
-   -0.0
+   0.0
   ],
   [
-   "Michael Brennan",
+   "Alex Fitzpatrick",
    68.7,
    null,
+   0.5,
    0.6,
-   0.3,
-   0.1,
    -0.2,
-   -0.2
+   0.0,
+   0.0
   ],
   [
-   "Akshay Bhatia",
+   "Alex Noren",
    68.7,
    null,
-   -0.3,
+   0.1,
    0.3,
    0.4,
-   0.1,
-   -0.0
-  ],
-  [
-   "Jordan Smith",
-   68.7,
-   null,
-   0.7,
-   0.4,
-   -0.1,
-   -0.2,
-   -0.0
-  ],
-  [
-   "Keith Mitchell",
-   68.7,
-   null,
-   0.6,
    0.2,
-   -0.0,
-   -0.0,
-   -0.1
+   -0.0
   ],
   [
    "Jacob Bridgeman",
@@ -440,154 +390,84 @@
    -0.0
   ],
   [
-   "Jordan Spieth",
+   "Kristoffer Reitan",
    68.7,
    null,
+   0.5,
    0.2,
+   0.2,
+   -0.1,
+   0.0
+  ],
+  [
+   "Ryan Fox",
+   68.9,
+   null,
+   0.2,
+   0.2,
+   0.2,
+   -0.0,
+   0.0
+  ],
+  [
+   "Gary Woodland",
+   68.9,
+   null,
+   0.5,
+   0.2,
+   0.0,
+   -0.2,
+   0.1
+  ],
+  [
+   "Ryo Hisatsune",
+   69.0,
+   null,
    0.3,
-   0.2,
+   0.4,
+   -0.2,
+   -0.0,
+   0.0
+  ],
+  [
+   "Aaron Rai",
+   69.0,
+   null,
    0.1,
+   0.4,
+   -0.1,
+   0.1,
+   -0.0
+  ],
+  [
+   "Eric Cole",
+   69.0,
+   null,
+   -0.3,
+   0.1,
+   0.4,
+   0.3,
    -0.1
   ],
   [
    "J.T. Poston",
-   68.7,
+   69.0,
    null,
    0.1,
    0.2,
    0.2,
    -0.0,
-   0.0
+   -0.0
   ],
   [
-   "Brian Harman",
-   68.8,
-   null,
-   -0.0,
-   0.5,
-   0.1,
-   0.2,
-   0.1
-  ],
-  [
-   "Eric Cole",
-   68.8,
+   "Akshay Bhatia",
+   69.0,
    null,
    -0.3,
-   0.1,
+   0.3,
    0.4,
-   0.3,
-   -0.0
-  ],
-  [
-   "Michael Kim",
-   68.8,
-   null,
-   -0.2,
-   0.3,
-   0.3,
    0.1,
    -0.0
-  ],
-  [
-   "Adam Scott",
-   68.8,
-   null,
-   0.4,
-   0.5,
-   0.0,
-   -0.0,
-   -0.1
-  ],
-  [
-   "Kristoffer Reitan",
-   68.8,
-   null,
-   0.5,
-   0.2,
-   0.2,
-   -0.1,
-   -0.1
-  ],
-  [
-   "Ryo Hisatsune",
-   68.9,
-   null,
-   0.3,
-   0.4,
-   -0.2,
-   -0.0,
-   -0.0
-  ],
-  [
-   "Nicolai Hojgaard",
-   68.9,
-   null,
-   0.4,
-   0.4,
-   0.1,
-   0.1,
-   -0.2
-  ],
-  [
-   "Harry Hall",
-   68.9,
-   null,
-   -0.3,
-   0.2,
-   0.5,
-   0.3,
-   -0.0
-  ],
-  [
-   "Jake Knapp",
-   68.9,
-   null,
-   0.5,
-   0.4,
-   0.2,
-   -0.1,
-   -0.1
-  ],
-  [
-   "Sahith Theegala",
-   69.0,
-   null,
-   -0.1,
-   0.2,
-   0.1,
-   0.1,
-   -0.1
-  ],
-  [
-   "Nick Taylor",
-   69.0,
-   null,
-   -0.1,
-   0.0,
-   0.3,
-   0.2,
-   0.0
-  ],
-  [
-   "Ricky Castillo",
-   69.0,
-   null,
-   0.1,
-   0.0,
-   0.1,
-   0.1,
-   -0.0
-  ],
-  [
-   "Ryan Fox",
-   69.1,
-   null,
-   0.2,
-   0.2,
-   0.2,
-   -0.0,
-   -0.1
   ],
   [
    "Nico Echavarria",
@@ -597,37 +477,7 @@
    0.1,
    0.3,
    0.0,
-   0.0
-  ],
-  [
-   "Gary Woodland",
-   69.1,
-   null,
-   0.5,
-   0.2,
-   0.0,
-   -0.2,
-   -0.1
-  ],
-  [
-   "Matt McCarty",
-   69.1,
-   null,
-   -0.2,
-   0.1,
-   0.4,
-   -0.1,
-   0.0
-  ],
-  [
-   "Sam Stevens",
-   69.2,
-   null,
-   0.2,
-   0.3,
-   -0.1,
-   -0.0,
-   -0.1
+   -0.0
   ],
   [
    "Sepp Straka",
@@ -640,63 +490,23 @@
    0.0
   ],
   [
-   "Max Homa",
+   "Sahith Theegala",
    69.3,
    null,
-   0.1,
-   0.1,
-   0.3,
-   0.0,
-   -0.0
-  ],
-  [
-   "Sudarshan Yellamaraju",
-   69.4,
-   null,
-   0.3,
-   0.1,
    -0.1,
-   0.0,
-   -0.1
+   0.2,
+   0.1,
+   0.1,
+   0.0
   ],
   [
-   "Matti Schmid",
+   "Matt McCarty",
    69.4,
    null,
-   0.1,
-   -0.0,
-   0.0,
-   -0.0,
-   -0.1
-  ],
-  [
-   "Pierceson Coody",
-   69.5,
-   null,
-   0.2,
-   -0.0,
-   0.2,
-   -0.0,
-   -0.1
-  ],
-  [
-   "Aldrich Potgieter",
-   69.9,
-   null,
-   0.4,
    -0.2,
-   -0.0,
-   -0.3,
-   -0.2
-  ],
-  [
-   "Patrick Rodgers",
-   69.9,
-   null,
+   0.1,
+   0.4,
    -0.1,
-   -0.3,
-   0.2,
-   0.0,
    -0.0
   ]
  ],
@@ -734,25 +544,6 @@
  ],
  "M": [
   [
-   "Adam Scott",
-   "Nick Taylor",
-   "?",
-   0.5136,
-   0.4878048780487805,
-   "+105 (datagolf)",
-   "-105 (datagolf)",
-   0.4878048780487805,
-   0.2,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
    "Tommy Fleetwood",
    "Hideki Matsuyama",
    "?",
@@ -772,34 +563,15 @@
    null
   ],
   [
-   "Gary Woodland",
-   "Harry Hall",
+   "Viktor Hovland",
+   "Tom Kim",
    "?",
-   0.4785,
-   0.45871559633027525,
-   "+118 (datagolf)",
-   "-118 (datagolf)",
-   0.45871559633027525,
-   0.2,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Michael Kim",
-   "Nicolai Hojgaard",
-   "?",
-   0.5102,
-   0.49261083743842365,
-   "+103 (datagolf)",
-   "-103 (datagolf)",
-   0.49261083743842365,
-   0.1,
+   0.526,
+   0.5098039215686274,
+   "-104 (datagolf)",
+   "+104 (datagolf)",
+   0.5098039215686274,
+   0.3,
    2,
    null,
    null,
@@ -829,14 +601,14 @@
    null
   ],
   [
+   "Alex Smalley",
    "Aaron Rai",
-   "Michael Brennan",
    "?",
-   0.5319,
-   0.5192307692307693,
-   "-108 (datagolf)",
-   "+108 (datagolf)",
-   0.5192307692307693,
+   0.5287,
+   0.5260663507109005,
+   "-111 (fanduel)",
+   "-111 (fanduel)",
+   0.5,
    0.4,
    2,
    null,
@@ -848,53 +620,15 @@
    null
   ],
   [
-   "Russell Henley",
-   "Michael Brennan",
-   "?",
-   0.5578,
-   0.5454545454545454,
-   "-120 (bet365)",
-   "+100 (bet365)",
-   0.5217391304347826,
-   0.6,
-   3,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Aaron Rai",
-   "Harry Hall",
-   "?",
-   0.5489,
-   0.5370370370370371,
-   "-116 (bet365)",
-   "-105 (bet365)",
-   0.5118381403357727,
-   0.6,
-   3,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
    "Maverick McNealy",
    "Xander Schauffele",
    "?",
-   0.4521,
+   0.4422,
    0.44052863436123346,
    "+127 (betcris)",
    "-160 (betcris)",
    0.417201540436457,
-   0.6,
+   0.7,
    2,
    null,
    null,
@@ -903,112 +637,17 @@
    null,
    null,
    null
-  ],
-  [
-   "Nick Taylor",
-   "Matt Fitzpatrick",
-   "?",
-   0.3957,
-   0.38461538461538464,
-   "+160 (draftkings)",
-   "-200 (draftkings)",
-   0.36585365853658536,
-   1.2,
-   8,
-   38.26,
-   6,
-   2.88,
-   1.67,
-   1.31,
-   "none",
-   "No edge"
   ],
   [
    "Matt Fitzpatrick",
    "Xander Schauffele",
    "?",
-   0.4886,
+   0.4798,
    0.4784688995215311,
    "+109 (datagolf)",
    "-109 (datagolf)",
    0.4784688995215311,
-   0.1,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Keith Mitchell",
-   "Jacob Bridgeman",
-   "?",
-   0.4955,
-   0.4854368932038835,
-   "+106 (datagolf)",
-   "-106 (datagolf)",
-   0.4854368932038835,
-   0.0,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Viktor Hovland",
-   "Tom Kim",
-   "?",
-   0.5168,
-   0.5098039215686274,
-   "-104 (datagolf)",
-   "+104 (datagolf)",
-   0.5098039215686274,
    0.2,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Patrick Cantlay",
-   "Wyndham Clark",
-   "?",
-   0.5417,
-   0.5370370370370371,
-   "-116 (datagolf)",
-   "+116 (datagolf)",
-   0.5370370370370371,
-   0.5,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Maverick McNealy",
-   "Chris Gotterup",
-   "?",
-   0.4893,
-   0.4854368932038835,
-   "+106 (datagolf)",
-   "-106 (datagolf)",
-   0.4854368932038835,
-   0.1,
    2,
    null,
    null,
@@ -1038,6 +677,25 @@
    null
   ],
   [
+   "Justin Thomas",
+   "Aaron Rai",
+   "?",
+   0.5726,
+   0.5726495726495726,
+   "-134 (draftkings)",
+   "+108 (draftkings)",
+   0.5436105476673427,
+   0.8,
+   8,
+   53.96,
+   6,
+   -0.01,
+   -0.4,
+   3.3,
+   "model",
+   "Model vs market"
+  ],
+  [
    "Bud Cauley",
    "Alex Smalley",
    "?",
@@ -1057,80 +715,23 @@
    null
   ],
   [
-   "Jordan Smith",
-   "Cameron Young",
-   "?",
-   0.4161,
-   0.4166666666666667,
-   "+140 (draftkings)",
-   "-175 (draftkings)",
-   0.3956834532374101,
-   1.0,
-   7,
-   41.92,
-   5,
-   -0.14,
-   2.36,
-   -0.31,
-   "none",
-   "No edge"
-  ],
-  [
-   "Keith Mitchell",
-   "Ludvig Aberg",
-   "?",
-   0.4364,
-   0.43859649122807015,
-   "+128 (draftkings)",
-   "-160 (draftkings)",
-   0.4161331626120358,
-   0.7,
-   8,
-   40.62,
-   6,
-   -0.5,
-   -1.0,
-   3.02,
-   "model",
-   "Model vs market"
-  ],
-  [
+   "Adam Scott",
    "J.T. Poston",
-   "Nico Echavarria",
    "?",
-   0.5345,
-   0.5370370370370371,
-   "-116 (bet365)",
-   "-105 (bet365)",
-   0.5118381403357727,
-   0.4,
-   4,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Sungjae Im",
-   "Jake Knapp",
-   "?",
-   0.5355,
-   0.5412844036697247,
-   "-118 (draftkings)",
-   "-108 (draftkings)",
-   0.510397604391948,
+   0.5407,
+   0.5454545454545454,
+   "-120 (draftkings)",
+   "-104 (draftkings)",
+   0.5168918918918919,
    0.4,
    9,
-   50.51,
+   51.78,
    7,
-   -1.07,
-   -0.53,
-   3.04,
-   "model",
-   "Model vs market"
+   -0.87,
+   0.09,
+   2.29,
+   "none",
+   "No edge"
   ],
   [
    "Bud Cauley",
@@ -1152,101 +753,6 @@
    null
   ],
   [
-   "Brian Harman",
-   "Alex Noren",
-   "?",
-   0.4803,
-   0.4878048780487805,
-   "+105 (bet365)",
-   "-125 (bet365)",
-   0.4675324675324675,
-   0.2,
-   4,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Si Woo Kim",
-   "Chris Gotterup",
-   "?",
-   0.5293,
-   0.5370370370370371,
-   "-116 (bet365)",
-   "-105 (bet365)",
-   0.5118381403357727,
-   0.3,
-   3,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Matti Schmid",
-   "Michael Brennan",
-   "?",
-   0.4369,
-   0.44642857142857145,
-   "+124 (draftkings)",
-   "-154 (draftkings)",
-   0.42406838520101514,
-   0.7,
-   7,
-   41.39,
-   5,
-   -2.13,
-   -1.02,
-   2.3,
-   "none",
-   "No edge"
-  ],
-  [
-   "Ludvig Aberg",
-   "Jackson Koivun",
-   "?",
-   0.5261,
-   0.5370370370370371,
-   "-116 (datagolf)",
-   "+116 (datagolf)",
-   0.5370370370370371,
-   0.3,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "J.J. Spaun",
-   "Jackson Koivun",
-   "?",
-   0.5003,
-   0.5121951219512195,
-   "-105 (draftkings)",
-   "-120 (draftkings)",
-   0.48427672955974843,
-   0.0,
-   9,
-   49.18,
-   7,
-   -2.32,
-   0.75,
-   0.85,
-   "none",
-   "No edge"
-  ],
-  [
    "Patrick Cantlay",
    "Nico Echavarria",
    "?",
@@ -1266,33 +772,90 @@
    null
   ],
   [
-   "Brian Harman",
-   "Tom Kim",
+   "Si Woo Kim",
+   "Sungjae Im",
    "?",
-   0.4526,
-   0.46511627906976744,
-   "+115 (draftkings)",
-   "-144 (draftkings)",
-   0.4407514450867052,
-   0.5,
-   8,
-   45.73,
-   6,
-   -2.69,
-   1.65,
-   -0.47,
-   "none",
-   "No edge"
+   0.5655,
+   0.5780590717299579,
+   "-137 (datagolf)",
+   "+137 (datagolf)",
+   0.5780590717299579,
+   0.7,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Patrick Cantlay",
+   "Wyndham Clark",
+   "?",
+   0.524,
+   0.5370370370370371,
+   "-116 (datagolf)",
+   "+116 (datagolf)",
+   0.5370370370370371,
+   0.3,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Gary Woodland",
+   "Jacob Bridgeman",
+   "?",
+   0.4797,
+   0.4975124378109453,
+   "+101 (betcris)",
+   "-131 (betcris)",
+   0.46731807974752687,
+   0.2,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
   ],
   [
    "Sungjae Im",
    "Tom Kim",
    "?",
-   0.4743,
+   0.4674,
    0.4878048780487805,
    "+105 (bet365)",
    "-125 (bet365)",
    0.4675324675324675,
+   0.3,
+   3,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Russell Henley",
+   "Michael Brennan",
+   "?",
+   0.5228,
+   0.5454545454545454,
+   "-120 (bet365)",
+   "+100 (bet365)",
+   0.5217391304347826,
    0.2,
    3,
    null,
@@ -1307,182 +870,49 @@
    "Alex Noren",
    "Hideki Matsuyama",
    "?",
-   0.4439,
+   0.4355,
    0.45871559633027525,
    "+118 (draftkings)",
    "-148 (draftkings)",
    0.4345997476517594,
-   0.6,
+   0.7,
    8,
    43.35,
    6,
-   -3.23,
+   -5.06,
    -0.11,
-   1.04,
+   0.2,
    "none",
    "No edge"
   ],
   [
-   "Max Homa",
-   "Alex Smalley",
+   "Maverick McNealy",
+   "Chris Gotterup",
    "?",
-   0.4385,
-   0.45454545454545453,
-   "+120 (draftkings)",
-   "-150 (draftkings)",
-   0.4310344827586207,
-   0.7,
-   8,
-   43.64,
-   6,
-   -3.53,
-   0.54,
-   0.21,
-   "none",
-   "No edge"
+   0.4618,
+   0.4854368932038835,
+   "+106 (datagolf)",
+   "-106 (datagolf)",
+   0.4854368932038835,
+   0.4,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
   ],
   [
-   "Justin Thomas",
-   "Ludvig Aberg",
+   "Jake Knapp",
+   "Kurt Kitayama",
    "?",
-   0.5099,
+   0.502,
    0.5260663507109005,
    "-111 (bet365)",
    "-111 (bet365)",
    0.5,
-   0.1,
-   3,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Max Homa",
-   "Ryo Hisatsune",
-   "?",
-   0.4642,
-   0.4807692307692308,
-   "+108 (datagolf)",
-   "-108 (datagolf)",
-   0.4807692307692308,
-   0.4,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Matti Schmid",
-   "Sam Stevens",
-   "?",
-   0.4808,
-   0.5,
-   "+100 (betcris)",
-   "-130 (betcris)",
-   0.4693877551020409,
-   0.2,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Patrick Rodgers",
-   "Pierceson Coody",
-   "?",
-   0.4657,
-   0.4854368932038835,
-   "+106 (draftkings)",
-   "-132 (draftkings)",
-   0.4603905381806636,
-   0.4,
-   10,
-   48.73,
-   8,
-   -4.07,
-   2.69,
-   -2.16,
-   "none",
-   "No edge"
-  ],
-  [
-   "Si Woo Kim",
-   "Sungjae Im",
-   "?",
-   0.5562,
-   0.5780590717299579,
-   "-137 (datagolf)",
-   "+137 (datagolf)",
-   0.5780590717299579,
-   0.6,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Bud Cauley",
-   "Harry Hall",
-   "?",
-   0.5311,
-   0.5535714285714286,
-   "-124 (draftkings)",
-   "-102 (draftkings)",
-   0.5229664272590613,
-   0.3,
-   9,
-   52.43,
-   7,
-   -4.06,
-   0.13,
-   0.68,
-   "none",
-   "No edge"
-  ],
-  [
-   "Collin Morikawa",
-   "Nicolai Hojgaard",
-   "?",
-   0.5869,
-   0.609375,
-   "-156 (draftkings)",
-   "+125 (draftkings)",
-   0.5782537067545305,
-   0.9,
-   7,
-   58.04,
-   5,
-   -3.69,
-   0.21,
-   0.65,
-   "none",
-   "No edge"
-  ],
-  [
-   "Alex Noren",
-   "Kurt Kitayama",
-   "?",
-   0.5007,
-   0.5238095238095238,
-   "-110 (fanduel)",
-   "-120 (fanduel)",
-   0.48987854251012153,
    0.0,
    3,
    null,
@@ -1494,10 +924,10 @@
    null
   ],
   [
-   "Rickie Fowler",
-   "Jackson Koivun",
+   "Adam Scott",
+   "Maverick McNealy",
    "?",
-   0.4752,
+   0.4738,
    0.5,
    "+100 (bet365)",
    "-120 (bet365)",
@@ -1513,35 +943,16 @@
    null
   ],
   [
-   "Brian Harman",
-   "Jake Knapp",
+   "J.T. Poston",
+   "Nico Echavarria",
    "?",
-   0.5059,
-   0.5327102803738317,
-   "-114 (datagolf)",
-   "+114 (datagolf)",
-   0.5327102803738317,
+   0.5094,
+   0.5370370370370371,
+   "-116 (bet365)",
+   "-105 (bet365)",
+   0.5118381403357727,
    0.1,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Ryo Hisatsune",
-   "Michael Brennan",
-   "?",
-   0.4777,
-   0.5073891625615764,
-   "-103 (betcris)",
-   "-127 (betcris)",
-   0.4755909035433872,
-   0.2,
-   2,
+   4,
    null,
    null,
    null,
@@ -1570,54 +981,16 @@
    null
   ],
   [
-   "Patrick Cantlay",
-   "Viktor Hovland",
+   "Si Woo Kim",
+   "Chris Gotterup",
    "?",
-   0.5069,
+   0.5037,
    0.5370370370370371,
    "-116 (bet365)",
    "-105 (bet365)",
    0.5118381403357727,
-   0.1,
-   4,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Justin Thomas",
-   "Ryan Gerard",
-   "?",
-   0.5245,
-   0.5555555555555556,
-   "-125 (fanduel)",
-   "+100 (fanduel)",
-   0.5263157894736842,
-   0.3,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Jordan Smith",
-   "Nicolai Hojgaard",
-   "?",
-   0.5184,
-   0.5495495495495496,
-   "-122 (betcris)",
-   "-108 (betcris)",
-   0.5141838223374939,
-   0.2,
-   2,
+   0.0,
+   3,
    null,
    null,
    null,
@@ -1628,117 +1001,22 @@
   ],
   [
    "Gary Woodland",
-   "Jacob Bridgeman",
+   "Maverick McNealy",
    "?",
-   0.463,
-   0.4975124378109453,
-   "+101 (betcris)",
-   "-131 (betcris)",
-   0.46731807974752687,
-   0.4,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Tommy Fleetwood",
-   "Sam Burns",
-   "?",
-   0.5209,
-   0.5555555555555556,
-   "-125 (fanduel)",
-   "+100 (fanduel)",
-   0.5263157894736842,
-   0.2,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Nick Taylor",
-   "Nico Echavarria",
-   "?",
-   0.508,
-   0.54337899543379,
-   "-119 (betcris)",
-   "-111 (betcris)",
-   0.5080942166821806,
-   0.1,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Justin Thomas",
-   "Aaron Rai",
-   "?",
-   0.537,
-   0.5726495726495726,
+   0.449,
+   0.4854368932038835,
+   "+106 (draftkings)",
    "-134 (draftkings)",
-   "+108 (draftkings)",
-   0.5436105476673427,
-   0.4,
+   0.4587875460748177,
+   0.6,
    8,
-   46.04,
+   56.06,
    6,
-   -3.7,
-   0.4,
-   0.26,
+   -3.78,
+   1.94,
+   -0.96,
    "none",
    "No edge"
-  ],
-  [
-   "Ryo Hisatsune",
-   "Sam Stevens",
-   "?",
-   0.5295,
-   0.5652173913043478,
-   "-130 (draftkings)",
-   "+102 (draftkings)",
-   0.5330897279740154,
-   0.3,
-   7,
-   47.89,
-   5,
-   -4.96,
-   1.2,
-   -0.84,
-   "none",
-   "No edge"
-  ],
-  [
-   "Jordan Spieth",
-   "J.J. Spaun",
-   "?",
-   0.4632,
-   0.5,
-   "+100 (bet365)",
-   "-120 (bet365)",
-   0.4782608695652174,
-   0.4,
-   3,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
   ],
   [
    "Hideki Matsuyama",
@@ -1760,53 +1038,34 @@
    null
   ],
   [
-   "Hideki Matsuyama",
-   "Wyndham Clark",
+   "Xander Schauffele",
+   "Jacob Bridgeman",
    "?",
-   0.5359,
-   0.574468085106383,
-   "-135 (bet365)",
-   "+115 (bet365)",
-   0.552594002855783,
-   0.5,
-   3,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Wyndham Clark",
-   "Chris Gotterup",
-   "?",
-   0.4708,
-   0.5098039215686274,
-   "-104 (draftkings)",
-   "-120 (draftkings)",
-   0.4831081081081081,
-   0.3,
-   9,
-   52.93,
-   7,
-   -2.98,
-   1.24,
-   -0.01,
+   0.5977,
+   0.6363636363636364,
+   "-175 (draftkings)",
+   "+140 (draftkings)",
+   0.60431654676259,
+   1.1,
+   8,
+   40.01,
+   6,
+   -3.45,
+   0.44,
+   0.22,
    "none",
    "No edge"
   ],
   [
-   "Keith Mitchell",
-   "Ryan Gerard",
+   "Patrick Cantlay",
+   "Viktor Hovland",
    "?",
-   0.4595,
-   0.5,
-   "+100 (bet365)",
-   "-120 (bet365)",
-   0.4782608695652174,
-   0.5,
+   0.4974,
+   0.5370370370370371,
+   "-116 (bet365)",
+   "-105 (bet365)",
+   0.5118381403357727,
+   0.0,
    4,
    null,
    null,
@@ -1815,44 +1074,6 @@
    null,
    null,
    null
-  ],
-  [
-   "Viktor Hovland",
-   "Kurt Kitayama",
-   "?",
-   0.5427,
-   0.5833333333333334,
-   "-140 (draftkings)",
-   "+112 (draftkings)",
-   0.5529061102831595,
-   0.5,
-   9,
-   45.54,
-   7,
-   -3.05,
-   0.83,
-   0.19,
-   "none",
-   "No edge"
-  ],
-  [
-   "Rickie Fowler",
-   "Jordan Spieth",
-   "?",
-   0.5124,
-   0.5535714285714286,
-   "-124 (draftkings)",
-   "-102 (draftkings)",
-   0.5229664272590613,
-   0.1,
-   10,
-   48.18,
-   8,
-   -3.44,
-   0.47,
-   0.58,
-   "none",
-   "No edge"
   ],
   [
    "Tommy Fleetwood",
@@ -1874,73 +1095,16 @@
    "No edge"
   ],
   [
-   "Adam Scott",
-   "Maverick McNealy",
+   "Tommy Fleetwood",
+   "Sam Burns",
    "?",
-   0.4565,
-   0.5,
-   "+100 (bet365)",
-   "-120 (bet365)",
-   0.4782608695652174,
-   0.5,
-   3,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Xander Schauffele",
-   "Jacob Bridgeman",
-   "?",
-   0.5906,
-   0.6363636363636364,
-   "-175 (draftkings)",
-   "+140 (draftkings)",
-   0.60431654676259,
-   1.0,
-   8,
-   40.01,
-   6,
-   -1.74,
-   0.44,
-   0.93,
-   "none",
-   "No edge"
-  ],
-  [
-   "Adam Scott",
-   "J.T. Poston",
-   "?",
-   0.4964,
-   0.5454545454545454,
-   "-120 (draftkings)",
-   "-104 (draftkings)",
-   0.5168918918918919,
+   0.5108,
+   0.5555555555555556,
+   "-125 (fanduel)",
+   "+100 (fanduel)",
+   0.5263157894736842,
    0.1,
-   9,
-   48.22,
-   7,
-   -1.22,
-   -0.09,
-   2.14,
-   "none",
-   "No edge"
-  ],
-  [
-   "Michael Kim",
-   "Sudarshan Yellamaraju",
-   "?",
-   0.553,
-   0.6031746031746031,
-   "-152 (betcris)",
-   "+121 (betcris)",
-   0.5713702544563886,
-   0.6,
-   5,
+   2,
    null,
    null,
    null,
@@ -1950,14 +1114,109 @@
    null
   ],
   [
-   "Jake Knapp",
+   "Ryo Hisatsune",
+   "Michael Brennan",
+   "?",
+   0.461,
+   0.5073891625615764,
+   "-103 (betcris)",
+   "-127 (betcris)",
+   0.4755909035433872,
+   0.4,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Wyndham Clark",
+   "Chris Gotterup",
+   "?",
+   0.4628,
+   0.5098039215686274,
+   "-104 (draftkings)",
+   "-120 (draftkings)",
+   0.4831081081081081,
+   0.4,
+   9,
+   52.93,
+   7,
+   -1.51,
+   1.24,
+   0.79,
+   "none",
+   "No edge"
+  ],
+  [
+   "Scottie Scheffler",
+   "Sam Burns",
+   "?",
+   0.6037,
+   0.6527777777777778,
+   "-188 (draftkings)",
+   "+150 (draftkings)",
+   0.6200527704485488,
+   1.2,
+   11,
+   40.62,
+   9,
+   -0.92,
+   2.62,
+   -0.99,
+   "none",
+   "No edge"
+  ],
+  [
+   "Viktor Hovland",
    "Kurt Kitayama",
    "?",
-   0.4756,
-   0.5260663507109005,
-   "-111 (bet365)",
-   "-111 (bet365)",
-   0.5,
+   0.5341,
+   0.5833333333333334,
+   "-140 (draftkings)",
+   "+112 (draftkings)",
+   0.5529061102831595,
+   0.4,
+   9,
+   45.54,
+   7,
+   -1.23,
+   0.83,
+   1.05,
+   "none",
+   "No edge"
+  ],
+  [
+   "Justin Thomas",
+   "Ryan Gerard",
+   "?",
+   0.5058,
+   0.5555555555555556,
+   "-125 (fanduel)",
+   "+100 (fanduel)",
+   0.5263157894736842,
+   0.1,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Alex Noren",
+   "Kurt Kitayama",
+   "?",
+   0.4731,
+   0.5238095238095238,
+   "-110 (fanduel)",
+   "-120 (fanduel)",
+   0.48987854251012153,
    0.3,
    3,
    null,
@@ -1969,16 +1228,54 @@
    null
   ],
   [
-   "Gary Woodland",
-   "Nick Taylor",
+   "Hideki Matsuyama",
+   "Wyndham Clark",
    "?",
-   0.4858,
-   0.5370370370370371,
-   "-116 (bet365)",
-   "-105 (bet365)",
-   0.5118381403357727,
-   0.1,
+   0.5175,
+   0.574468085106383,
+   "-135 (bet365)",
+   "+115 (bet365)",
+   0.552594002855783,
+   0.3,
    3,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Sungjae Im",
+   "Jake Knapp",
+   "?",
+   0.484,
+   0.5412844036697247,
+   "-118 (draftkings)",
+   "-108 (draftkings)",
+   0.510397604391948,
+   0.2,
+   9,
+   49.49,
+   7,
+   -0.62,
+   0.53,
+   2.11,
+   "none",
+   "No edge"
+  ],
+  [
+   "Aaron Rai",
+   "Michael Brennan",
+   "?",
+   0.4612,
+   0.5192307692307693,
+   "-108 (datagolf)",
+   "+108 (datagolf)",
+   0.5192307692307693,
+   0.4,
+   2,
    null,
    null,
    null,
@@ -1991,12 +1288,12 @@
    "Rickie Fowler",
    "Maverick McNealy",
    "?",
-   0.4727,
+   0.4642,
    0.5260663507109005,
    "-111 (fanduel)",
    "-111 (fanduel)",
    0.5,
-   0.3,
+   0.4,
    2,
    null,
    null,
@@ -2005,55 +1302,17 @@
    null,
    null,
    null
-  ],
-  [
-   "Russell Henley",
-   "Ludvig Aberg",
-   "?",
-   0.4899,
-   0.54337899543379,
-   "-119 (betcris)",
-   "-111 (betcris)",
-   0.5080942166821806,
-   0.1,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Gary Woodland",
-   "Maverick McNealy",
-   "?",
-   0.4305,
-   0.4854368932038835,
-   "+106 (draftkings)",
-   "-134 (draftkings)",
-   0.4587875460748177,
-   0.8,
-   8,
-   56.06,
-   6,
-   -0.55,
-   1.94,
-   0.89,
-   "none",
-   "No edge"
   ],
   [
    "Collin Morikawa",
    "Cameron Young",
    "?",
-   0.4709,
+   0.4621,
    0.5260663507109005,
    "-111 (bet365)",
    "-111 (bet365)",
    0.5,
-   0.3,
+   0.4,
    5,
    null,
    null,
@@ -2062,63 +1321,6 @@
    null,
    null,
    null
-  ],
-  [
-   "Scottie Scheffler",
-   "Sam Burns",
-   "?",
-   0.5947,
-   0.6527777777777778,
-   "-188 (draftkings)",
-   "+150 (draftkings)",
-   0.6200527704485488,
-   1.1,
-   11,
-   40.62,
-   9,
-   1.32,
-   2.62,
-   -0.09,
-   "none",
-   "No edge"
-  ],
-  [
-   "Alex Smalley",
-   "Aaron Rai",
-   "?",
-   0.4651,
-   0.5260663507109005,
-   "-111 (fanduel)",
-   "-111 (fanduel)",
-   0.5,
-   0.3,
-   2,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null,
-   null
-  ],
-  [
-   "Russell Henley",
-   "Ryan Gerard",
-   "?",
-   0.5114,
-   0.5726495726495726,
-   "-134 (draftkings)",
-   "+106 (draftkings)",
-   0.5412124539251824,
-   0.1,
-   8,
-   46.87,
-   6,
-   0.65,
-   0.99,
-   1.99,
-   "none",
-   "No edge"
   ],
   [
    "Hideki Matsuyama",
@@ -2159,15 +1361,623 @@
    null
   ],
   [
+   "Collin Morikawa",
+   "Nicolai Hojgaard",
+   "?",
+   0.5396,
+   0.609375,
+   "-156 (draftkings)",
+   "+125 (draftkings)",
+   0.5782537067545305,
+   0.4,
+   7,
+   41.96,
+   5,
+   3.59,
+   -0.21,
+   4.08,
+   "model",
+   "Model vs market"
+  ],
+  [
+   "Justin Thomas",
+   "Ludvig Aberg",
+   "?",
+   0.4495,
+   0.5260663507109005,
+   "-111 (bet365)",
+   "-111 (bet365)",
+   0.5,
+   0.6,
+   3,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Russell Henley",
+   "Ryan Gerard",
+   "?",
+   0.494,
+   0.5726495726495726,
+   "-134 (draftkings)",
+   "+106 (draftkings)",
+   0.5412124539251824,
+   0.1,
+   8,
+   46.87,
+   6,
+   4.24,
+   0.99,
+   3.73,
+   "model",
+   "Model vs market"
+  ],
+  [
+   "Russell Henley",
+   "Ludvig Aberg",
+   "?",
+   0.4294,
+   0.54337899543379,
+   "-119 (betcris)",
+   "-111 (betcris)",
+   0.5080942166821806,
+   0.8,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Aaron Rai",
+   "Harry Hall",
+   "?",
+   null,
+   0.5370370370370371,
+   "-116 (bet365)",
+   "-105 (bet365)",
+   0.5118381403357727,
+   null,
+   3,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Keith Mitchell",
+   "Ryan Gerard",
+   "?",
+   null,
+   0.5,
+   "+100 (bet365)",
+   "-120 (bet365)",
+   0.4782608695652174,
+   null,
+   4,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Gary Woodland",
+   "Nick Taylor",
+   "?",
+   null,
+   0.5370370370370371,
+   "-116 (bet365)",
+   "-105 (bet365)",
+   0.5118381403357727,
+   null,
+   3,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Rickie Fowler",
+   "Jackson Koivun",
+   "?",
+   null,
+   0.5,
+   "+100 (bet365)",
+   "-120 (bet365)",
+   0.4782608695652174,
+   null,
+   3,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Jordan Spieth",
+   "J.J. Spaun",
+   "?",
+   null,
+   0.5,
+   "+100 (bet365)",
+   "-120 (bet365)",
+   0.4782608695652174,
+   null,
+   3,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Brian Harman",
+   "Alex Noren",
+   "?",
+   null,
+   0.4878048780487805,
+   "+105 (bet365)",
+   "-125 (bet365)",
+   0.4675324675324675,
+   null,
+   4,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Michael Kim",
+   "Sudarshan Yellamaraju",
+   "?",
+   null,
+   0.6031746031746031,
+   "-152 (betcris)",
+   "+121 (betcris)",
+   0.5713702544563886,
+   null,
+   5,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Jordan Smith",
+   "Cameron Young",
+   "?",
+   null,
+   0.4166666666666667,
+   "+140 (draftkings)",
+   "-175 (draftkings)",
+   0.3956834532374101,
+   null,
+   7,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Ryo Hisatsune",
+   "Sam Stevens",
+   "?",
+   null,
+   0.5652173913043478,
+   "-130 (draftkings)",
+   "+102 (draftkings)",
+   0.5330897279740154,
+   null,
+   7,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Matti Schmid",
+   "Michael Brennan",
+   "?",
+   null,
+   0.44642857142857145,
+   "+124 (draftkings)",
+   "-154 (draftkings)",
+   0.42406838520101514,
+   null,
+   7,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Max Homa",
+   "Alex Smalley",
+   "?",
+   null,
+   0.45454545454545453,
+   "+120 (draftkings)",
+   "-150 (draftkings)",
+   0.4310344827586207,
+   null,
+   8,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Bud Cauley",
+   "Harry Hall",
+   "?",
+   null,
+   0.5535714285714286,
+   "-124 (draftkings)",
+   "-102 (draftkings)",
+   0.5229664272590613,
+   null,
+   9,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Keith Mitchell",
+   "Ludvig Aberg",
+   "?",
+   null,
+   0.43859649122807015,
+   "+128 (draftkings)",
+   "-160 (draftkings)",
+   0.4161331626120358,
+   null,
+   8,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Patrick Rodgers",
+   "Pierceson Coody",
+   "?",
+   null,
+   0.4854368932038835,
+   "+106 (draftkings)",
+   "-132 (draftkings)",
+   0.4603905381806636,
+   null,
+   10,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "J.J. Spaun",
+   "Jackson Koivun",
+   "?",
+   null,
+   0.5121951219512195,
+   "-105 (draftkings)",
+   "-120 (draftkings)",
+   0.48427672955974843,
+   null,
+   9,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Rickie Fowler",
+   "Jordan Spieth",
+   "?",
+   null,
+   0.5535714285714286,
+   "-124 (draftkings)",
+   "-102 (draftkings)",
+   0.5229664272590613,
+   null,
+   10,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Nick Taylor",
+   "Matt Fitzpatrick",
+   "?",
+   null,
+   0.38461538461538464,
+   "+160 (draftkings)",
+   "-200 (draftkings)",
+   0.36585365853658536,
+   null,
+   8,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Brian Harman",
+   "Tom Kim",
+   "?",
+   null,
+   0.46511627906976744,
+   "+115 (draftkings)",
+   "-144 (draftkings)",
+   0.4407514450867052,
+   null,
+   8,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Michael Kim",
+   "Nicolai Hojgaard",
+   "?",
+   null,
+   0.49261083743842365,
+   "+103 (datagolf)",
+   "-103 (datagolf)",
+   0.49261083743842365,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Max Homa",
+   "Ryo Hisatsune",
+   "?",
+   null,
+   0.4807692307692308,
+   "+108 (datagolf)",
+   "-108 (datagolf)",
+   0.4807692307692308,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Gary Woodland",
+   "Harry Hall",
+   "?",
+   null,
+   0.45871559633027525,
+   "+118 (datagolf)",
+   "-118 (datagolf)",
+   0.45871559633027525,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Ludvig Aberg",
+   "Jackson Koivun",
+   "?",
+   null,
+   0.5370370370370371,
+   "-116 (datagolf)",
+   "+116 (datagolf)",
+   0.5370370370370371,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Keith Mitchell",
+   "Jacob Bridgeman",
+   "?",
+   null,
+   0.4854368932038835,
+   "+106 (datagolf)",
+   "-106 (datagolf)",
+   0.4854368932038835,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Adam Scott",
+   "Nick Taylor",
+   "?",
+   null,
+   0.4878048780487805,
+   "+105 (datagolf)",
+   "-105 (datagolf)",
+   0.4878048780487805,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Brian Harman",
+   "Jake Knapp",
+   "?",
+   null,
+   0.5327102803738317,
+   "-114 (datagolf)",
+   "+114 (datagolf)",
+   0.5327102803738317,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
    "Brian Harman",
    "Sungjae Im",
    "?",
-   0.4717,
+   null,
    0.5555555555555556,
    "-125 (fanduel)",
    "+100 (fanduel)",
    0.5263157894736842,
-   0.3,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Jordan Smith",
+   "Nicolai Hojgaard",
+   "?",
+   null,
+   0.5495495495495496,
+   "-122 (betcris)",
+   "-108 (betcris)",
+   0.5141838223374939,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Matti Schmid",
+   "Sam Stevens",
+   "?",
+   null,
+   0.5,
+   "+100 (betcris)",
+   "-130 (betcris)",
+   0.4693877551020409,
+   null,
+   2,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  [
+   "Nick Taylor",
+   "Nico Echavarria",
+   "?",
+   null,
+   0.54337899543379,
+   "-119 (betcris)",
+   "-111 (betcris)",
+   0.5080942166821806,
+   null,
    2,
    null,
    null,
@@ -2181,1665 +1991,1209 @@
  "W": [
   [
    "Scottie Scheffler",
-   0.1166,
-   0.7014925373134329,
-   "-235 (draftkings)"
+   0.1554,
+   0.24096385542168675,
+   "+315 (draftkings)"
   ],
   [
    "Rory McIlroy",
-   0.0453,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   0.0472,
+   0.0625,
+   "+1500 (draftkings)"
   ],
   [
    "Tommy Fleetwood",
-   0.0405,
-   0.02857142857142857,
-   "+3400 (draftkings)"
-  ],
-  [
-   "Cameron Young",
-   0.0399,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Xander Schauffele",
-   0.0369,
-   0.00024993751562109475,
-   "+400000 (draftkings)"
-  ],
-  [
-   "Matt Fitzpatrick",
-   0.0306,
-   0.0006662225183211193,
-   "+150000 (draftkings)"
-  ],
-  [
-   "Si Woo Kim",
-   0.0303,
-   0.010101010101010102,
-   "+9800 (draftkings)"
-  ],
-  [
-   "Justin Thomas",
-   0.0296,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Sam Burns",
-   0.0265,
-   0.18518518518518517,
-   "+440 (draftkings)"
-  ],
-  [
-   "Hideki Matsuyama",
-   0.0261,
-   0.011235955056179775,
-   "+8800 (draftkings)"
-  ],
-  [
-   "Collin Morikawa",
-   0.0245,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   0.0439,
+   0.05405405405405406,
+   "+1750 (draftkings)"
   ],
   [
    "Ludvig Aberg",
-   0.0232,
-   0.00024993751562109475,
-   "+400000 (draftkings)"
+   0.0436,
+   0.05263157894736842,
+   "+1800 (draftkings)"
   ],
   [
-   "Russell Henley",
-   0.023,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Xander Schauffele",
+   0.0435,
+   0.05555555555555555,
+   "+1700 (draftkings)"
   ],
   [
-   "Patrick Cantlay",
-   0.0222,
-   0.0016638935108153079,
-   "+60000 (draftkings)"
+   "Cameron Young",
+   0.0381,
+   0.046511627906976744,
+   "+2050 (draftkings)"
   ],
   [
-   "Viktor Hovland",
-   0.0205,
-   0.004524886877828055,
-   "+22000 (draftkings)"
+   "Sam Burns",
+   0.0364,
+   0.05714285714285714,
+   "+1650 (draftkings)"
   ],
   [
-   "Ryan Gerard",
-   0.0204,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Ben Griffin",
-   0.0193,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Tom Kim",
-   0.0193,
-   0.003436426116838488,
-   "+29000 (draftkings)"
+   "Matt Fitzpatrick",
+   0.0347,
+   0.046511627906976744,
+   "+2050 (draftkings)"
   ],
   [
    "Chris Gotterup",
-   0.0172,
-   0.0016638935108153079,
-   "+60000 (draftkings)"
+   0.0322,
+   0.044444444444444446,
+   "+2150 (draftkings)"
   ],
   [
-   "Maverick McNealy",
-   0.0171,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Si Woo Kim",
+   0.0287,
+   0.038461538461538464,
+   "+2500 (draftkings)"
   ],
   [
-   "Jackson Koivun",
-   0.0146,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Hideki Matsuyama",
+   0.0287,
+   0.04,
+   "+2400 (draftkings)"
   ],
   [
-   "Aaron Rai",
-   0.0145,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Viktor Hovland",
+   0.0274,
+   0.041666666666666664,
+   "+2300 (draftkings)"
   ],
   [
-   "Robert MacIntyre",
-   0.0141,
-   null,
-   "\u2014"
+   "Patrick Cantlay",
+   0.0265,
+   0.03333333333333333,
+   "+2900 (draftkings)"
   ],
   [
-   "J.J. Spaun",
-   0.014,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Justin Thomas",
+   0.0205,
+   0.030303030303030304,
+   "+3200 (draftkings)"
   ],
   [
-   "Sungjae Im",
-   0.0134,
-   0.11494252873563218,
-   "+770 (draftkings)"
+   "Collin Morikawa",
+   0.0192,
+   0.03333333333333333,
+   "+2900 (draftkings)"
   ],
   [
-   "Michael Thorbjornsen",
-   0.0125,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   "Tom Kim",
+   0.0192,
+   0.02564102564102564,
+   "+3800 (draftkings)"
   ],
   [
    "Min Woo Lee",
-   0.012,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   0.019,
+   0.0196078431372549,
+   "+5000 (draftkings)"
   ],
   [
-   "Bud Cauley",
-   0.0119,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Ben Griffin",
+   0.0189,
+   0.015625,
+   "+6300 (draftkings)"
   ],
   [
-   "Alex Fitzpatrick",
-   0.0114,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   "Ryan Gerard",
+   0.0188,
+   0.02127659574468085,
+   "+4600 (draftkings)"
   ],
   [
    "Wyndham Clark",
-   0.0109,
-   0.0014792899408284023,
-   "+67500 (draftkings)"
+   0.0185,
+   0.029411764705882353,
+   "+3300 (draftkings)"
   ],
   [
-   "Shane Lowry",
-   0.0108,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Justin Rose",
-   0.0101,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Corey Conners",
-   0.0099,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Alex Noren",
-   0.0098,
-   0.006622516556291391,
-   "+15000 (draftkings)"
-  ],
-  [
-   "Keith Mitchell",
-   0.0096,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Rickie Fowler",
-   0.0094,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Harris English",
-   0.0093,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Jordan Spieth",
-   0.0089,
-   0.0003332222592469177,
-   "+300000 (draftkings)"
-  ],
-  [
-   "Jacob Bridgeman",
-   0.0087,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Alex Smalley",
-   0.0084,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Jordan Smith",
-   0.0083,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Akshay Bhatia",
-   0.0082,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Brian Harman",
-   0.0082,
-   0.005681818181818182,
-   "+17500 (draftkings)"
-  ],
-  [
-   "Eric Cole",
-   0.0082,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   "Maverick McNealy",
+   0.0183,
+   0.02127659574468085,
+   "+4600 (draftkings)"
   ],
   [
    "Kurt Kitayama",
-   0.0081,
-   0.0026595744680851063,
-   "+37500 (draftkings)"
+   0.0164,
+   0.0196078431372549,
+   "+5000 (draftkings)"
   ],
   [
-   "Michael Brennan",
-   0.0076,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Michael Thorbjornsen",
+   0.0161,
+   0.017543859649122806,
+   "+5600 (draftkings)"
   ],
   [
-   "Adam Scott",
-   0.0073,
-   0.0009082652134423251,
-   "+110000 (draftkings)"
-  ],
-  [
-   "Michael Kim",
-   0.0069,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "J.T. Poston",
-   0.0067,
-   0.0006891798759476223,
-   "+145000 (draftkings)"
-  ],
-  [
-   "Kristoffer Reitan",
-   0.0064,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Harry Hall",
-   0.0061,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Nicolai Hojgaard",
-   0.0058,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Sahith Theegala",
-   0.0055,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Nick Taylor",
-   0.0052,
-   0.00022217285047767163,
-   "+450000 (draftkings)"
-  ],
-  [
-   "Ryo Hisatsune",
-   0.0051,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Ricky Castillo",
-   0.005,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   "Russell Henley",
+   0.0151,
+   0.02040816326530612,
+   "+4800 (draftkings)"
   ],
   [
    "Jake Knapp",
-   0.0048,
+   0.0144,
+   0.024390243902439025,
+   "+4000 (draftkings)"
+  ],
+  [
+   "J.J. Spaun",
+   0.0132,
+   0.02040816326530612,
+   "+4800 (draftkings)"
+  ],
+  [
+   "Michael Brennan",
+   0.0121,
+   0.01818181818181818,
+   "+5400 (draftkings)"
+  ],
+  [
+   "Robert MacIntyre",
+   0.0115,
    0.016666666666666666,
    "+5900 (draftkings)"
   ],
   [
-   "Nico Echavarria",
-   0.0046,
-   0.0006891798759476223,
-   "+145000 (draftkings)"
+   "Bud Cauley",
+   0.0114,
+   0.010526315789473684,
+   "+9400 (draftkings)"
   ],
   [
-   "Ryan Fox",
-   0.004,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   "Adam Scott",
+   0.0112,
+   0.015384615384615385,
+   "+6400 (draftkings)"
   ],
   [
-   "Matt McCarty",
-   0.0039,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   "Alex Smalley",
+   0.0108,
+   0.012658227848101266,
+   "+7800 (draftkings)"
+  ],
+  [
+   "Sungjae Im",
+   0.0102,
+   0.016129032258064516,
+   "+6100 (draftkings)"
+  ],
+  [
+   "Alex Noren",
+   0.0102,
+   0.011494252873563218,
+   "+8600 (draftkings)"
+  ],
+  [
+   "Jacob Bridgeman",
+   0.0102,
+   0.012345679012345678,
+   "+8000 (draftkings)"
+  ],
+  [
+   "Nicolai Hojgaard",
+   0.01,
+   0.0136986301369863,
+   "+7200 (draftkings)"
+  ],
+  [
+   "Justin Rose",
+   0.01,
+   0.012987012987012988,
+   "+7600 (draftkings)"
+  ],
+  [
+   "Rickie Fowler",
+   0.0089,
+   0.014492753623188406,
+   "+6800 (draftkings)"
+  ],
+  [
+   "Alex Fitzpatrick",
+   0.0086,
+   0.011235955056179775,
+   "+8800 (draftkings)"
+  ],
+  [
+   "Kristoffer Reitan",
+   0.0078,
+   0.011494252873563218,
+   "+8600 (draftkings)"
+  ],
+  [
+   "Aaron Rai",
+   0.0067,
+   0.009009009009009009,
+   "+11000 (draftkings)"
   ],
   [
    "Gary Woodland",
-   0.0038,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   0.0065,
+   0.008620689655172414,
+   "+11500 (draftkings)"
   ],
   [
-   "Sam Stevens",
-   0.0036,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   "Ryan Fox",
+   0.0061,
+   0.008264462809917356,
+   "+12000 (draftkings)"
+  ],
+  [
+   "J.T. Poston",
+   0.0054,
+   0.00684931506849315,
+   "+14500 (draftkings)"
+  ],
+  [
+   "Akshay Bhatia",
+   0.0049,
+   0.008264462809917356,
+   "+12000 (draftkings)"
+  ],
+  [
+   "Nico Echavarria",
+   0.0048,
+   0.006211180124223602,
+   "+16000 (draftkings)"
+  ],
+  [
+   "Eric Cole",
+   0.0047,
+   0.00641025641025641,
+   "+15500 (draftkings)"
+  ],
+  [
+   "Ryo Hisatsune",
+   0.0045,
+   0.00684931506849315,
+   "+14500 (draftkings)"
+  ],
+  [
+   "Matt McCarty",
+   0.0033,
+   0.0030211480362537764,
+   "+33000 (draftkings)"
   ],
   [
    "Sepp Straka",
    0.0032,
-   0.0001999600079984003,
-   "+500000 (bet365)"
+   0.0030211480362537764,
+   "+33000 (draftkings)"
   ],
   [
-   "Max Homa",
-   0.0029,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Sudarshan Yellamaraju",
-   0.0028,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Matti Schmid",
-   0.0019,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Pierceson Coody",
-   0.0016,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
-  ],
-  [
-   "Aldrich Potgieter",
-   0.0006,
-   0.0001999600079984003,
-   "+500000 (bet365)"
-  ],
-  [
-   "Patrick Rodgers",
-   0.0005,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   "Sahith Theegala",
+   0.0031,
+   0.004739336492890996,
+   "+21000 (draftkings)"
   ]
  ],
  "W5": [
   [
    "Scottie Scheffler",
-   0.3369,
-   0.9803921568627451,
-   "-5000 (draftkings)"
-  ],
-  [
-   "Rory McIlroy",
-   0.1793,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Tommy Fleetwood",
-   0.1652,
-   0.46296296296296297,
-   "+116 (draftkings)"
-  ],
-  [
-   "Cameron Young",
-   0.1621,
-   0.002036659877800407,
-   "+49000 (draftkings)"
+   0.432,
+   0.5652173913043478,
+   "-130 (draftkings)"
   ],
   [
    "Xander Schauffele",
-   0.1571,
-   0.02857142857142857,
-   "+3400 (draftkings)"
+   0.2032,
+   0.22727272727272727,
+   "+340 (draftkings)"
   ],
   [
-   "Matt Fitzpatrick",
-   0.1471,
-   0.05405405405405406,
-   "+1750 (draftkings)"
-  ],
-  [
-   "Justin Thomas",
-   0.1372,
-   0.002932551319648094,
-   "+34000 (draftkings)"
-  ],
-  [
-   "Sam Burns",
-   0.1325,
-   0.8305084745762712,
-   "-490 (draftkings)"
-  ],
-  [
-   "Si Woo Kim",
-   0.1296,
-   0.28169014084507044,
-   "+255 (draftkings)"
-  ],
-  [
-   "Hideki Matsuyama",
-   0.121,
-   0.2898550724637681,
-   "+245 (draftkings)"
-  ],
-  [
-   "Patrick Cantlay",
-   0.1153,
-   0.09615384615384616,
-   "+940 (draftkings)"
+   "Rory McIlroy",
+   0.2015,
+   0.24390243902439024,
+   "+310 (draftkings)"
   ],
   [
    "Ludvig Aberg",
-   0.1153,
-   0.02564102564102564,
-   "+3800 (draftkings)"
-  ],
-  [
-   "Collin Morikawa",
-   0.1151,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Viktor Hovland",
-   0.1041,
-   0.16666666666666666,
-   "+500 (draftkings)"
-  ],
-  [
-   "Russell Henley",
-   0.1041,
-   0.00684931506849315,
-   "+14500 (draftkings)"
-  ],
-  [
-   "Ryan Gerard",
-   0.0992,
-   0.005681818181818182,
-   "+17500 (draftkings)"
-  ],
-  [
-   "Chris Gotterup",
-   0.0946,
-   0.09174311926605505,
-   "+990 (draftkings)"
-  ],
-  [
-   "Ben Griffin",
-   0.0909,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Tom Kim",
-   0.0894,
-   0.15384615384615385,
-   "+550 (draftkings)"
-  ],
-  [
-   "Maverick McNealy",
-   0.0863,
-   0.015873015873015872,
-   "+6200 (draftkings)"
-  ],
-  [
-   "Jackson Koivun",
-   0.085,
-   0.018867924528301886,
-   "+5200 (draftkings)"
-  ],
-  [
-   "Aaron Rai",
-   0.0834,
-   0.002036659877800407,
-   "+49000 (draftkings)"
-  ],
-  [
-   "Robert MacIntyre",
-   0.0832,
-   null,
-   "\u2014"
-  ],
-  [
-   "J.J. Spaun",
-   0.0792,
-   0.016666666666666666,
-   "+5900 (draftkings)"
-  ],
-  [
-   "Min Woo Lee",
-   0.073,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Michael Thorbjornsen",
-   0.0725,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Wyndham Clark",
-   0.0683,
-   0.0851063829787234,
-   "+1075 (draftkings)"
-  ],
-  [
-   "Sungjae Im",
-   0.0676,
-   0.7368421052631579,
-   "-280 (draftkings)"
-  ],
-  [
-   "Shane Lowry",
-   0.0669,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Alex Fitzpatrick",
-   0.0641,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Bud Cauley",
-   0.063,
-   0.004149377593360996,
-   "+24000 (draftkings)"
-  ],
-  [
-   "Corey Conners",
-   0.0608,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Alex Noren",
-   0.0592,
+   0.1987,
    0.21739130434782608,
    "+360 (draftkings)"
   ],
   [
-   "Justin Rose",
-   0.0592,
-   0.0024937655860349127,
-   "+40000 (bet365)"
+   "Tommy Fleetwood",
+   0.1905,
+   0.23255813953488372,
+   "+330 (draftkings)"
   ],
   [
-   "Harris English",
-   0.0584,
-   0.0024937655860349127,
-   "+40000 (bet365)"
+   "Cameron Young",
+   0.1729,
+   0.20202020202020202,
+   "+395 (draftkings)"
   ],
   [
-   "Alex Smalley",
-   0.058,
-   0.00510204081632653,
-   "+19500 (draftkings)"
+   "Sam Burns",
+   0.1701,
+   0.22988505747126436,
+   "+335 (draftkings)"
+  ],
+  [
+   "Matt Fitzpatrick",
+   0.1671,
+   0.20618556701030927,
+   "+385 (draftkings)"
+  ],
+  [
+   "Chris Gotterup",
+   0.1516,
+   0.18867924528301888,
+   "+430 (draftkings)"
+  ],
+  [
+   "Si Woo Kim",
+   0.1504,
+   0.18018018018018017,
+   "+455 (draftkings)"
+  ],
+  [
+   "Patrick Cantlay",
+   0.1406,
+   0.16129032258064516,
+   "+520 (draftkings)"
+  ],
+  [
+   "Hideki Matsuyama",
+   0.1402,
+   0.1834862385321101,
+   "+445 (draftkings)"
+  ],
+  [
+   "Viktor Hovland",
+   0.1355,
+   0.1834862385321101,
+   "+445 (draftkings)"
+  ],
+  [
+   "Collin Morikawa",
+   0.1129,
+   0.15873015873015872,
+   "+530 (draftkings)"
+  ],
+  [
+   "Justin Thomas",
+   0.1127,
+   0.14925373134328357,
+   "+570 (draftkings)"
+  ],
+  [
+   "Maverick McNealy",
+   0.1031,
+   0.11363636363636363,
+   "+780 (draftkings)"
+  ],
+  [
+   "Min Woo Lee",
+   0.1025,
+   0.10638297872340426,
+   "+840 (draftkings)"
+  ],
+  [
+   "Ryan Gerard",
+   0.102,
+   0.11494252873563218,
+   "+770 (draftkings)"
+  ],
+  [
+   "Michael Thorbjornsen",
+   0.0999,
+   0.09900990099009901,
+   "+910 (draftkings)"
+  ],
+  [
+   "Tom Kim",
+   0.0986,
+   0.13333333333333333,
+   "+650 (draftkings)"
+  ],
+  [
+   "Ben Griffin",
+   0.0981,
+   0.09174311926605505,
+   "+990 (draftkings)"
+  ],
+  [
+   "Wyndham Clark",
+   0.0973,
+   0.14285714285714285,
+   "+600 (draftkings)"
+  ],
+  [
+   "J.J. Spaun",
+   0.0886,
+   0.10989010989010989,
+   "+810 (draftkings)"
+  ],
+  [
+   "Jake Knapp",
+   0.0875,
+   0.12048192771084337,
+   "+730 (draftkings)"
+  ],
+  [
+   "Russell Henley",
+   0.0873,
+   0.11494252873563218,
+   "+770 (draftkings)"
   ],
   [
    "Kurt Kitayama",
-   0.0573,
-   0.125,
-   "+700 (draftkings)"
-  ],
-  [
-   "Jacob Bridgeman",
-   0.0564,
-   0.012345679012345678,
-   "+8000 (draftkings)"
-  ],
-  [
-   "Jordan Smith",
-   0.0549,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Rickie Fowler",
-   0.0542,
-   0.014285714285714285,
-   "+6900 (draftkings)"
-  ],
-  [
-   "Keith Mitchell",
-   0.0542,
-   0.0136986301369863,
-   "+7200 (draftkings)"
-  ],
-  [
-   "Akshay Bhatia",
-   0.0503,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Michael Brennan",
-   0.0489,
-   0.001996007984031936,
-   "+50000 (draftkings)"
+   0.0852,
+   0.10638297872340426,
+   "+840 (draftkings)"
   ],
   [
    "Adam Scott",
-   0.0485,
-   0.0625,
-   "+1500 (draftkings)"
+   0.0731,
+   0.08888888888888889,
+   "+1025 (draftkings)"
   ],
   [
-   "J.T. Poston",
-   0.0484,
+   "Michael Brennan",
+   0.0718,
+   0.09523809523809523,
+   "+950 (draftkings)"
+  ],
+  [
+   "Bud Cauley",
+   0.0689,
+   0.06779661016949153,
+   "+1375 (draftkings)"
+  ],
+  [
+   "Robert MacIntyre",
+   0.0687,
+   0.09090909090909091,
+   "+1000 (draftkings)"
+  ],
+  [
+   "Alex Smalley",
+   0.0686,
+   0.07692307692307693,
+   "+1200 (draftkings)"
+  ],
+  [
+   "Nicolai Hojgaard",
+   0.0674,
+   0.08,
+   "+1150 (draftkings)"
+  ],
+  [
+   "Sungjae Im",
+   0.0667,
+   0.09345794392523364,
+   "+970 (draftkings)"
+  ],
+  [
+   "Alex Fitzpatrick",
+   0.0654,
+   0.07142857142857142,
+   "+1300 (draftkings)"
+  ],
+  [
+   "Jacob Bridgeman",
+   0.0631,
+   0.07547169811320754,
+   "+1225 (draftkings)"
+  ],
+  [
+   "Rickie Fowler",
+   0.0628,
+   0.08695652173913043,
+   "+1050 (draftkings)"
+  ],
+  [
+   "Alex Noren",
+   0.061,
+   0.07272727272727272,
+   "+1275 (draftkings)"
+  ],
+  [
+   "Justin Rose",
+   0.0587,
+   0.0784313725490196,
+   "+1175 (draftkings)"
+  ],
+  [
+   "Kristoffer Reitan",
+   0.0583,
+   0.07017543859649122,
+   "+1325 (draftkings)"
+  ],
+  [
+   "Gary Woodland",
+   0.045,
+   0.05555555555555555,
+   "+1700 (draftkings)"
+  ],
+  [
+   "Akshay Bhatia",
+   0.0436,
+   0.05555555555555555,
+   "+1700 (draftkings)"
+  ],
+  [
+   "Ryan Fox",
+   0.0429,
    0.05405405405405406,
    "+1750 (draftkings)"
   ],
   [
-   "Jordan Spieth",
-   0.0477,
-   0.03125,
-   "+3100 (draftkings)"
-  ],
-  [
-   "Brian Harman",
-   0.0459,
-   0.19801980198019803,
-   "+405 (draftkings)"
-  ],
-  [
-   "Kristoffer Reitan",
-   0.0453,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Michael Kim",
-   0.0449,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Eric Cole",
-   0.0447,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Nicolai Hojgaard",
-   0.0407,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Harry Hall",
-   0.0395,
-   0.00398406374501992,
-   "+25000 (draftkings)"
+   "J.T. Poston",
+   0.0401,
+   0.047619047619047616,
+   "+2000 (draftkings)"
   ],
   [
    "Ryo Hisatsune",
-   0.0382,
-   0.001996007984031936,
-   "+50000 (draftkings)"
+   0.0398,
+   0.04878048780487805,
+   "+1950 (draftkings)"
   ],
   [
-   "Sahith Theegala",
-   0.036,
-   0.0024937655860349127,
-   "+40000 (bet365)"
+   "Eric Cole",
+   0.0398,
+   0.044444444444444446,
+   "+2150 (draftkings)"
   ],
   [
-   "Jake Knapp",
-   0.0354,
-   0.3225806451612903,
-   "+210 (draftkings)"
-  ],
-  [
-   "Nick Taylor",
-   0.0351,
-   0.02040816326530612,
-   "+4800 (draftkings)"
-  ],
-  [
-   "Ricky Castillo",
-   0.0332,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Ryan Fox",
-   0.0302,
-   0.0024937655860349127,
-   "+40000 (bet365)"
+   "Aaron Rai",
+   0.0395,
+   0.06060606060606061,
+   "+1550 (draftkings)"
   ],
   [
    "Nico Echavarria",
-   0.0293,
-   0.05128205128205128,
-   "+1850 (draftkings)"
-  ],
-  [
-   "Matt McCarty",
-   0.0291,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Gary Woodland",
-   0.0268,
-   0.01098901098901099,
-   "+9000 (draftkings)"
+   0.0358,
+   0.043478260869565216,
+   "+2200 (draftkings)"
   ],
   [
    "Sepp Straka",
-   0.0259,
-   0.0024937655860349127,
-   "+40000 (bet365)"
+   0.0341,
+   0.025,
+   "+3900 (draftkings)"
   ],
   [
-   "Sam Stevens",
-   0.0252,
-   0.0024937655860349127,
-   "+40000 (bet365)"
+   "Sahith Theegala",
+   0.0305,
+   0.034482758620689655,
+   "+2800 (draftkings)"
   ],
   [
-   "Max Homa",
-   0.0232,
-   0.002036659877800407,
-   "+49000 (draftkings)"
-  ],
-  [
-   "Sudarshan Yellamaraju",
-   0.0187,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Matti Schmid",
-   0.0174,
-   0.001996007984031936,
-   "+50000 (draftkings)"
-  ],
-  [
-   "Pierceson Coody",
-   0.0154,
-   0.007633587786259542,
-   "+13000 (draftkings)"
-  ],
-  [
-   "Aldrich Potgieter",
-   0.0077,
-   0.0024937655860349127,
-   "+40000 (bet365)"
-  ],
-  [
-   "Patrick Rodgers",
-   0.0073,
-   0.00510204081632653,
-   "+19500 (draftkings)"
+   "Matt McCarty",
+   0.0244,
+   0.025,
+   "+3900 (draftkings)"
   ]
  ],
  "W10": [
   [
    "Scottie Scheffler",
-   0.4995,
-   0.9950248756218906,
-   "-20000 (draftkings)"
-  ],
-  [
-   "Rory McIlroy",
-   0.3075,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Tommy Fleetwood",
-   0.2873,
-   0.7727272727272727,
-   "-340 (draftkings)"
-  ],
-  [
-   "Cameron Young",
-   0.2853,
-   0.015625,
-   "+6300 (draftkings)"
+   0.6095,
+   0.7468354430379747,
+   "-295 (draftkings)"
   ],
   [
    "Xander Schauffele",
-   0.2774,
-   0.14492753623188406,
-   "+590 (draftkings)"
+   0.359,
+   0.4032258064516129,
+   "+148 (draftkings)"
   ],
   [
-   "Matt Fitzpatrick",
-   0.2697,
-   0.22988505747126436,
-   "+335 (draftkings)"
-  ],
-  [
-   "Justin Thomas",
-   0.2535,
-   0.027777777777777776,
-   "+3500 (draftkings)"
-  ],
-  [
-   "Si Woo Kim",
-   0.247,
-   0.609375,
-   "-156 (draftkings)"
-  ],
-  [
-   "Sam Burns",
-   0.2416,
-   0.9565217391304348,
-   "-2200 (draftkings)"
-  ],
-  [
-   "Hideki Matsuyama",
-   0.232,
-   0.6124031007751938,
-   "-158 (draftkings)"
-  ],
-  [
-   "Patrick Cantlay",
-   0.2221,
-   0.3333333333333333,
-   "+200 (draftkings)"
-  ],
-  [
-   "Collin Morikawa",
-   0.2184,
-   0.004424778761061947,
-   "+22500 (bet365)"
+   "Rory McIlroy",
+   0.3572,
+   0.42016806722689076,
+   "+138 (draftkings)"
   ],
   [
    "Ludvig Aberg",
-   0.2181,
-   0.13333333333333333,
-   "+650 (draftkings)"
+   0.3502,
+   0.390625,
+   "+156 (draftkings)"
   ],
   [
-   "Viktor Hovland",
-   0.2079,
-   0.45045045045045046,
-   "+122 (draftkings)"
+   "Tommy Fleetwood",
+   0.3416,
+   0.4166666666666667,
+   "+140 (draftkings)"
   ],
   [
-   "Russell Henley",
-   0.2071,
-   0.05405405405405406,
-   "+1750 (draftkings)"
+   "Cameron Young",
+   0.3154,
+   0.37037037037037035,
+   "+170 (draftkings)"
+  ],
+  [
+   "Sam Burns",
+   0.3135,
+   0.4065040650406504,
+   "+146 (draftkings)"
+  ],
+  [
+   "Matt Fitzpatrick",
+   0.3092,
+   0.3816793893129771,
+   "+162 (draftkings)"
   ],
   [
    "Chris Gotterup",
-   0.1902,
+   0.2877,
+   0.3472222222222222,
+   "+188 (draftkings)"
+  ],
+  [
+   "Si Woo Kim",
+   0.2831,
+   0.3448275862068966,
+   "+190 (draftkings)"
+  ],
+  [
+   "Hideki Matsuyama",
+   0.2713,
+   0.3472222222222222,
+   "+188 (draftkings)"
+  ],
+  [
+   "Patrick Cantlay",
+   0.2681,
+   0.31746031746031744,
+   "+215 (draftkings)"
+  ],
+  [
+   "Viktor Hovland",
+   0.2613,
+   0.3424657534246575,
+   "+192 (draftkings)"
+  ],
+  [
+   "Collin Morikawa",
+   0.2279,
    0.3125,
    "+220 (draftkings)"
   ],
   [
-   "Ryan Gerard",
-   0.1893,
-   0.045454545454545456,
-   "+2100 (draftkings)"
-  ],
-  [
-   "Ben Griffin",
-   0.183,
-   0.00398406374501992,
-   "+25000 (bet365)"
+   "Justin Thomas",
+   0.2226,
+   0.29850746268656714,
+   "+235 (draftkings)"
   ],
   [
    "Maverick McNealy",
-   0.1776,
-   0.09433962264150944,
-   "+960 (draftkings)"
-  ],
-  [
-   "Tom Kim",
-   0.1734,
-   0.43478260869565216,
-   "+130 (draftkings)"
-  ],
-  [
-   "Aaron Rai",
-   0.1717,
-   0.01694915254237288,
-   "+5800 (draftkings)"
-  ],
-  [
-   "Jackson Koivun",
-   0.1709,
-   0.10869565217391304,
-   "+820 (draftkings)"
-  ],
-  [
-   "Robert MacIntyre",
-   0.1707,
-   null,
-   "\u2014"
-  ],
-  [
-   "J.J. Spaun",
-   0.167,
-   0.09900990099009901,
-   "+910 (draftkings)"
-  ],
-  [
-   "Min Woo Lee",
-   0.1556,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Michael Thorbjornsen",
-   0.1544,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Sungjae Im",
-   0.1449,
-   0.9166666666666666,
-   "-1100 (draftkings)"
-  ],
-  [
-   "Wyndham Clark",
-   0.143,
-   0.29411764705882354,
-   "+240 (draftkings)"
-  ],
-  [
-   "Shane Lowry",
-   0.1391,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Alex Fitzpatrick",
-   0.1358,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Alex Noren",
-   0.1318,
-   0.5283018867924528,
-   "-112 (draftkings)"
-  ],
-  [
-   "Alex Smalley",
-   0.1282,
-   0.0425531914893617,
-   "+2250 (draftkings)"
-  ],
-  [
-   "Bud Cauley",
-   0.1277,
-   0.037037037037037035,
-   "+2600 (draftkings)"
-  ],
-  [
-   "Kurt Kitayama",
-   0.1271,
-   0.3787878787878788,
-   "+164 (draftkings)"
-  ],
-  [
-   "Harris English",
-   0.1263,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Corey Conners",
-   0.125,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Justin Rose",
-   0.1232,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Rickie Fowler",
-   0.1221,
-   0.09090909090909091,
-   "+1000 (draftkings)"
-  ],
-  [
-   "Jacob Bridgeman",
-   0.1202,
-   0.08,
-   "+1150 (draftkings)"
-  ],
-  [
-   "Keith Mitchell",
-   0.1172,
-   0.08333333333333333,
-   "+1100 (draftkings)"
-  ],
-  [
-   "Jordan Smith",
-   0.1147,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "J.T. Poston",
-   0.113,
-   0.2222222222222222,
-   "+350 (draftkings)"
-  ],
-  [
-   "Akshay Bhatia",
-   0.1116,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Jordan Spieth",
-   0.1091,
-   0.15151515151515152,
-   "+560 (draftkings)"
-  ],
-  [
-   "Michael Brennan",
-   0.1085,
-   0.009009009009009009,
-   "+11000 (draftkings)"
-  ],
-  [
-   "Kristoffer Reitan",
-   0.1058,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Eric Cole",
-   0.1055,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Adam Scott",
-   0.1018,
+   0.2174,
    0.24096385542168675,
    "+315 (draftkings)"
   ],
   [
-   "Brian Harman",
-   0.099,
-   0.5,
-   "+100 (draftkings)"
+   "Wyndham Clark",
+   0.2108,
+   0.2857142857142857,
+   "+250 (draftkings)"
   ],
   [
-   "Michael Kim",
-   0.0983,
-   0.00398406374501992,
-   "+25000 (bet365)"
+   "Min Woo Lee",
+   0.2103,
+   0.22988505747126436,
+   "+335 (draftkings)"
   ],
   [
-   "Nicolai Hojgaard",
-   0.0941,
-   0.00398406374501992,
-   "+25000 (bet365)"
+   "Michael Thorbjornsen",
+   0.2093,
+   0.21978021978021978,
+   "+355 (draftkings)"
   ],
   [
-   "Ryo Hisatsune",
-   0.0921,
-   0.004975124378109453,
-   "+20000 (draftkings)"
+   "Ryan Gerard",
+   0.2087,
+   0.24390243902439024,
+   "+310 (draftkings)"
   ],
   [
-   "Harry Hall",
-   0.0906,
-   0.03333333333333333,
-   "+2900 (draftkings)"
+   "Tom Kim",
+   0.2076,
+   0.2777777777777778,
+   "+260 (draftkings)"
+  ],
+  [
+   "Ben Griffin",
+   0.207,
+   0.20833333333333334,
+   "+380 (draftkings)"
+  ],
+  [
+   "J.J. Spaun",
+   0.1929,
+   0.23809523809523808,
+   "+320 (draftkings)"
+  ],
+  [
+   "Russell Henley",
+   0.1895,
+   0.24691358024691357,
+   "+305 (draftkings)"
   ],
   [
    "Jake Knapp",
-   0.0866,
-   0.6296296296296297,
-   "-170 (draftkings)"
+   0.1893,
+   0.24390243902439024,
+   "+310 (draftkings)"
   ],
   [
-   "Sahith Theegala",
-   0.0823,
-   0.00398406374501992,
-   "+25000 (bet365)"
+   "Kurt Kitayama",
+   0.1864,
+   0.22988505747126436,
+   "+335 (draftkings)"
   ],
   [
-   "Ricky Castillo",
-   0.08,
-   0.00398406374501992,
-   "+25000 (bet365)"
+   "Alex Smalley",
+   0.1591,
+   0.18018018018018017,
+   "+455 (draftkings)"
   ],
   [
-   "Nick Taylor",
-   0.0785,
-   0.11627906976744186,
-   "+760 (draftkings)"
+   "Michael Brennan",
+   0.1584,
+   0.20618556701030927,
+   "+385 (draftkings)"
   ],
   [
-   "Ryan Fox",
-   0.0719,
-   0.00398406374501992,
-   "+25000 (bet365)"
+   "Nicolai Hojgaard",
+   0.156,
+   0.18181818181818182,
+   "+450 (draftkings)"
   ],
   [
-   "Matt McCarty",
-   0.0711,
-   0.00398406374501992,
-   "+25000 (bet365)"
+   "Bud Cauley",
+   0.156,
+   0.16393442622950818,
+   "+510 (draftkings)"
   ],
   [
-   "Nico Echavarria",
-   0.0708,
-   0.21052631578947367,
-   "+375 (draftkings)"
+   "Sungjae Im",
+   0.1559,
+   0.20833333333333334,
+   "+380 (draftkings)"
+  ],
+  [
+   "Adam Scott",
+   0.1558,
+   0.19801980198019803,
+   "+405 (draftkings)"
+  ],
+  [
+   "Robert MacIntyre",
+   0.1553,
+   0.19801980198019803,
+   "+405 (draftkings)"
+  ],
+  [
+   "Alex Fitzpatrick",
+   0.144,
+   0.16806722689075632,
+   "+495 (draftkings)"
+  ],
+  [
+   "Justin Rose",
+   0.1436,
+   0.18181818181818182,
+   "+450 (draftkings)"
+  ],
+  [
+   "Jacob Bridgeman",
+   0.1428,
+   0.17699115044247787,
+   "+465 (draftkings)"
+  ],
+  [
+   "Rickie Fowler",
+   0.1418,
+   0.19607843137254902,
+   "+410 (draftkings)"
+  ],
+  [
+   "Alex Noren",
+   0.1408,
+   0.17391304347826086,
+   "+475 (draftkings)"
+  ],
+  [
+   "Kristoffer Reitan",
+   0.139,
+   0.16393442622950818,
+   "+510 (draftkings)"
   ],
   [
    "Gary Woodland",
-   0.0692,
+   0.1137,
+   0.136986301369863,
+   "+630 (draftkings)"
+  ],
+  [
+   "Ryan Fox",
+   0.1097,
+   0.13333333333333333,
+   "+650 (draftkings)"
+  ],
+  [
+   "Akshay Bhatia",
+   0.1058,
+   0.136986301369863,
+   "+630 (draftkings)"
+  ],
+  [
+   "Aaron Rai",
+   0.1022,
+   0.14925373134328357,
+   "+570 (draftkings)"
+  ],
+  [
+   "J.T. Poston",
+   0.1017,
+   0.12345679012345678,
+   "+710 (draftkings)"
+  ],
+  [
+   "Eric Cole",
+   0.1008,
+   0.11494252873563218,
+   "+770 (draftkings)"
+  ],
+  [
+   "Ryo Hisatsune",
+   0.098,
+   0.12345679012345678,
+   "+710 (draftkings)"
+  ],
+  [
+   "Nico Echavarria",
+   0.0882,
+   0.11235955056179775,
+   "+790 (draftkings)"
+  ],
+  [
+   "Sepp Straka",
+   0.0853,
    0.07272727272727272,
    "+1275 (draftkings)"
   ],
   [
-   "Sam Stevens",
-   0.0645,
-   0.004424778761061947,
-   "+22500 (bet365)"
+   "Sahith Theegala",
+   0.0746,
+   0.09345794392523364,
+   "+970 (draftkings)"
   ],
   [
-   "Sepp Straka",
-   0.0601,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Max Homa",
-   0.053,
-   0.012048192771084338,
-   "+8200 (draftkings)"
-  ],
-  [
-   "Sudarshan Yellamaraju",
-   0.0459,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Matti Schmid",
-   0.0446,
-   0.004149377593360996,
-   "+24000 (draftkings)"
-  ],
-  [
-   "Pierceson Coody",
-   0.043,
-   0.05263157894736842,
-   "+1800 (draftkings)"
-  ],
-  [
-   "Aldrich Potgieter",
-   0.0231,
-   0.00398406374501992,
-   "+25000 (bet365)"
-  ],
-  [
-   "Patrick Rodgers",
-   0.0215,
-   0.0392156862745098,
-   "+2450 (draftkings)"
+   "Matt McCarty",
+   0.0647,
+   0.07272727272727272,
+   "+1275 (draftkings)"
   ]
  ],
  "W20": [
   [
    "Scottie Scheffler",
-   0.7053,
-   0.9999000099990001,
-   "-1000000 (pointsbet)"
-  ],
-  [
-   "Rory McIlroy",
-   0.5034,
-   0.009900990099009901,
-   "+10000 (bet365)"
+   0.8014,
+   0.9047619047619048,
+   "-950 (draftkings)"
   ],
   [
    "Xander Schauffele",
-   0.4863,
-   0.4854368932038835,
-   "+106 (draftkings)"
+   0.5986,
+   0.6575342465753424,
+   "-192 (draftkings)"
   ],
   [
-   "Cameron Young",
-   0.4854,
-   0.12987012987012986,
-   "+670 (draftkings)"
+   "Rory McIlroy",
+   0.5974,
+   0.6721311475409836,
+   "-205 (draftkings)"
+  ],
+  [
+   "Ludvig Aberg",
+   0.5937,
+   0.6428571428571429,
+   "-180 (draftkings)"
   ],
   [
    "Tommy Fleetwood",
-   0.4835,
-   0.9523809523809523,
-   "-2000 (draftkings)"
+   0.5744,
+   0.6774193548387096,
+   "-210 (draftkings)"
+  ],
+  [
+   "Cameron Young",
+   0.5574,
+   0.6268656716417911,
+   "-168 (draftkings)"
+  ],
+  [
+   "Sam Burns",
+   0.5565,
+   0.6598639455782312,
+   "-194 (draftkings)"
   ],
   [
    "Matt Fitzpatrick",
-   0.4605,
+   0.5512,
+   0.6402877697841727,
+   "-178 (draftkings)"
+  ],
+  [
+   "Chris Gotterup",
+   0.5191,
+   0.5967741935483871,
+   "-148 (draftkings)"
+  ],
+  [
+   "Si Woo Kim",
+   0.5185,
    0.6062992125984252,
    "-154 (draftkings)"
   ],
   [
-   "Justin Thomas",
-   0.4385,
-   0.1834862385321101,
-   "+445 (draftkings)"
+   "Hideki Matsuyama",
+   0.5068,
+   0.6031746031746031,
+   "-152 (draftkings)"
   ],
   [
-   "Si Woo Kim",
-   0.4373,
-   0.8888888888888888,
-   "-800 (draftkings)"
-  ],
-  [
-   "Sam Burns",
-   0.4287,
-   0.9950248756218906,
-   "-20000 (draftkings)"
+   "Viktor Hovland",
+   0.4958,
+   0.5901639344262295,
+   "-144 (draftkings)"
   ],
   [
    "Patrick Cantlay",
-   0.4174,
-   0.7101449275362319,
-   "-245 (draftkings)"
+   0.4952,
+   0.5726495726495726,
+   "-134 (draftkings)"
   ],
   [
-   "Hideki Matsuyama",
-   0.4158,
-   0.8888888888888888,
-   "-800 (draftkings)"
+   "Collin Morikawa",
+   0.4529,
+   0.5689655172413793,
+   "-132 (draftkings)"
   ],
   [
-   "Ludvig Aberg",
-   0.41,
+   "Justin Thomas",
+   0.4426,
+   0.5454545454545454,
+   "-120 (draftkings)"
+  ],
+  [
+   "Maverick McNealy",
+   0.4333,
+   0.47619047619047616,
+   "+110 (draftkings)"
+  ],
+  [
+   "Wyndham Clark",
+   0.4291,
+   0.5327102803738317,
+   "-114 (draftkings)"
+  ],
+  [
+   "Min Woo Lee",
+   0.4241,
+   0.46296296296296297,
+   "+116 (draftkings)"
+  ],
+  [
+   "Michael Thorbjornsen",
+   0.4225,
    0.45454545454545453,
    "+120 (draftkings)"
   ],
   [
-   "Collin Morikawa",
-   0.4036,
-   0.058823529411764705,
-   "+1600 (bet365)"
-  ],
-  [
-   "Viktor Hovland",
-   0.3939,
-   0.7959183673469388,
-   "-390 (draftkings)"
-  ],
-  [
-   "Russell Henley",
-   0.3878,
-   0.2857142857142857,
-   "+250 (draftkings)"
+   "Ben Griffin",
+   0.4216,
+   0.4424778761061947,
+   "+126 (draftkings)"
   ],
   [
    "Ryan Gerard",
-   0.3688,
-   0.25,
-   "+300 (draftkings)"
-  ],
-  [
-   "Chris Gotterup",
-   0.3651,
-   0.6825396825396826,
-   "-215 (draftkings)"
-  ],
-  [
-   "Ben Griffin",
-   0.3534,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Maverick McNealy",
-   0.3482,
-   0.373134328358209,
-   "+168 (draftkings)"
-  ],
-  [
-   "Jackson Koivun",
-   0.3453,
-   0.4098360655737705,
-   "+144 (draftkings)"
-  ],
-  [
-   "Tom Kim",
-   0.3409,
-   0.7916666666666666,
-   "-380 (draftkings)"
-  ],
-  [
-   "Aaron Rai",
-   0.3405,
-   0.14084507042253522,
-   "+610 (draftkings)"
-  ],
-  [
-   "Robert MacIntyre",
-   0.3357,
-   null,
-   "\u2014"
-  ],
-  [
-   "J.J. Spaun",
-   0.3304,
-   0.390625,
-   "+156 (draftkings)"
-  ],
-  [
-   "Min Woo Lee",
-   0.313,
-   0.01098901098901099,
-   "+9000 (bet365)"
-  ],
-  [
-   "Michael Thorbjornsen",
-   0.3095,
-   0.021739130434782608,
-   "+4500 (bet365)"
-  ],
-  [
-   "Alex Fitzpatrick",
-   0.2984,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Wyndham Clark",
-   0.2974,
-   0.6621621621621622,
-   "-196 (draftkings)"
-  ],
-  [
-   "Sungjae Im",
-   0.2939,
-   0.9876543209876543,
-   "-8000 (draftkings)"
-  ],
-  [
-   "Shane Lowry",
-   0.289,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Alex Noren",
-   0.2809,
-   0.8461538461538461,
-   "-550 (draftkings)"
-  ],
-  [
-   "Alex Smalley",
-   0.2798,
-   0.24096385542168675,
-   "+315 (draftkings)"
-  ],
-  [
-   "Bud Cauley",
-   0.2742,
-   0.21978021978021978,
-   "+355 (draftkings)"
-  ],
-  [
-   "Harris English",
-   0.2733,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Justin Rose",
-   0.2709,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Kurt Kitayama",
-   0.2708,
-   0.7435897435897436,
-   "-290 (draftkings)"
-  ],
-  [
-   "Corey Conners",
-   0.2672,
-   0.014084507042253521,
-   "+7000 (bet365)"
-  ],
-  [
-   "Rickie Fowler",
-   0.2658,
-   0.373134328358209,
-   "+168 (draftkings)"
-  ],
-  [
-   "Jordan Smith",
-   0.2573,
-   0.03225806451612903,
-   "+3000 (bet365)"
-  ],
-  [
-   "Akshay Bhatia",
-   0.2546,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Keith Mitchell",
-   0.2543,
-   0.3448275862068966,
-   "+190 (draftkings)"
-  ],
-  [
-   "Jacob Bridgeman",
-   0.2534,
-   0.3448275862068966,
-   "+190 (draftkings)"
-  ],
-  [
-   "Michael Brennan",
-   0.2483,
-   0.08333333333333333,
-   "+1100 (draftkings)"
-  ],
-  [
-   "J.T. Poston",
-   0.2462,
-   0.5867768595041323,
-   "-142 (draftkings)"
-  ],
-  [
-   "Jordan Spieth",
-   0.2456,
+   0.4211,
    0.4854368932038835,
    "+106 (draftkings)"
   ],
   [
-   "Adam Scott",
-   0.2348,
-   0.609375,
-   "-156 (draftkings)"
+   "Tom Kim",
+   0.4183,
+   0.5283018867924528,
+   "-112 (draftkings)"
   ],
   [
-   "Kristoffer Reitan",
-   0.2336,
-   0.009900990099009901,
-   "+10000 (bet365)"
+   "Russell Henley",
+   0.4,
+   0.5,
+   "+100 (draftkings)"
   ],
   [
-   "Eric Cole",
-   0.2321,
-   0.009900990099009901,
-   "+10000 (bet365)"
+   "Kurt Kitayama",
+   0.3999,
+   0.46511627906976744,
+   "+115 (draftkings)"
   ],
   [
-   "Brian Harman",
-   0.2286,
-   0.8305084745762712,
-   "-490 (draftkings)"
-  ],
-  [
-   "Michael Kim",
-   0.2256,
-   0.027777777777777776,
-   "+3500 (bet365)"
-  ],
-  [
-   "Nicolai Hojgaard",
-   0.2171,
-   0.029411764705882353,
-   "+3300 (bet365)"
-  ],
-  [
-   "Ryo Hisatsune",
-   0.2154,
-   0.058823529411764705,
-   "+1600 (draftkings)"
-  ],
-  [
-   "Harry Hall",
-   0.2109,
-   0.20202020202020202,
-   "+395 (draftkings)"
+   "J.J. Spaun",
+   0.3978,
+   0.47619047619047616,
+   "+110 (draftkings)"
   ],
   [
    "Jake Knapp",
-   0.2035,
-   0.8888888888888888,
-   "-800 (draftkings)"
+   0.3972,
+   0.4716981132075472,
+   "+112 (draftkings)"
   ],
   [
-   "Sahith Theegala",
-   0.1951,
-   0.009900990099009901,
-   "+10000 (bet365)"
+   "Bud Cauley",
+   0.3563,
+   0.37593984962406013,
+   "+166 (draftkings)"
   ],
   [
-   "Nick Taylor",
-   0.1945,
-   0.42735042735042733,
-   "+134 (draftkings)"
+   "Alex Smalley",
+   0.3553,
+   0.4,
+   "+150 (draftkings)"
   ],
   [
-   "Ricky Castillo",
-   0.1872,
-   0.009900990099009901,
-   "+10000 (bet365)"
+   "Michael Brennan",
+   0.3532,
+   0.423728813559322,
+   "+136 (draftkings)"
+  ],
+  [
+   "Adam Scott",
+   0.3518,
+   0.423728813559322,
+   "+136 (draftkings)"
+  ],
+  [
+   "Sungjae Im",
+   0.3515,
+   0.43859649122807015,
+   "+128 (draftkings)"
+  ],
+  [
+   "Robert MacIntyre",
+   0.3511,
+   0.4132231404958678,
+   "+142 (draftkings)"
+  ],
+  [
+   "Nicolai Hojgaard",
+   0.3491,
+   0.3968253968253968,
+   "+152 (draftkings)"
+  ],
+  [
+   "Justin Rose",
+   0.3344,
+   0.4,
+   "+150 (draftkings)"
+  ],
+  [
+   "Kristoffer Reitan",
+   0.3341,
+   0.37037037037037035,
+   "+170 (draftkings)"
+  ],
+  [
+   "Alex Noren",
+   0.3329,
+   0.3937007874015748,
+   "+154 (draftkings)"
+  ],
+  [
+   "Alex Fitzpatrick",
+   0.33,
+   0.3816793893129771,
+   "+162 (draftkings)"
+  ],
+  [
+   "Rickie Fowler",
+   0.3232,
+   0.423728813559322,
+   "+136 (draftkings)"
+  ],
+  [
+   "Jacob Bridgeman",
+   0.3229,
+   0.3937007874015748,
+   "+154 (draftkings)"
   ],
   [
    "Ryan Fox",
-   0.1782,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Matt McCarty",
-   0.1761,
-   0.009900990099009901,
-   "+10000 (bet365)"
+   0.2837,
+   0.31746031746031744,
+   "+215 (draftkings)"
   ],
   [
    "Gary Woodland",
-   0.1738,
-   0.3225806451612903,
-   "+210 (draftkings)"
+   0.2798,
+   0.32786885245901637,
+   "+205 (draftkings)"
+  ],
+  [
+   "Akshay Bhatia",
+   0.2665,
+   0.3333333333333333,
+   "+200 (draftkings)"
+  ],
+  [
+   "Aaron Rai",
+   0.2661,
+   0.35714285714285715,
+   "+180 (draftkings)"
+  ],
+  [
+   "J.T. Poston",
+   0.2613,
+   0.3076923076923077,
+   "+225 (draftkings)"
+  ],
+  [
+   "Eric Cole",
+   0.2602,
+   0.29411764705882354,
+   "+240 (draftkings)"
+  ],
+  [
+   "Ryo Hisatsune",
+   0.2573,
+   0.3125,
+   "+220 (draftkings)"
   ],
   [
    "Nico Echavarria",
-   0.1737,
-   0.5652173913043478,
-   "-130 (draftkings)"
-  ],
-  [
-   "Sam Stevens",
-   0.1617,
-   0.047619047619047616,
-   "+2000 (bet365)"
+   0.2415,
+   0.2857142857142857,
+   "+250 (draftkings)"
   ],
   [
    "Sepp Straka",
-   0.1575,
-   0.009900990099009901,
-   "+10000 (bet365)"
+   0.2226,
+   0.2127659574468085,
+   "+370 (draftkings)"
   ],
   [
-   "Max Homa",
-   0.1481,
-   0.10309278350515463,
-   "+870 (draftkings)"
+   "Sahith Theegala",
+   0.2034,
+   0.25,
+   "+300 (draftkings)"
   ],
   [
-   "Sudarshan Yellamaraju",
-   0.1304,
-   0.024390243902439025,
-   "+4000 (bet365)"
-  ],
-  [
-   "Matti Schmid",
-   0.1248,
-   0.04878048780487805,
-   "+1950 (draftkings)"
-  ],
-  [
-   "Pierceson Coody",
-   0.1172,
-   0.2597402597402597,
-   "+285 (draftkings)"
-  ],
-  [
-   "Aldrich Potgieter",
-   0.0758,
-   0.009900990099009901,
-   "+10000 (bet365)"
-  ],
-  [
-   "Patrick Rodgers",
-   0.0748,
-   0.21739130434782608,
-   "+360 (draftkings)"
+   "Matt McCarty",
+   0.1854,
+   0.21052631578947367,
+   "+375 (draftkings)"
   ]
  ],
  "RS": []
