@@ -64,6 +64,18 @@ grade DK's actual price against it. No multi-book split here — model vs. DK
 only, same as the matchup grade minus the consensus half, because there's no
 second book to compare against. See MAP 5 / build_round_scores() below.
 
+BIRDIES OR BETTER O/U (added this session): same situation as Round Score —
+DataGolf's Betting Tools only covers Outrights and Matchups (confirmed against
+their docs, same check as above), so there's no feed for this market either.
+Graded the identical way: drop DraftKings' Birdies Or Better board (raw
+copy-paste) into birdies_paste.txt next to this script, and build() parses it
+and grades DK's actual price against birdie_bogey_engine.birdies_or_better_prob()
+— a Binomial(18,p) per-round model, p shifted from a rough Tour-average
+baseline by the player's own projected strokes-gained vs. the live field
+average (same engine already ported to JS for the PrizePicks panel on the
+page — this is the Python-side source of truth it was ported FROM). See MAP 6 /
+build_birdies() below.
+
 course_fit_table.json (written by load_course_fit_xlsx.py from
 course_fit_template.xlsx) is now read automatically if present, and used both
 for the F table and as the course-level scoreSD/blowup input to the sim. Falls
@@ -82,11 +94,13 @@ from collections import defaultdict, Counter
 
 from sim_engine import (run_matchup_sim, run_finish_sim, round_total_prob,
                          TOUR_BASELINE_SD, DEFAULT_BLOWUP, N_TRIALS as SIM_N_TRIALS)
+from birdie_bogey_engine import birdies_or_better_prob, bogeys_or_worse_prob
 
 BASE = "https://feeds.datagolf.com"
 OUT  = "rods_data.json"
 COURSE_FIT_TABLE = "course_fit_table.json"   # written by load_course_fit_xlsx.py, optional
 ROUND_SCORE_PASTE_FILE = "round_score_paste.txt"   # optional — see MAP 5 below
+BIRDIES_PASTE_FILE = "birdies_paste.txt"   # optional — see MAP 6 below
 
 # ---- endpoints we use for Path A ----
 EP = {
@@ -499,19 +513,26 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
     # standard 2-way market (ties refunded — "ties": "void") and a 3-way market (ties as
     # their own outcome — "ties": "separate bet offered"). Confirmed live: the 3-way variant
     # carries far fewer books and never includes DraftKings, so keeping both just duplicates
-    # every such pairing with a worse, less-actionable price — always prefer the void (2-way)
-    # entry's price when both exist.
+    # every such pairing with a worse, less-actionable price. This part applies to BOTH
+    # market types — always prefer the void (2-way) entry's price when both exist.
     #
-    # REVERSED (previous version required round_matchups pairs to have BOTH tie types before
-    # counting them as "real", on the theory that fabricated cross-group pairings only ever
-    # got a "void" entry). Confirmed against a live round_matchups pull with ~90 real,
-    # book-backed pairings (multiple books deep, including cross-3-ball-group pairs like
-    # Blanchet/Sargent + Blanchet/Keefer + Sargent/Keefer all posted separately off the same
-    # tee group — completely normal, not fabricated) where only 2 pairs had a "separate bet
-    # offered" sibling at all. The dual-tie-type filter was dropping ~98% of genuine matchups
-    # on a heuristic that doesn't hold in general — a pairing having only "void" is the
-    # NORMAL case, not a red flag. Removed; round_matchups and tournament_matchups now get
-    # the same simple dedup (prefer void, else take whatever's there).
+    # The DUAL-TIE-STRUCTURE REQUIREMENT (a pair only counts as "real" if it has BOTH tie
+    # types) is market-SPECIFIC and does NOT generalize — confirmed with two separate live
+    # pulls:
+    #   - round_matchups (single-round 2-ball, tied to actual tee groups): every genuine
+    #     tee-group pairing appeared under BOTH tie structures; "alternate" cross-group
+    #     pairings (not real tee groups — e.g. "McIlroy vs Schauffele" when their real groups
+    #     were McIlroy/Bridgeman and Fox/Schauffele) only ever had "void", no sibling. The
+    #     dual-structure check correctly separated real from fabricated here.
+    #   - tournament_matchups (72-hole, NOT tied to tee groups at all — any two named players
+    #     can have a legitimate full-tournament head-to-head): confirmed live, 116 of 128 real
+    #     pairs had ONLY "void", no "separate" sibling — ties are near-impossible over 72
+    #     holes, so books mostly skip offering the 3-way variant at all. Applying the
+    #     round_matchups-derived dual-structure rule here wrongly dropped 128 real matchups
+    #     down to 12. There's no "fabricated pairing" concept for tournament matchups in the
+    #     first place — any two players is a legitimate market — so this market just needs
+    #     simple dedup, not the stricter round_matchups filter.
+    require_dual_tie_types = (market_used == "round_matchups")
     by_pair = defaultdict(list)
     for r in raw_rows:
         p1_raw = pick(r, "p1_player_name", "player1", "p1")
@@ -521,6 +542,10 @@ def build_matchups(matchup_payload, wave_by_name, proj_by_name, course_row, n_ro
         by_pair[(p1_raw, p2_raw)].append(r)
     rows = []
     for key, entries in by_pair.items():
+        if require_dual_tie_types:
+            tie_types = {e.get("ties") for e in entries}
+            if "separate bet offered" not in tie_types:
+                continue  # alternate/cross-group pairing (round_matchups only) — drop it
         void_entry = next((e for e in entries if e.get("ties") == "void"), None)
         rows.append(void_entry if void_entry is not None else entries[0])
     pairs = []
@@ -742,6 +767,109 @@ def build_round_scores(raw_text, proj_by_name, course_row, ev_threshold=EV_THRES
     return rows
 
 
+# ------------------------------------------------------------------
+# MAP 6: Birdies Or Better O/U (the `BB` array) — also NOT a DataGolf feed
+# ------------------------------------------------------------------
+# Same situation as Round Score above (see MAP 5's docstring) — confirmed
+# against DataGolf's own API docs, Betting Tools only covers Outrights and
+# Matchups, so there's no auto-fetch possible here either. Same convention:
+# drop DraftKings' Birdies Or Better board (raw copy-paste) into
+# BIRDIES_PASTE_FILE next to this script; skipped entirely (no error) if it
+# doesn't exist.
+#
+# Graded against birdie_bogey_engine.birdies_or_better_prob() instead of
+# sim_engine.round_total_prob() — a Binomial(18,p) per-round count model
+# rather than a continuous-score Monte Carlo, since "how many birdies" is a
+# discrete count, not a total-strokes distribution. p is a rough Tour-average
+# baseline (3.75 birdies/round) shifted by the player's projected strokes-
+# gained vs. the live field average for this event (field_avg - player's
+# effective proj — same "SG vs field" input the ported JS version on the page
+# uses for the PrizePicks panel, so Python and JS agree on what that number
+# means). Not fit from real historical birdie-count data yet — flagged in
+# birdie_bogey_engine.py's own docstring, not hidden here either.
+DK_BIRDIES_RE = re.compile(
+    r"([A-Za-z][A-Za-z.’'\-\ ]*?)\s+Birdies\s+Or\s+Better\s*-\s*Round\s*\d+\s*O/U\s*\n"
+    r"Over\s*([\d.]+)\s*\n"
+    r"([+−\-]\s*\d+)\s*\n"
+    r"Under\s*([\d.]+)\s*\n"
+    r"([+−\-]\s*\d+)"
+)
+
+
+def parse_dk_birdies_paste(raw_text):
+    """
+    Same shape/logic as parse_dk_round_score_paste() (see MAP 5) — pulls every
+    "<Player> Birdies Or Better - Round N O/U / OverX.5 / <price> / UnderX.5 /
+    <price>" block out of a raw DraftKings copy-paste, same U+2212 minus-sign
+    normalization DraftKings needs everywhere else on this page.
+    Returns a list of {"player":, "line":, "over_price":, "under_price":}.
+    """
+    out = []
+    for m in DK_BIRDIES_RE.finditer(raw_text):
+        player, line, over_price, under_price = m.group(1), m.group(2), m.group(3), m.group(5)
+        out.append({
+            "player": player.strip(),
+            "line": float(line),
+            "over_price": over_price.replace("−", "-").replace(" ", ""),
+            "under_price": under_price.replace("−", "-").replace(" ", ""),
+        })
+    return out
+
+
+def build_birdies(raw_text, proj_by_name, ev_threshold=EV_THRESHOLD):
+    """
+    Parse a raw DraftKings Birdies Or Better O/U paste, grade each line
+    against birdie_bogey_engine.birdies_or_better_prob() using this event's
+    live field-average projection as the "strokes gained vs field" baseline
+    (same field_avg - player_proj computation the page's JS
+    ppFieldAvgEffectiveProj()/birdiesOrBetterProb() pairing already does
+    client-side for PrizePicks), and return Rod's `BB` rows:
+      [player, line, side, price, modelPct, evPct]
+    side is whichever of Over/Under is the better bet at DK's actual price.
+    Unresolved/unmodeled names are skipped and reported to stdout, same
+    convention as build_round_scores().
+    """
+    means = [v["mean"] for v in proj_by_name.values() if v.get("mean") is not None]
+    field_avg = (sum(means) / len(means)) if means else None
+
+    entries = parse_dk_birdies_paste(raw_text)
+    rows, skipped = [], []
+    if field_avg is None:
+        skipped = [e["player"] for e in entries]
+        if skipped:
+            print(f"   birdies: skipped {len(skipped)} — no field-average projection available yet")
+        return rows
+
+    for e in entries:
+        resolved = resolve_player_name(e["player"], proj_by_name)
+        proj = proj_by_name.get(resolved) if resolved else None
+        if not proj or proj.get("mean") is None:
+            skipped.append(e["player"])
+            continue
+        sg_vs_field = field_avg - proj["mean"]  # positive = better than the field average
+        p_over = birdies_or_better_prob(e["line"], sg_vs_field)
+        p_under = 1 - p_over
+
+        dec_over, dec_under = american_to_decimal(e["over_price"]), american_to_decimal(e["under_price"])
+        ev_over = (p_over * dec_over - 1) * 100 if dec_over else None
+        ev_under = (p_under * dec_under - 1) * 100 if dec_under else None
+        if ev_over is None and ev_under is None:
+            skipped.append(e["player"])
+            continue
+
+        if ev_under is None or (ev_over is not None and ev_over >= ev_under):
+            side, price, model_pct, ev_pct = "over", e["over_price"], p_over * 100, ev_over
+        else:
+            side, price, model_pct, ev_pct = "under", e["under_price"], p_under * 100, ev_under
+
+        rows.append([resolved, e["line"], side, price, round(model_pct, 2), round(ev_pct, 2)])
+
+    if skipped:
+        print(f"   birdies: skipped {len(skipped)} unresolved/unmodeled name(s): {', '.join(skipped)}")
+    rows.sort(key=lambda r: -r[5])
+    return rows
+
+
 def as_prob(x):
     """Coerce a probability that might be 0-1 or 0-100 into a 0-1 float."""
     if x is None or x == "":
@@ -892,20 +1020,20 @@ def fetch_matchups_with_fallback(key, tour):
 def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=DEFAULT_BASELINE_ROUND_SCORE,
           ev_threshold=EV_THRESHOLD):
     key = get_key()
-    print(f"[1/7] player decompositions ({tour}) ...")
+    print(f"[1/8] player decompositions ({tour}) ...")
     decomp = fetch(EP["decomp"], key, tour=tour)
-    print(f"[2/7] skill ratings ...")
+    print(f"[2/8] skill ratings ...")
     skill = fetch(EP["skill"], key)  # not tour-specific — season-level skill ratings
-    print(f"[3/7] pre-tournament predictions ({tour}) ...")
+    print(f"[3/8] pre-tournament predictions ({tour}) ...")
     pretourn = fetch(EP["pretourn"], key, tour=tour, odds_format="percent")  # win/top-N/make-cut probs;
     # not used directly — no projected-score field exists here (confirmed live). Kept in
     # case you want to sanity-check the finish sim against DataGolf's own probabilities.
-    print(f"[4/7] field / tee times ({tour}) ...")
+    print(f"[4/8] field / tee times ({tour}) ...")
     field = fetch(EP["field"], key, tour=tour)
-    print(f"[5/7] matchups ({tour}) ...")
+    print(f"[5/8] matchups ({tour}) ...")
     matchup_rows, market_used, auto_rounds = fetch_matchups_with_fallback(key, tour)
     print(f"   using market: {market_used} ({len(matchup_rows)} matchups)")
-    print(f"[6/7] outrights (win/top5/top10/top20, {tour}) ...")
+    print(f"[6/8] outrights (win/top5/top10/top20, {tour}) ...")
     # market param values per DataGolf's docs: win, top_5, top_10, top_20 (also make_cut/frl exist,
     # not pulled here — not asked for, and make_cut needs real cut-line modeling this sim doesn't do yet)
     FINISH_MARKETS = [("win", "win"), ("top_5", "top5"), ("top_10", "top10"), ("top_20", "top20")]
@@ -964,12 +1092,27 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
     if os.path.exists(ROUND_SCORE_PASTE_FILE):
         with open(ROUND_SCORE_PASTE_FILE, encoding="utf-8") as f:
             raw_paste = f.read()
-        print(f"[7/7] round score O/U (from {ROUND_SCORE_PASTE_FILE}) ...")
+        print(f"[7/8] round score O/U (from {ROUND_SCORE_PASTE_FILE}) ...")
         RS = build_round_scores(raw_paste, proj_by_name, target_course_row, ev_threshold=ev_threshold)
         playable_rs = [r for r in RS if r[5] >= ev_threshold]
         print(f"   {len(playable_rs)} of {len(RS)} round-score lines clear {ev_threshold:.1f}% EV at DraftKings")
     else:
-        print(f"[7/7] round score O/U — no {ROUND_SCORE_PASTE_FILE} found, skipping (paste DK's board into that "
+        print(f"[7/8] round score O/U — no {ROUND_SCORE_PASTE_FILE} found, skipping (paste DK's board into that "
+              f"file next to this script to grade it each run)")
+
+    # Birdies Or Better O/U (see MAP 6) — same optional-paste-file convention as Round
+    # Score. No DataGolf feed for this market either (same doc-confirmed gap), so this
+    # grades model (birdie_bogey_engine) vs. whatever single DK price is in the file.
+    BB = []
+    if os.path.exists(BIRDIES_PASTE_FILE):
+        with open(BIRDIES_PASTE_FILE, encoding="utf-8") as f:
+            raw_birdies_paste = f.read()
+        print(f"[8/8] birdies or better O/U (from {BIRDIES_PASTE_FILE}) ...")
+        BB = build_birdies(raw_birdies_paste, proj_by_name, ev_threshold=ev_threshold)
+        playable_bb = [r for r in BB if r[5] >= ev_threshold]
+        print(f"   {len(playable_bb)} of {len(BB)} birdies-or-better lines clear {ev_threshold:.1f}% EV at DraftKings")
+    else:
+        print(f"[8/8] birdies or better O/U — no {BIRDIES_PASTE_FILE} found, skipping (paste DK's board into that "
               f"file next to this script to grade it each run)")
 
     # convert to the compact array shapes the page's JS already expects.
@@ -994,12 +1137,13 @@ def build(tour, matchup_rounds=None, finish_trials=10000, baseline_round_score=D
             "draw_bias": None,   # fill when you add forecast/results logic
             "ev_threshold": ev_threshold,
         },
-        "P": P, "F": F, "M": M, "W": W, "W5": W5, "W10": W10, "W20": W20, "RS": RS,
+        "P": P, "F": F, "M": M, "W": W, "W5": W5, "W10": W10, "W20": W20, "RS": RS, "BB": BB,
     }
     with open(OUT, "w") as f:
         json.dump(data, f, indent=1)
     print(f"\nWrote {OUT}: event='{event_name}' course='{course_name}' — {len(P)} players, {len(M)} matchups, "
-          f"{len(W)}/{len(W5)}/{len(W10)}/{len(W20)} win/top5/top10/top20 rows, {len(RS)} round-score rows.")
+          f"{len(W)}/{len(W5)}/{len(W10)}/{len(W20)} win/top5/top10/top20 rows, {len(RS)} round-score rows, "
+          f"{len(BB)} birdies-or-better rows.")
     return data
 
 
