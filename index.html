@@ -894,15 +894,16 @@ function initials(name){const p=name.split(' ');return (p[0][0]+(p[p.length-1][0
 // Round Score line: +3.9% Edge but -0.1% EV once the vig on that specific price was
 // accounted for). Edge% alone was letting plays through that looked real against the fair
 // market but had nothing left once you priced in the vig. Now requires BOTH: Edge% clearing
-// the threshold (a real, non-trivial model disagreement) AND EV% > 0 at the actual price
-// you'd bet (the disagreement hasn't already been eaten by the book's juice). FADE has no
-// EV gate here -- there's no literal opposing price to "fade" an outright win market at
-// (it's informational only; no +trk button ever appears for a FADE call in this tab).
+// the threshold (a real, non-trivial model disagreement) AND EV% clearing its own 3% bar at
+// the actual price you'd bet (Rod's real staking cutoff -- a barely-positive EV% was still
+// letting plays through that weren't worth the vig, once he looked at the actual numbers).
+// FADE has no EV gate here -- there's no literal opposing price to "fade" an outright win
+// market at (it's informational only; no +trk button ever appears for a FADE call in this tab).
 function winCallFor(edge, price, model) {
   if (edge === null) return { call: '—', cls: 'thin' };
   const pct = edge * 100;
   const ev = computeBetEV(price, model);
-  if (pct >= 1.5 && ev !== null && ev > 0) return { call: 'BET', cls: 'edge' };   // tighter threshold than matchups —
+  if (pct >= 1.5 && ev !== null && ev >= 3) return { call: 'BET', cls: 'edge' };   // tighter Edge threshold than matchups —
   if (pct <= -1.5) return { call: 'FADE', cls: 'fade' }; // outright win% swings are small in absolute terms
   return { call: 'PASS', cls: 'thin' };
 }
@@ -1406,11 +1407,11 @@ function buildThreeBall(search='') {
   lastThreeBallPlays = []; // repopulated below — 3-ball bulk-adds are always tracking-only, same rule as the individual +trk here
   rows.forEach(r => {
     const edgePct = r.edge * 100;
-    // Edge% ≥ 3% alone isn't enough -- also requires positive EV% at the actual price (vig
-    // included), same principle as Matchups/Round Score/Outrights. r.price has no book suffix
-    // yet here, but computeBetEV only needs the number, so that's fine.
+    // Edge% ≥ 3% alone isn't enough -- also requires EV% ≥ 3% at the actual price (vig
+    // included), same principle and same 3% cutoff as Matchups/Round Score/Outrights/Birdies.
+    // r.price has no book suffix yet here, but computeBetEV only needs the number, so that's fine.
     const evTb = computeBetEV(r.price, r.model);
-    const qualifies = edgePct >= 3 && evTb !== null && evTb > 0;
+    const qualifies = edgePct >= 3 && evTb !== null && evTb >= 3;
     const call = qualifies ? 'BET' : 'PASS'; // FADE doesn't cleanly apply to a 3-way market — "the other two combined" isn't one bettable side
     const cls = qualifies ? 'edge' : 'thin';
     const edgeCls = edgePct >= 0 ? 'val-pos' : 'val-neg';
@@ -1490,15 +1491,16 @@ function buildMatch(search=''){
     // Edge% (model vs. no-vig market) alone isn't enough to call a play -- confirmed live on
     // a real Round Score line (Doug Ghim, +3.9% Edge but -0.1% EV once the vig on the actual
     // price was priced in) that Edge% can clear the bar while there's nothing left at the real
-    // price. Now requires EV% > 0 too, computed fresh from whichever side/price the call would
-    // actually bet at (priceA for BET, priceB for FADE) -- not the pipeline's own DK-specific
-    // evPct, which can be null (thin consensus) or aligned to a different "side" than this
-    // no-vig-based call logic uses. Same gate as Round Score/Outrights/3-Ball.
+    // price. Now requires EV% ≥ 3% too (Rod's real staking cutoff, not just "positive"),
+    // computed fresh from whichever side/price the call would actually bet at (priceA for BET,
+    // priceB for FADE) -- not the pipeline's own DK-specific evPct, which can be null (thin
+    // consensus) or aligned to a different "side" than this no-vig-based call logic uses.
+    // Same gate as Round Score/Outrights/3-Ball/Birdies.
     const evA = computeBetEV(r.priceA, r.model);
     const evB = computeBetEV(r.priceB, (r.model !== null && r.model !== undefined) ? 1 - r.model : null);
     let call,cls;
-    if(edgePct>=3 && evA!==null && evA>0){call='BET';cls='edge';}
-    else if(edgePct<=-3 && evB!==null && evB>0){call='FADE';cls='fade';}
+    if(edgePct>=3 && evA!==null && evA>=3){call='BET';cls='edge';}
+    else if(edgePct<=-3 && evB!==null && evB>=3){call='FADE';cls='fade';}
     else{call='PASS';cls='thin';}
     const edgeCls=edgePct>=0?'val-pos':'val-neg';
     // FADE means the value is on player B, not A — use B's own price, not A's, so the
@@ -2291,8 +2293,8 @@ function renderBirdies() {
     const edgeO = (p.marketOver !== null) ? p.modelOver - p.marketOver : null;
     const evU = computeBetEV(p.underPrice, p.modelUnder);
     const evO = computeBetEV(p.overPrice, p.modelOver);
-    const uQualifies = edgeU !== null && edgeU * 100 >= 3 && evU !== null && evU > 0;
-    const oQualifies = edgeO !== null && edgeO * 100 >= 3 && evO !== null && evO > 0;
+    const uQualifies = edgeU !== null && edgeU * 100 >= 3 && evU !== null && evU >= 3;
+    const oQualifies = edgeO !== null && edgeO * 100 >= 3 && evO !== null && evO >= 3;
     let play = null;
     if (uQualifies && (!oQualifies || edgeU >= edgeO)) play = { side: 'Under', edge: edgeU, price: p.underPrice };
     else if (oQualifies) play = { side: 'Over', edge: edgeO, price: p.overPrice };
@@ -2950,12 +2952,12 @@ function renderRoundScore() {
     // Edge% alone isn't enough -- confirmed live that a line can clear 3% Edge against the
     // fair market and still have nothing left once the actual price's vig is priced in (e.g.
     // Doug Ghim's R4 Under 68.5: +3.9% Edge but -0.1% true EV at the real -124 price). Now
-    // requires EV% > 0 too, computed straight from the stored price for that side -- same gate
-    // as Matchups/Outrights/3-Ball.
+    // requires EV% ≥ 3% too (Rod's real staking cutoff, not just "positive"), computed
+    // straight from the stored price for that side -- same gate as Matchups/Outrights/3-Ball/Birdies.
     const evU = computeBetEV(p.underPrice, p.modelUnder);
     const evO = computeBetEV(p.overPrice, p.modelOver);
-    const uQualifies = edgeU !== null && edgeU * 100 >= 3 && evU !== null && evU > 0;
-    const oQualifies = edgeO !== null && edgeO * 100 >= 3 && evO !== null && evO > 0;
+    const uQualifies = edgeU !== null && edgeU * 100 >= 3 && evU !== null && evU >= 3;
+    const oQualifies = edgeO !== null && edgeO * 100 >= 3 && evO !== null && evO >= 3;
     if (uQualifies && (!oQualifies || edgeU >= edgeO)) play = { side: 'Under', edge: edgeU, price: p.underPrice };
     else if (oQualifies) play = { side: 'Over', edge: edgeO, price: p.overPrice };
     const bestEdge = Math.max(edgeU ?? -Infinity, edgeO ?? -Infinity);
