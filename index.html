@@ -626,6 +626,7 @@
 
 <!-- ============ TAB: BIRDIES OR BETTER ============ -->
 <div class="tabpane" id="tab-birdies">
+  <div style="padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:6px;margin-bottom:10px;font-size:12px" id="bbCorrectionBadge">No correction active — using the flat 3.75 birdies/round tour-average baseline.</div>
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
     <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Bulk Import — paste straight from DraftKings' Birdies Or Better page. Model % comes from the same Binomial(18,p) birdie-count engine already used for PrizePicks (see birdie_bogey_engine.py), graded against DraftKings' real two-sided price here instead of a pick'em payout.</label>
     <textarea id="bbBulkText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied slate here — e.g. player names, 'Birdies Or Better - Round N O/U' headers, Over/Under lines and prices, exactly as copied. Non-matching lines are ignored automatically."></textarea>
@@ -1857,9 +1858,36 @@ function ppBinomialSf(k, n, p) {
   for (let i = k + 1; i <= n; i++) total += ppChoose(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i);
   return total;
 }
-function ppBirdieRate(sgVsField, holes) {
+// Market-calibrated correction to the flat 3.75-birdies/round baseline above, computed from
+// real DraftKings Birdies Or Better prices on each import (see processBirdiesImport) -- plays
+// the same role fieldBaselineCorrection plays for Round Score's mean-score baseline. Confirmed
+// live this was needed: a real BMW Championship import showed 37 of 37 graded lines coming
+// back BET UNDER, every single one -- the sweep-warning's exact intended catch. Root cause was
+// this flat constant never getting corrected against anything real, unlike Round Score.
+// Persisted so it survives a reload; reset to 0 on a new tournament (see applyMeta). No
+// equivalent exists for bogeys yet -- there's no real market feed to calibrate that side
+// against, so ppBogeyRate below stays on the flat, uncorrected baseline.
+let birdieBaselineCorrection = loadLS('rodsModel_birdieBaselineCorrection', 0);
+
+// RAW birdie rate from the flat baseline + per-player shift only, deliberately ignoring any
+// live birdieBaselineCorrection -- this is what solveForFairBirdieRate's residual gets
+// measured against on each import, so every import is a fresh full recalibration rather than
+// compounding on top of a stale previous correction. Same pattern Round Score's
+// processRoundScoreImport uses (residual measured against raw PROJ, not getEffectiveProj).
+function ppBirdieRateRaw(sgVsField, holes) {
   holes = holes || 18;
   const expected = PP_BASELINE_BIRDIE_RATE * holes + sgVsField * PP_STROKES_PER_BIRDIE_SHIFT;
+  return ppClamp01(expected / holes);
+}
+// Actual grading rate -- same formula, but starting from the market-calibrated baseline
+// instead of the flat constant. Used everywhere a birdie probability is shown or bet: this
+// Birdies tab AND the PrizePicks panel, which share this one engine -- a real
+// DraftKings-calibrated baseline should make PrizePicks' birdie picks more accurate too, not
+// just this tab's.
+function ppBirdieRate(sgVsField, holes) {
+  holes = holes || 18;
+  const correctedBaselineRate = (PP_BASELINE_BIRDIES_PER_ROUND + birdieBaselineCorrection) / 18;
+  const expected = correctedBaselineRate * holes + sgVsField * PP_STROKES_PER_BIRDIE_SHIFT;
   return ppClamp01(expected / holes);
 }
 function ppBogeyRate(sgVsField, holes) {
@@ -1872,6 +1900,20 @@ function birdiesOrBetterProb(line, sgVsField, holes) {
 }
 function bogeysOrWorseProb(line, sgVsField, holes) {
   return ppBinomialSf(Math.floor(line), holes || 18, ppBogeyRate(sgVsField, holes));
+}
+// Binary-search for the birdie rate p that makes P(birdie count > line) match a target
+// probability -- mirrors solveForFairProj()'s role for Round Score, just solving for a rate
+// instead of a mean score. ppBinomialSf is increasing in p (a higher birdie rate makes
+// clearing any fixed line more likely), so the search direction below is unambiguous.
+function solveForFairBirdieRate(line, targetOverProb, holes) {
+  holes = holes || 18;
+  let lo = 0.0005, hi = 0.9995;
+  for (let iter = 0; iter < 40; iter++) {
+    const mid = (lo + hi) / 2;
+    const over = ppBinomialSf(Math.floor(line), holes, mid);
+    if (over > targetOverProb) hi = mid; else lo = mid;
+  }
+  return (lo + hi) / 2;
 }
 
 // Field-average effective projection -- the baseline "strokes gained vs field" is measured
@@ -2116,23 +2158,54 @@ function upsertBirdieProp(entry) {
 // Grades DraftKings' real price against the birdie-count model -- reuses
 // ppFieldAvgEffectiveProj()/getEffectiveProj() exactly as PrizePicks does, so a player's
 // "strokes gained vs field" input is identical whether it's feeding a PrizePicks pick or a
-// DraftKings line. No separate field-baseline recalibration step here (unlike Round Score's
-// solveForFairProj path) -- Round Score/PrizePicks/manual entry already keep
-// fieldBaselineCorrection current; this just grades against whatever that's currently set to.
+// DraftKings line.
+//
+// MARKET CALIBRATION (added after a real BMW Championship import showed 37 of 37 graded
+// lines all landing on BET UNDER -- confirmed not real diversified edge, the flat
+// PP_BASELINE_BIRDIES_PER_ROUND=3.75 constant this ran on had never been checked against
+// anything real). For every line with a real two-sided price, back out the birdie rate the
+// MARKET believes that specific player has (solveForFairBirdieRate), compare it to what the
+// model's raw baseline+shift formula would have said before any correction
+// (ppBirdieRateRaw), and average that gap across the whole batch into
+// birdieBaselineCorrection -- same role fieldBaselineCorrection plays for Round Score's mean
+// score, just in birdies-per-round units instead of strokes. This is a fresh full
+// recalibration every import (residuals measured against the RAW baseline, not whatever
+// correction was already active), not an additive stack -- same non-compounding pattern
+// Round Score's processRoundScoreImport uses.
 function processBirdiesImport(parsed, bookName) {
   const fieldAvg = ppFieldAvgEffectiveProj();
-  let added = 0, updated = 0, unmatched = [];
-  parsed.forEach((entry, i) => {
+  const residuals = [];
+  const matchedRows = [];
+  let unmatched = [];
+
+  parsed.forEach(entry => {
     const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
     if (!prow || prow[1] === null || prow[1] === undefined) { unmatched.push(entry.player); return; }
     if (fieldAvg === null) { unmatched.push(entry.player); return; }
     const effectiveProj = getEffectiveProj(prow[0], prow[1]);
     const sgVsField = fieldAvg - effectiveProj;
-    const modelOver = birdiesOrBetterProb(entry.line, sgVsField);
-    const modelUnder = 1 - modelOver;
     const taggedUnder = `${entry.underPrice} (${bookName})`;
     const taggedOver = `${entry.overPrice} (${bookName})`;
     const marketUnder = noVigRoundScore(taggedUnder, taggedOver);
+    matchedRows.push({ entry, prow, sgVsField, taggedUnder, taggedOver, marketUnder });
+    if (marketUnder !== null) {
+      const marketOver = 1 - marketUnder;
+      const marketImpliedRate = solveForFairBirdieRate(entry.line, marketOver) * 18; // birdies/round the market believes for THIS player
+      const modelRawRate = ppBirdieRateRaw(sgVsField) * 18; // what the UNCORRECTED baseline+shift formula currently says for this player
+      residuals.push(marketImpliedRate - modelRawRate);
+    }
+  });
+
+  if (residuals.length > 0) {
+    birdieBaselineCorrection = residuals.reduce((s, r) => s + r, 0) / residuals.length;
+    birdieBaselineCorrection = Math.round(birdieBaselineCorrection * 1000) / 1000;
+    saveLS('rodsModel_birdieBaselineCorrection', birdieBaselineCorrection);
+  }
+
+  let added = 0, updated = 0;
+  matchedRows.forEach(({ entry, prow, sgVsField, taggedUnder, taggedOver, marketUnder }, i) => {
+    const modelOver = birdiesOrBetterProb(entry.line, sgVsField); // now reads the just-updated birdieBaselineCorrection
+    const modelUnder = 1 - modelOver;
     const marketOver = marketUnder !== null ? 1 - marketUnder : null;
     const isNew = upsertBirdieProp({
       id: Date.now() + Math.random() + i,
@@ -2142,8 +2215,27 @@ function processBirdiesImport(parsed, bookName) {
     });
     if (isNew) added++; else updated++;
   });
+
+  // retroactively recompute every OTHER existing birdie row too -- the corrected baseline
+  // applies to the whole field, not just the players named in this specific batch.
+  let recomputedOthers = 0;
+  birdieProps.forEach(p => {
+    if (matchedRows.find(r => r.prow[0] === p.name && r.entry.round === p.round && r.entry.line === p.line)) return;
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
+    if (!prow || prow[1] === null || prow[1] === undefined || fieldAvg === null) return;
+    const effectiveProj = getEffectiveProj(p.name, prow[1]);
+    const sgVsField = fieldAvg - effectiveProj;
+    p.modelOver = birdiesOrBetterProb(p.line, sgVsField);
+    p.modelUnder = 1 - p.modelOver;
+    recomputedOthers++;
+  });
+
   saveLS('rodsModel_birdieProps', birdieProps);
-  return { added, updated, unmatched, totalParsed: parsed.length };
+  return {
+    added, updated, unmatched, totalParsed: parsed.length,
+    correction: residuals.length > 0 ? birdieBaselineCorrection : null,
+    correctionN: residuals.length, recomputedOthers,
+  };
 }
 
 function bulkImportBirdies() {
@@ -2155,6 +2247,7 @@ function bulkImportBirdies() {
   const r = processBirdiesImport(parsed, 'draftkings');
   document.getElementById('bbBulkText').value = '';
   status.textContent = `Added ${r.added} new, updated ${r.updated} existing (of ${r.totalParsed} parsed).` +
+    (r.correction !== null ? ` Market-calibrated correction: ${r.correction>=0?'+':''}${r.correction.toFixed(2)} birdies/round (from ${r.correctionN} real priced lines in this batch, applied to everyone${r.recomputedOthers>0?`, recomputed ${r.recomputedOthers} other existing row${r.recomputedOthers===1?'':'s'}`:''}).` : '') +
     (r.unmatched.length ? ` Not matched to the field: ${r.unmatched.join(', ')}.` : '');
   const roundCounts = {};
   parsed.forEach(e => { roundCounts[e.round] = (roundCounts[e.round]||0) + 1; });
@@ -2165,9 +2258,21 @@ function bulkImportBirdies() {
 
 let lastBirdiesPlays = [];
 
+function renderBirdieCorrectionBadge() {
+  const el = document.getElementById('bbCorrectionBadge');
+  if (!el) return;
+  if (birdieBaselineCorrection === 0) {
+    el.innerHTML = `<span style="color:var(--text-faint)">No correction active — using the flat 3.75 birdies/round tour-average baseline.</span>`;
+    return;
+  }
+  const sign = birdieBaselineCorrection >= 0 ? '+' : '';
+  el.innerHTML = `Active correction: <b>${sign}${birdieBaselineCorrection.toFixed(2)} birdies/round</b> — <span style="color:var(--green)">MARKET-CALIBRATED</span> from real DraftKings Birdies Or Better prices.`;
+}
+
 function renderBirdies() {
   const body = document.getElementById('bbBody');
   if (!body) return;
+  renderBirdieCorrectionBadge();
   body.innerHTML = '';
 
   // same one-time dedupe cleanup as Round Score, for anything saved before the upsert fix existed
@@ -3679,7 +3784,7 @@ function applyMeta(meta){
     // tournament to show up as live plays for the new one. Clearing it outright, rather than
     // trying to recompute rows that don't belong to this event at all, is the actual fix.
     if (lastKnownEvent !== null && lastKnownEvent !== meta.event) {
-      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length) || (roundScoreProps && roundScoreProps.length) || (prizePicksProps && prizePicksProps.length) || (birdieProps && birdieProps.length);
+      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length) || (roundScoreProps && roundScoreProps.length) || (prizePicksProps && prizePicksProps.length) || (birdieProps && birdieProps.length) || birdieBaselineCorrection !== 0;
       formAdjustments = {};
       fieldBaselineCorrection = 0;
       dkMatchupOverride = null;
@@ -3687,10 +3792,12 @@ function applyMeta(meta){
       roundScoreProps = [];
       prizePicksProps = []; // same stale-data class as roundScoreProps -- current, actionable lines, not a persistent record
       birdieProps = []; // same stale-data class -- current, actionable DK lines, not a persistent record
+      birdieBaselineCorrection = 0; // same stale-data class as fieldBaselineCorrection -- calibrated against last event's field, not this one
       lastImportedRound = null;
       lastImportedBirdieRound = null;
       saveLS('rodsModel_formAdjustments', formAdjustments);
       saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
+      saveLS('rodsModel_birdieBaselineCorrection', birdieBaselineCorrection);
       saveLS('rodsModel_dkMatchupOverride', null);
       saveLS('rodsModel_dk3BallData', null);
       saveLS('rodsModel_roundScoreProps', roundScoreProps);
