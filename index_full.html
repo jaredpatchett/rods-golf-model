@@ -304,6 +304,7 @@
   <button class="tab" data-tab="fit">Course Fit</button>
   <button class="tab" data-tab="match">2-Ball Matchups</button>
   <button class="tab" data-tab="rscore">Round Score</button>
+  <button class="tab" data-tab="birdies">Birdies O/U</button>
   <button class="tab" data-tab="outrights">Outrights</button>
   <button class="tab" data-tab="weather">Weather</button>
   <button class="tab" data-tab="tracker">Tracker</button>
@@ -623,6 +624,54 @@
   <div class="note">Birdies Or Better / Bogeys or Worse use a new Binomial(18, p) engine (<code>birdie_bogey_engine.py</code>, ported here in JS) — p starts from a rough Tour-average baseline and shifts with the player's projected strokes-gained vs. the field average, <b>not</b> fit from real historical birdie/bogey data yet (that needs DataGolf's raw round-level hole-score-count field, unconfirmed — <code>discover_round_shape.py</code> checks for it but hasn't found real access yet). Strokes reuses the same round-score model as the table above. Greens In Regulation / Pars / Fairways Hit have no model behind them — shown for reference only, never call MORE/LESS. PrizePicks has no two-sided price, so Edge%/EV% don't apply — MORE/LESS instead checks whether Model % clears an assumed ~58% breakeven (a standard 2-pick Power Play; your actual slip may need more or less edge than that, and goblin/demon tiers pay different, undisclosed multipliers this doesn't account for at all).</div>
 </div>
 
+<!-- ============ TAB: BIRDIES OR BETTER ============ -->
+<div class="tabpane" id="tab-birdies">
+  <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
+    <label style="font-size:8px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase">Bulk Import — paste straight from DraftKings' Birdies Or Better page. Model % comes from the same Binomial(18,p) birdie-count engine already used for PrizePicks (see birdie_bogey_engine.py), graded against DraftKings' real two-sided price here instead of a pick'em payout.</label>
+    <textarea id="bbBulkText" class="finput" style="min-width:100%;min-height:90px;font-family:var(--mono);resize:vertical" placeholder="Paste the whole copied slate here — e.g. player names, 'Birdies Or Better - Round N O/U' headers, Over/Under lines and prices, exactly as copied. Non-matching lines are ignored automatically."></textarea>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="addbtn" onclick="bulkImportBirdies()">Parse &amp; Add All</button>
+      <span id="bbBulkStatus" style="font-size:10px;color:var(--text-dim)"></span>
+    </div>
+  </div>
+  <div class="toolrow">
+    <button class="toolbtn" onclick="exportCSV('birdies')">Export CSV</button>
+    <button class="toolbtn" onclick="clearAll('birdies')">Clear All</button>
+    <button class="toolbtn" style="border-color:var(--green);color:var(--green)" onclick="bulkAddPlaysToTracker(lastBirdiesPlays, 'Birdies O/U')">Track All Plays</button>
+  </div>
+  <div class="toolrow" style="justify-content:flex-start;gap:8px">
+    <button class="fbtn on" id="bbFilterAll">ALL</button>
+    <button class="fbtn" id="bbFilterPlays">PLAYS ONLY</button>
+    <select class="finput" id="bbRoundFilter" style="min-width:130px;font-size:11px">
+      <option value="current">Current round only</option>
+      <option value="all">All rounds</option>
+    </select>
+    <span id="bbCount" style="font-size:10px;color:var(--text-dim);align-self:center"></span>
+    <span style="flex:1"></span>
+    <span style="font-size:9px;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;align-self:center">sorted by best edge</span>
+  </div>
+  <div id="bbSweepWarning"></div>
+  <div class="wide">
+    <table id="birdiesTable">
+      <thead>
+        <tr>
+          <th class="player">Player</th>
+          <th>Rd</th>
+          <th>Line</th>
+          <th>Model U%</th>
+          <th>Mkt U%</th>
+          <th>Model O%</th>
+          <th>Mkt O%</th>
+          <th>Play</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="bbBody"></tbody>
+    </table>
+  </div>
+  <div class="note"><b>Model Over%</b> is P(birdies-or-better count &gt; line) from a Binomial(18, p) per-round model — p is a rough Tour-average baseline (3.75 birdies/round) shifted by this player's projected strokes-gained vs. the live field average (same <code>ppFieldAvgEffectiveProj()</code> field baseline the PrizePicks panel uses), not fit from real hole-by-hole data yet. There's no DataGolf feed for this market (confirmed — their betting tools only cover Outright and Match-Up/3-Ball), so this is DraftKings' real price graded against that model, same relationship Round Score has to its own market price. <b>Play</b> requires both Edge% ≥ 3pts AND positive true EV% at DraftKings' actual price, same double-gate as every other tab. Entries save to this browser only (localStorage) — use Export CSV as a backup.</div>
+</div>
+
 <!-- ============ TAB 5: OUTRIGHTS ============ -->
 <div class="tabpane" id="tab-outrights">
   <div class="form-panel" style="flex-direction:column;align-items:stretch;gap:8px">
@@ -716,7 +765,7 @@
     <div class="field">
       <label>Type</label>
       <select class="fselect" id="trType">
-        <option>Matchup</option><option>Round Score</option><option>Outright</option><option>Other</option>
+        <option>Matchup</option><option>Round Score</option><option>Birdies</option><option>Outright</option><option>Other</option>
       </select>
     </div>
     <div class="field">
@@ -1547,6 +1596,9 @@ document.getElementById('trEventFilter').addEventListener('change',function(){tr
 document.getElementById('rsFilterAll').addEventListener('click',function(){rsFilter='all';setActive(this);renderRoundScore();});
 document.getElementById('rsFilterPlays').addEventListener('click',function(){rsFilter='plays';setActive(this);renderRoundScore();});
 document.getElementById('rsRoundFilter').addEventListener('change', function(){ rsRoundFilterMode = this.value; renderRoundScore(); });
+document.getElementById('bbFilterAll').addEventListener('click',function(){bbFilter='all';setActive(this);renderBirdies();});
+document.getElementById('bbFilterPlays').addEventListener('click',function(){bbFilter='plays';setActive(this);renderBirdies();});
+document.getElementById('bbRoundFilter').addEventListener('change', function(){ bbRoundFilterMode = this.value; renderBirdies(); });
 function recomputeAllRoundScoreProps() {
   // Standalone version of the same recompute already used after every bulk import --
   // needed here too since toggling wind adjustment changes what getEffectiveProj returns
@@ -1564,13 +1616,34 @@ function recomputeAllRoundScoreProps() {
   if (recomputed > 0) saveLS('rodsModel_roundScoreProps', roundScoreProps);
   return recomputed;
 }
+// Birdies' equivalent of recomputeAllRoundScoreProps() -- toggling wind adjustment changes
+// what getEffectiveProj/ppFieldAvgEffectiveProj return for every player, so every stored
+// birdie line needs its model% regenerated too, not just new ones going forward.
+function recomputeAllBirdieProps() {
+  const fieldAvg = ppFieldAvgEffectiveProj();
+  if (fieldAvg === null) return 0;
+  let recomputed = 0;
+  birdieProps.forEach(p => {
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(p.name));
+    if (!prow || prow[1] === null || prow[1] === undefined) return;
+    const effectiveProj = getEffectiveProj(p.name, prow[1]);
+    const sgVsField = fieldAvg - effectiveProj;
+    p.modelOver = birdiesOrBetterProb(p.line, sgVsField);
+    p.modelUnder = 1 - p.modelOver;
+    recomputed++;
+  });
+  if (recomputed > 0) saveLS('rodsModel_birdieProps', birdieProps);
+  return recomputed;
+}
 document.getElementById('windAdjustmentToggle').addEventListener('change', function(){
   windCorrectionEnabled = this.checked;
   saveLS('rodsModel_windCorrectionEnabled', windCorrectionEnabled);
   recomputeAllRoundScoreProps();
+  recomputeAllBirdieProps();
   renderWindAdjustmentUI();
   renderRoundScore();
   renderPrizePicks();
+  renderBirdies();
 });
 document.getElementById('windAdjustmentToggle').checked = windCorrectionEnabled;
 document.getElementById('rsRoundsCompleted').addEventListener('input', function(){
@@ -1982,6 +2055,193 @@ function deletePrizePicksProp(id) {
   prizePicksProps = prizePicksProps.filter(p => p.id !== id);
   saveLS('rodsModel_prizePicksProps', prizePicksProps);
   renderPrizePicks();
+}
+
+// ---------------- Birdies Or Better: real DraftKings O/U odds, graded against the same
+// Binomial(18,p) birdie-count engine as PrizePicks -- but against a genuine two-sided
+// vig-priced market (DraftKings), not a pick'em payout, so this gets the full
+// Edge%/EV%/BET-FADE-PASS treatment every other real-odds tab gets, unlike PrizePicks above.
+// No DataGolf feed for this market either (confirmed -- same situation as Round Score), so
+// it's paste-only, same DK board format/parsing approach as Round Score's bulk importer.
+let birdieProps = loadLS('rodsModel_birdieProps', []);
+let bbFilter = 'all'; // 'all' | 'plays'
+let bbRoundFilterMode = 'current'; // 'current' | 'all'
+let lastImportedBirdieRound = loadLS('rodsModel_lastImportedBirdieRound', null);
+
+// Same header shape as Round Score's DK paste ("Player Round Score - Round N O/U"), swapping
+// in "Birdies Or Better" -- DraftKings uses the identical Over/Under-per-round layout for
+// both markets, just a different market name in the header line.
+function parseBulkBirdiesText(text) {
+  const normalized = text.replace(/\u2212/g, '-');
+  const lines = normalized.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const entries = [];
+  const headerRe = /^(.+?)\s+Birdies\s+Or\s+Better\s*-\s*Round\s*(\d+)\s*O\/U$/i;
+  const priceRe = /^[+-]\d{2,4}$/;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(headerRe);
+    if (!m) continue;
+    const player = m[1].trim();
+    const roundNum = m[2];
+    const over = parseKeywordNumber(lines, i + 1, 'Over');
+    if (!over || over.nextIdx >= lines.length || !priceRe.test(lines[over.nextIdx])) continue;
+    const overPrice = lines[over.nextIdx];
+    const under = parseKeywordNumber(lines, over.nextIdx + 1, 'Under');
+    if (!under || under.nextIdx > lines.length || !priceRe.test(lines[under.nextIdx])) continue;
+    const underPrice = lines[under.nextIdx];
+    entries.push({
+      player, round: 'R' + roundNum,
+      line: over.value, overPrice,
+      underLine: under.value, underPrice,
+    });
+    i = under.nextIdx;
+  }
+  return entries;
+}
+
+// Same player+round+line upsert convention as Round Score/PrizePicks -- re-pasting the same
+// slate updates in place instead of stacking duplicates.
+function upsertBirdieProp(entry) {
+  entry = { ...entry, event: entry.event || currentEvent };
+  const existingIdx = birdieProps.findIndex(p =>
+    normalizeNameForMatch(p.name) === normalizeNameForMatch(entry.name) &&
+    p.round === entry.round && p.line === entry.line && (p.event || null) === (entry.event || null));
+  if (existingIdx >= 0) {
+    birdieProps[existingIdx] = { ...birdieProps[existingIdx], ...entry, id: birdieProps[existingIdx].id };
+    return false;
+  }
+  birdieProps.push(entry);
+  return true;
+}
+
+// Grades DraftKings' real price against the birdie-count model -- reuses
+// ppFieldAvgEffectiveProj()/getEffectiveProj() exactly as PrizePicks does, so a player's
+// "strokes gained vs field" input is identical whether it's feeding a PrizePicks pick or a
+// DraftKings line. No separate field-baseline recalibration step here (unlike Round Score's
+// solveForFairProj path) -- Round Score/PrizePicks/manual entry already keep
+// fieldBaselineCorrection current; this just grades against whatever that's currently set to.
+function processBirdiesImport(parsed, bookName) {
+  const fieldAvg = ppFieldAvgEffectiveProj();
+  let added = 0, updated = 0, unmatched = [];
+  parsed.forEach((entry, i) => {
+    const prow = P.find(r => normalizeNameForMatch(r[0]) === normalizeNameForMatch(entry.player));
+    if (!prow || prow[1] === null || prow[1] === undefined) { unmatched.push(entry.player); return; }
+    if (fieldAvg === null) { unmatched.push(entry.player); return; }
+    const effectiveProj = getEffectiveProj(prow[0], prow[1]);
+    const sgVsField = fieldAvg - effectiveProj;
+    const modelOver = birdiesOrBetterProb(entry.line, sgVsField);
+    const modelUnder = 1 - modelOver;
+    const taggedUnder = `${entry.underPrice} (${bookName})`;
+    const taggedOver = `${entry.overPrice} (${bookName})`;
+    const marketUnder = noVigRoundScore(taggedUnder, taggedOver);
+    const marketOver = marketUnder !== null ? 1 - marketUnder : null;
+    const isNew = upsertBirdieProp({
+      id: Date.now() + Math.random() + i,
+      name: prow[0], round: entry.round, line: entry.line,
+      underPrice: taggedUnder, overPrice: taggedOver,
+      modelUnder, modelOver, marketUnder, marketOver,
+    });
+    if (isNew) added++; else updated++;
+  });
+  saveLS('rodsModel_birdieProps', birdieProps);
+  return { added, updated, unmatched, totalParsed: parsed.length };
+}
+
+function bulkImportBirdies() {
+  const text = document.getElementById('bbBulkText').value;
+  const status = document.getElementById('bbBulkStatus');
+  if (!text.trim()) { status.textContent = 'Paste something first.'; return; }
+  const parsed = parseBulkBirdiesText(text);
+  if (!parsed.length) { status.textContent = 'Found 0 lines — check the paste includes "Birdies Or Better - Round N O/U" headers.'; return; }
+  const r = processBirdiesImport(parsed, 'draftkings');
+  document.getElementById('bbBulkText').value = '';
+  status.textContent = `Added ${r.added} new, updated ${r.updated} existing (of ${r.totalParsed} parsed).` +
+    (r.unmatched.length ? ` Not matched to the field: ${r.unmatched.join(', ')}.` : '');
+  const roundCounts = {};
+  parsed.forEach(e => { roundCounts[e.round] = (roundCounts[e.round]||0) + 1; });
+  const topRound = Object.keys(roundCounts).sort((a,b) => roundCounts[b]-roundCounts[a])[0];
+  if (topRound) { lastImportedBirdieRound = topRound; saveLS('rodsModel_lastImportedBirdieRound', lastImportedBirdieRound); }
+  renderBirdies();
+}
+
+let lastBirdiesPlays = [];
+
+function renderBirdies() {
+  const body = document.getElementById('bbBody');
+  if (!body) return;
+  body.innerHTML = '';
+
+  // same one-time dedupe cleanup as Round Score, for anything saved before the upsert fix existed
+  const seen = new Map();
+  birdieProps.forEach(p => {
+    const key = normalizeNameForMatch(p.name) + '|' + p.round + '|' + p.line;
+    seen.set(key, p);
+  });
+  if (seen.size !== birdieProps.length) {
+    birdieProps = Array.from(seen.values());
+    saveLS('rodsModel_birdieProps', birdieProps);
+  }
+
+  let rows = birdieProps.map(p => {
+    const edgeU = (p.marketUnder !== null) ? p.modelUnder - p.marketUnder : null;
+    const edgeO = (p.marketOver !== null) ? p.modelOver - p.marketOver : null;
+    const evU = computeBetEV(p.underPrice, p.modelUnder);
+    const evO = computeBetEV(p.overPrice, p.modelOver);
+    const uQualifies = edgeU !== null && edgeU * 100 >= 3 && evU !== null && evU > 0;
+    const oQualifies = edgeO !== null && edgeO * 100 >= 3 && evO !== null && evO > 0;
+    let play = null;
+    if (uQualifies && (!oQualifies || edgeU >= edgeO)) play = { side: 'Under', edge: edgeU, price: p.underPrice };
+    else if (oQualifies) play = { side: 'Over', edge: edgeO, price: p.overPrice };
+    const bestEdge = Math.max(edgeU ?? -Infinity, edgeO ?? -Infinity);
+    return { p, edgeU, edgeO, play, bestEdge };
+  });
+
+  if (bbFilter === 'plays') rows = rows.filter(r => r.play !== null);
+  const totalBeforeRoundFilter = rows.length;
+  if (bbRoundFilterMode === 'current' && lastImportedBirdieRound) rows = rows.filter(r => r.p.round === lastImportedBirdieRound && r.p.event === currentEvent);
+  const hiddenByRound = totalBeforeRoundFilter - rows.length;
+  rows.sort((a, b) => b.bestEdge - a.bestEdge);
+
+  const countEl = document.getElementById('bbCount');
+  if (countEl) countEl.textContent = `${rows.length} line${rows.length===1?'':'s'}` +
+    (hiddenByRound > 0 ? ` (${hiddenByRound} from other rounds hidden — showing ${lastImportedBirdieRound})` : '');
+
+  const playSides = rows.map(r => r.play).filter(Boolean).map(pl => pl.side);
+  renderSweepWarning('bbSweepWarning', checkOneSidedSweep(playSides), 'plays');
+
+  lastBirdiesPlays = [];
+  rows.forEach(({ p, play }) => {
+    const canBet = play && play.price;
+    if (canBet) {
+      lastBirdiesPlays.push({
+        desc: `${p.name} ${p.round} Birdies O/U ${play.side} ${p.line}`, type: 'Birdies', price: play.price,
+        modelProb: play.side === 'Under' ? p.modelUnder : p.modelOver, edgePct: play.edge * 100, edgeTag: null,
+      });
+    }
+    const playHtml = play
+      ? `<span class="pill edge" style="font-size:11px;padding:5px 10px">BET ${play.side.toUpperCase()} ${p.line.toFixed(1)}</span>
+         <span class="val-pos" style="margin-left:6px;font-size:11px">+${(play.edge*100).toFixed(1)}%</span>
+         ${canBet?`<button class="delbtn" style="margin-left:6px;border-color:var(--green);color:var(--green)" onclick="addBirdieToTracker('${p.name.replace(/'/g,"\\'")}','${p.round}',${p.line},'${play.side}','${play.price}',${play.side==='Under'?p.modelUnder:p.modelOver},${play.edge*100})">+trk</button>`:''}`
+      : `<span class="pill thin">PASS</span>`;
+    body.innerHTML += `<tr>
+      <td class="pname"><span class="pinit">${initials(p.name)}</span>${p.name}</td>
+      <td class="cell" style="text-align:center">${p.round}</td>
+      <td class="cell"><b>${p.line.toFixed(1)}</b></td>
+      <td class="cell heat" style="background:${heat((p.modelUnder-0.3)/0.4)}">${(p.modelUnder*100).toFixed(1)}%</td>
+      <td class="cell">${p.marketUnder!==null?(p.marketUnder*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell heat" style="background:${heat((p.modelOver-0.3)/0.4)}">${(p.modelOver*100).toFixed(1)}%</td>
+      <td class="cell">${p.marketOver!==null?(p.marketOver*100).toFixed(1)+'%':'—'}</td>
+      <td class="cell" style="text-align:center;white-space:nowrap">${playHtml}</td>
+      <td class="cell"><button class="delbtn" onclick="deleteBirdieProp(${p.id})">✕</button></td>
+    </tr>`;
+  });
+}
+function deleteBirdieProp(id) {
+  birdieProps = birdieProps.filter(p => p.id !== id);
+  saveLS('rodsModel_birdieProps', birdieProps);
+  renderBirdies();
+}
+function addBirdieToTracker(name, round, line, side, price, modelProb, edgePct) {
+  quickAddToTracker(`${name} ${round} Birdies O/U ${side} ${line}`, 'Birdies', price, modelProb, edgePct);
 }
 
 let roundScoreProps = loadLS('rodsModel_roundScoreProps', []);
@@ -3127,6 +3387,7 @@ function saveLS(key, val) {
 function clearAll(kind) {
   if (!confirm('Clear all saved entries for this tab? This cannot be undone (export CSV first if you want a backup).')) return;
   if (kind === 'roundscore') { roundScoreProps = []; prizePicksProps = []; saveLS('rodsModel_roundScoreProps', roundScoreProps); saveLS('rodsModel_prizePicksProps', prizePicksProps); renderRoundScore(); renderPrizePicks(); }
+  if (kind === 'birdies') { birdieProps = []; saveLS('rodsModel_birdieProps', birdieProps); renderBirdies(); }
   if (kind === 'tracker') { betTracker = []; saveLS('rodsModel_betTracker', betTracker); renderTracker(); }
 }
 // ---------------- tracker: import bets from a CSV file (round-trips with Export CSV, also
@@ -3180,7 +3441,7 @@ function importTrackerCSV(event) {
       const date = r.date || new Date().toISOString().slice(0,10);
       if (!desc || !price || isNaN(stake) || stake <= 0) { skipped++; return; } // need the essentials to make sense of a row
 
-      const typeLookup = { matchup: 'Matchup', 'round score': 'Round Score', outright: 'Outright', other: 'Other' };
+      const typeLookup = { matchup: 'Matchup', 'round score': 'Round Score', birdies: 'Birdies', outright: 'Outright', other: 'Other' };
       const type = typeLookup[(r.type || 'Other').trim().toLowerCase()] || 'Other';
 
       let statusVal = (r.status || 'pending').trim().toLowerCase();
@@ -3222,6 +3483,10 @@ function exportCSV(kind) {
     rows = [['Player','Round','Line','ModelUnder%','MarketUnder%','ModelOver%','MarketOver%','UnderPrice','OverPrice']];
     roundScoreProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
     filename = 'round_score_props.csv';
+  } else if (kind === 'birdies') {
+    rows = [['Player','Round','Line','ModelUnder%','MarketUnder%','ModelOver%','MarketOver%','UnderPrice','OverPrice']];
+    birdieProps.forEach(p => rows.push([p.name,p.round,p.line,(p.modelUnder*100).toFixed(1),p.marketUnder!==null?(p.marketUnder*100).toFixed(1):'',(p.modelOver*100).toFixed(1),p.marketOver!==null?(p.marketOver*100).toFixed(1):'',p.underPrice||'',p.overPrice||'']));
+    filename = 'birdies_props.csv';
   } else {
     rows = [['Date','Event','Description','Type','Price','Stake','Status','ModelProb%','Edge%','Wagered','Profit']];
     betTracker.forEach(b => rows.push([b.date,b.event||'',b.desc,b.type,b.price,b.stake,b.status,(b.modelProb!==null&&b.modelProb!==undefined)?(b.modelProb*100).toFixed(1):'',(b.edgeAtBetTime!==null&&b.edgeAtBetTime!==undefined)?b.edgeAtBetTime.toFixed(1):'',b.wagered!==false?'yes':'no',betProfit(b)!==null?betProfit(b).toFixed(2):'']));
@@ -3239,6 +3504,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (d) d.value = new Date().toISOString().slice(0,10);
   renderRoundScore();
   renderPrizePicks();
+  renderBirdies();
   renderTracker();
 });
 
@@ -3413,26 +3679,31 @@ function applyMeta(meta){
     // tournament to show up as live plays for the new one. Clearing it outright, rather than
     // trying to recompute rows that don't belong to this event at all, is the actual fix.
     if (lastKnownEvent !== null && lastKnownEvent !== meta.event) {
-      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length) || (roundScoreProps && roundScoreProps.length) || (prizePicksProps && prizePicksProps.length);
+      const hadStaleData = Object.keys(formAdjustments || {}).length > 0 || fieldBaselineCorrection !== 0 || (dkMatchupOverride && dkMatchupOverride.length) || (dk3BallData && dk3BallData.length) || (roundScoreProps && roundScoreProps.length) || (prizePicksProps && prizePicksProps.length) || (birdieProps && birdieProps.length);
       formAdjustments = {};
       fieldBaselineCorrection = 0;
       dkMatchupOverride = null;
       dk3BallData = null;
       roundScoreProps = [];
       prizePicksProps = []; // same stale-data class as roundScoreProps -- current, actionable lines, not a persistent record
+      birdieProps = []; // same stale-data class -- current, actionable DK lines, not a persistent record
       lastImportedRound = null;
+      lastImportedBirdieRound = null;
       saveLS('rodsModel_formAdjustments', formAdjustments);
       saveLS('rodsModel_fieldBaselineCorrection', fieldBaselineCorrection);
       saveLS('rodsModel_dkMatchupOverride', null);
       saveLS('rodsModel_dk3BallData', null);
       saveLS('rodsModel_roundScoreProps', roundScoreProps);
       saveLS('rodsModel_prizePicksProps', prizePicksProps);
+      saveLS('rodsModel_birdieProps', birdieProps);
       saveLS('rodsModel_lastImportedRound', null);
+      saveLS('rodsModel_lastImportedBirdieRound', null);
       if (hadStaleData) {
-        console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, DraftKings matchup overrides, and Round Score lines from the previous tournament.`);
-        alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, DraftKings matchup data, and Round Score lines from the previous event — these belonged to a different tournament's field and were no longer valid. Re-import this event's Round Score lines when you have them.`);
+        console.warn(`Event changed from "${lastKnownEvent}" to "${meta.event}" — cleared stale form adjustments, field baseline correction, DraftKings matchup overrides, and Round Score/Birdies lines from the previous tournament.`);
+        alert(`New tournament detected: "${meta.event}" (was "${lastKnownEvent}").\n\nCleared leftover Live Form Adjustment, field baseline correction, DraftKings matchup data, and Round Score/Birdies lines from the previous event — these belonged to a different tournament's field and were no longer valid. Re-import this event's lines when you have them.`);
         renderRoundScore();
   renderPrizePicks();
+  renderBirdies();
       }
     }
     lastKnownEvent = meta.event;
