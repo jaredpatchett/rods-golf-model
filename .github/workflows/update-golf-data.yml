@@ -31,17 +31,19 @@ jobs:
       - name: Run pipeline
         env:
           DG_KEY: ${{ secrets.DG_KEY }}
-        # FedEx St. Jude Championship, Aug 13-16 2026 -- TPC Southwind, Memphis TN, par 70.
-        # Unlike Wyndham (Sedgefield, birdie-friendly, -18 to -22 winners), TPC Southwind plays
-        # close to tour-average difficulty -- narrow tree-lined fairways, thick Bermuda rough,
-        # firm/fast greens -- with a confirmed real scoring average of 69.56 (2020, ranked 14th
-        # toughest of 41 courses that year). Winning scores run -15 to -17, but that's the
-        # champion, not the field average, so it's not usable directly as a baseline. 69.5 is
-        # grounded in that real recorded scoring average -- more solid than a par-based guess --
-        # though this is now a limited/elite ~70-player FedExCup Playoff field rather than a
-        # full field, which could shift the true average slightly; no clean way to quantify
-        # that without real per-event data. Check against real rounds once R1 is in.
-        run: python3 rods_pipeline.py --baseline-score 69.5
+        # BMW Championship, Aug 20-23 2026 -- Bellerive Country Club, Town and Country MO, par 70
+        # (per Rod). Second of the three FedExCup Playoff events -- limited elite ~50-player
+        # field, no cut, so the same caveat as FedEx St. Jude applies: whatever real scoring
+        # average this course settles into with a top-50 field could run a bit lower than a
+        # plain par-based guess, same way TPC Southwind's real 69.56 average sat just under its
+        # own par 70. No confirmed real scoring-average data point for THIS field/setup yet
+        # (unlike TPC Southwind, which had one from 2020) -- 70.0 is the pipeline's own
+        # documented fallback for a regular, non-major-tuned tour stop (see
+        # DEFAULT_BASELINE_ROUND_SCORE / --baseline-score's help text in rods_pipeline.py).
+        # Recalibrate once real Round 1 scores are in -- Round Score's own bulk import already
+        # does this automatically from real DraftKings prices, so this static number mostly
+        # just needs to be in the right neighborhood for Round 1 before real market data exists.
+        run: python3 rods_pipeline.py --baseline-score 70.0
 
       - name: Deploy to Cloudflare
         env:
