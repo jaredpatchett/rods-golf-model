@@ -3,7 +3,7 @@
   "event": "TOUR Championship",
   "course": "East Lake Golf Club",
   "players": 30,
-  "generated": "2026-09-07 00:12:10",
+  "generated": "2026-09-07 17:26:51",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups] + edge_engine (in-pipeline)",
   "draw_bias": null,
   "ev_threshold": 3.0
@@ -105,7 +105,7 @@
    null,
    0.0,
    0.6,
-   0.5,
+   0.4,
    0.4,
    0.0
   ],
@@ -146,7 +146,7 @@
    0.2,
    0.6,
    0.1,
-   0.4,
+   0.3,
    0.0
   ],
   [
@@ -174,7 +174,7 @@
    68.7,
    null,
    0.5,
-   0.5,
+   0.4,
    0.3,
    0.1,
    0.0
@@ -196,7 +196,7 @@
    0.2,
    0.7,
    0.2,
-   0.2,
+   0.1,
    0.0
   ],
   [
@@ -205,7 +205,7 @@
    null,
    0.2,
    0.2,
-   0.5,
+   0.4,
    0.1,
    0.0
   ],
@@ -244,7 +244,7 @@
    69.1,
    null,
    0.2,
-   0.6,
+   0.5,
    0.1,
    0.0,
    0.0
@@ -253,7 +253,7 @@
    "Jacob Bridgeman",
    69.1,
    null,
-   0.2,
+   0.1,
    0.3,
    0.5,
    0.1,
