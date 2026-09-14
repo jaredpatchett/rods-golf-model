@@ -3,7 +3,7 @@
   "event": "TOUR Championship",
   "course": "East Lake Golf Club",
   "players": 30,
-  "generated": "2026-09-14 01:24:30",
+  "generated": "2026-09-14 17:51:57",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups] + edge_engine (in-pipeline)",
   "draw_bias": null,
   "ev_threshold": 3.0
@@ -24,8 +24,8 @@
    67.8,
    null,
    0.9,
-   0.6,
-   0.3,
+   0.7,
+   0.2,
    0.1,
    -0.0
   ],
@@ -146,7 +146,7 @@
    0.2,
    0.6,
    0.1,
-   0.3,
+   0.4,
    0.0
   ],
   [
@@ -244,7 +244,7 @@
    69.1,
    null,
    0.2,
-   0.5,
+   0.6,
    0.1,
    0.0,
    0.0
@@ -284,8 +284,8 @@
    69.2,
    null,
    0.4,
-   0.5,
-   -0.1,
+   0.4,
+   -0.0,
    0.1,
    0.0
   ],
