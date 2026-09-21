@@ -3,7 +3,7 @@
   "event": "Presidents Cup",
   "course": "Medinah Country Club (No. 3)",
   "players": 24,
-  "generated": "2026-09-21 17:58:10",
+  "generated": "2026-09-21 21:55:12",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups] + edge_engine (in-pipeline)",
   "draw_bias": null,
   "ev_threshold": 3.0
@@ -120,6 +120,16 @@
    0.0
   ],
   [
+   "Jacob Bridgeman",
+   68.7,
+   null,
+   0.2,
+   0.4,
+   0.6,
+   0.1,
+   -0.0
+  ],
+  [
    "Hideki Matsuyama",
    68.7,
    null,
@@ -138,26 +148,6 @@
    -0.0,
    0.0,
    0.0
-  ],
-  [
-   "Jacob Bridgeman",
-   68.7,
-   null,
-   0.2,
-   0.4,
-   0.6,
-   0.1,
-   -0.0
-  ],
-  [
-   "Min Woo Lee",
-   68.8,
-   null,
-   0.4,
-   0.3,
-   0.3,
-   0.2,
-   0.1
   ],
   [
    "Russell Henley",
@@ -180,6 +170,16 @@
    -0.0
   ],
   [
+   "Min Woo Lee",
+   68.8,
+   null,
+   0.4,
+   0.3,
+   0.3,
+   0.2,
+   0.1
+  ],
+  [
    "Corey Conners",
    69.1,
    null,
@@ -200,16 +200,6 @@
    -0.0
   ],
   [
-   "Ryo Hisatsune",
-   69.4,
-   null,
-   0.3,
-   0.4,
-   -0.1,
-   -0.0,
-   -0.0
-  ],
-  [
    "Ryan Fox",
    69.4,
    null,
@@ -218,6 +208,16 @@
    0.2,
    0.0,
    0.0
+  ],
+  [
+   "Ryo Hisatsune",
+   69.4,
+   null,
+   0.3,
+   0.4,
+   -0.1,
+   -0.0,
+   -0.0
   ],
   [
    "Christiaan Bezuidenhout",
@@ -390,37 +390,37 @@
    "\u2014"
   ],
   [
-   "Hideki Matsuyama",
+   "Jacob Bridgeman",
    0.0367,
-   null,
-   "\u2014"
+   0.05,
+   "+1900 (draftkings)"
   ],
   [
-   "Adam Scott",
+   "Hideki Matsuyama",
    0.0361,
    null,
    "\u2014"
   ],
   [
-   "Jacob Bridgeman",
+   "Adam Scott",
    0.0338,
-   0.05,
-   "+1900 (draftkings)"
-  ],
-  [
-   "Russell Henley",
-   0.0326,
    null,
    "\u2014"
   ],
   [
    "Tom Kim",
-   0.0304,
+   0.0326,
    null,
    "\u2014"
   ],
   [
    "Min Woo Lee",
+   0.0304,
+   null,
+   "\u2014"
+  ],
+  [
+   "Russell Henley",
    0.0301,
    null,
    "\u2014"
@@ -438,13 +438,13 @@
    "+500000 (bet365)"
   ],
   [
-   "Ryan Fox",
+   "Ryo Hisatsune",
    0.0136,
    null,
    "\u2014"
   ],
   [
-   "Ryo Hisatsune",
+   "Ryan Fox",
    0.0127,
    null,
    "\u2014"
@@ -536,37 +536,37 @@
    "\u2014"
   ],
   [
-   "Hideki Matsuyama",
+   "Jacob Bridgeman",
    0.2076,
-   null,
-   "\u2014"
+   0.4424778761061947,
+   "+126 (draftkings)"
   ],
   [
-   "Adam Scott",
+   "Hideki Matsuyama",
    0.2075,
    null,
    "\u2014"
   ],
   [
-   "Jacob Bridgeman",
+   "Adam Scott",
    0.2017,
-   0.4424778761061947,
-   "+126 (draftkings)"
-  ],
-  [
-   "Tom Kim",
-   0.189,
-   null,
-   "\u2014"
-  ],
-  [
-   "Russell Henley",
-   0.1885,
    null,
    "\u2014"
   ],
   [
    "Min Woo Lee",
+   0.189,
+   null,
+   "\u2014"
+  ],
+  [
+   "Tom Kim",
+   0.1885,
+   null,
+   "\u2014"
+  ],
+  [
+   "Russell Henley",
    0.1862,
    null,
    "\u2014"
@@ -584,13 +584,13 @@
    "\u2014"
   ],
   [
-   "Ryo Hisatsune",
+   "Ryan Fox",
    0.0986,
    null,
    "\u2014"
   ],
   [
-   "Ryan Fox",
+   "Ryo Hisatsune",
    0.0967,
    null,
    "\u2014"
@@ -682,37 +682,37 @@
    "\u2014"
   ],
   [
-   "Hideki Matsuyama",
+   "Jacob Bridgeman",
    0.432,
-   null,
-   "\u2014"
+   0.75,
+   "-300 (draftkings)"
   ],
   [
-   "Adam Scott",
+   "Hideki Matsuyama",
    0.4302,
    null,
    "\u2014"
   ],
   [
-   "Jacob Bridgeman",
+   "Adam Scott",
    0.4149,
-   0.75,
-   "-300 (draftkings)"
-  ],
-  [
-   "Russell Henley",
-   0.4066,
-   null,
-   "\u2014"
-  ],
-  [
-   "Min Woo Lee",
-   0.4039,
    null,
    "\u2014"
   ],
   [
    "Tom Kim",
+   0.4066,
+   null,
+   "\u2014"
+  ],
+  [
+   "Russell Henley",
+   0.4039,
+   null,
+   "\u2014"
+  ],
+  [
+   "Min Woo Lee",
    0.4006,
    null,
    "\u2014"
@@ -730,13 +730,13 @@
    "+25000 (bet365)"
   ],
   [
-   "Ryo Hisatsune",
+   "Ryan Fox",
    0.2674,
    null,
    "\u2014"
   ],
   [
-   "Ryan Fox",
+   "Ryo Hisatsune",
    0.2598,
    null,
    "\u2014"
@@ -828,14 +828,20 @@
    "\u2014"
   ],
   [
-   "Adam Scott",
+   "Hideki Matsuyama",
    0.8546,
    null,
    "\u2014"
   ],
   [
-   "Hideki Matsuyama",
+   "Jacob Bridgeman",
    0.8501,
+   0.9473684210526315,
+   "-1800 (draftkings)"
+  ],
+  [
+   "Russell Henley",
+   0.8491,
    null,
    "\u2014"
   ],
@@ -846,19 +852,13 @@
    "\u2014"
   ],
   [
-   "Tom Kim",
-   0.8491,
+   "Adam Scott",
+   0.8484,
    null,
    "\u2014"
   ],
   [
-   "Jacob Bridgeman",
-   0.8484,
-   0.9473684210526315,
-   "-1800 (draftkings)"
-  ],
-  [
-   "Russell Henley",
+   "Tom Kim",
    0.8444,
    null,
    "\u2014"
@@ -876,13 +876,13 @@
    "\u2014"
   ],
   [
-   "Ryo Hisatsune",
+   "Ryan Fox",
    0.7451,
    null,
    "\u2014"
   ],
   [
-   "Ryan Fox",
+   "Ryo Hisatsune",
    0.7427,
    null,
    "\u2014"
