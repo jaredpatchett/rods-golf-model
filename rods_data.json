@@ -3,7 +3,7 @@
   "event": "VidantaWorld Mexico Open",
   "course": "Vidanta Vallarta",
   "players": 120,
-  "generated": "2026-10-30 02:25:50",
+  "generated": "2026-10-30 17:48:04",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups] + edge_engine (in-pipeline)",
   "draw_bias": null,
   "ev_threshold": 3.0
@@ -1409,8 +1409,8 @@
   [
    "Mackenzie Hughes",
    0.0114,
-   0.0392156862745098,
-   "+2450 (draftkings)"
+   0.038461538461538464,
+   "+2500 (draftkings)"
   ],
   [
    "Lee Hodges",
@@ -1625,8 +1625,8 @@
   [
    "Isaiah Salinda",
    0.0051,
-   0.005681818181818182,
-   "+17500 (draftkings)"
+   0.005847953216374269,
+   "+17000 (draftkings)"
   ],
   [
    "Brice Garnett",
@@ -1781,8 +1781,8 @@
   [
    "Tyler Duncan",
    0.002,
-   0.0019011406844106464,
-   "+52500 (draftkings)"
+   0.0018148820326678765,
+   "+55000 (draftkings)"
   ],
   [
    "Davis Chatfield",
@@ -1793,8 +1793,8 @@
   [
    "Cam Davis",
    0.002,
-   0.00039984006397441024,
-   "+250000 (draftkings)"
+   0.000444247001332741,
+   "+225000 (draftkings)"
   ],
   [
    "Joe Highsmith",
@@ -1859,8 +1859,8 @@
   [
    "Nick Dunlap",
    0.0011,
-   0.00039984006397441024,
-   "+250000 (draftkings)"
+   0.000444247001332741,
+   "+225000 (draftkings)"
   ],
   [
    "Camilo Villegas",
@@ -1981,8 +1981,8 @@
   [
    "Ben Griffin",
    0.1613,
-   0.4032258064516129,
-   "+148 (draftkings)"
+   0.4,
+   "+150 (draftkings)"
   ],
   [
    "Ben James",
@@ -2017,8 +2017,8 @@
   [
    "Johnny Keefer",
    0.099,
-   0.02702702702702703,
-   "+3600 (draftkings)"
+   0.027777777777777776,
+   "+3500 (draftkings)"
   ],
   [
    "Blades Brown",
@@ -2149,8 +2149,8 @@
   [
    "Mackenzie Hughes",
    0.0558,
-   0.18181818181818182,
-   "+450 (draftkings)"
+   0.18018018018018017,
+   "+455 (draftkings)"
   ],
   [
    "Christiaan Bezuidenhout",
@@ -2281,8 +2281,8 @@
   [
    "Gordon Sargent",
    0.0397,
-   0.07017543859649122,
-   "+1325 (draftkings)"
+   0.07142857142857142,
+   "+1300 (draftkings)"
   ],
   [
    "Haotong Li",
@@ -2419,8 +2419,8 @@
   [
    "Andrew Putnam",
    0.022,
-   0.0033222591362126247,
-   "+30000 (draftkings)"
+   0.003215434083601286,
+   "+31000 (draftkings)"
   ],
   [
    "Davis Riley",
@@ -2907,8 +2907,8 @@
   [
    "Zac Blair",
    0.1009,
-   0.10416666666666667,
-   "+860 (draftkings)"
+   0.10309278350515463,
+   "+870 (draftkings)"
   ],
   [
    "Max Greyserman",
@@ -2937,8 +2937,8 @@
   [
    "Takumi Kanaya",
    0.095,
-   0.023255813953488372,
-   "+4200 (draftkings)"
+   0.022727272727272728,
+   "+4300 (draftkings)"
   ],
   [
    "Taylor Pendrith",
@@ -3021,14 +3021,14 @@
   [
    "Gordon Sargent",
    0.08,
-   0.15384615384615385,
-   "+550 (draftkings)"
+   0.15625,
+   "+540 (draftkings)"
   ],
   [
    "Rasmus Hojgaard",
    0.0783,
-   0.02127659574468085,
-   "+4600 (draftkings)"
+   0.021739130434782608,
+   "+4500 (draftkings)"
   ],
   [
    "Adrien Dumont De Chassart",
@@ -3345,14 +3345,14 @@
   [
    "Omar Morales",
    0.0136,
-   0.005681818181818182,
-   "+17500 (draftkings)"
+   0.005847953216374269,
+   "+17000 (draftkings)"
   ],
   [
    "Christo Lamprecht",
    0.012,
-   0.011235955056179775,
-   "+8800 (draftkings)"
+   0.011494252873563218,
+   "+8600 (draftkings)"
   ],
   [
    "Camilo Villegas",
@@ -3381,8 +3381,8 @@
   [
    "John Daly II",
    0.003,
-   0.009433962264150943,
-   "+10500 (draftkings)"
+   0.009900990099009901,
+   "+10000 (draftkings)"
   ],
   [
    "Mauricio Figueroa",
@@ -3833,8 +3833,8 @@
   [
    "John VanDerLaan",
    0.1366,
-   0.04,
-   "+2400 (draftkings)"
+   0.0392156862745098,
+   "+2450 (draftkings)"
   ],
   [
    "Davis Riley",
@@ -4079,8 +4079,8 @@
   [
    "Camilo Villegas",
    0.0361,
-   0.027777777777777776,
-   "+3500 (pointsbet)"
+   0.009900990099009901,
+   "+10000 (bovada)"
   ],
   [
    "Marcelo Rozo",
@@ -4121,8 +4121,8 @@
   [
    "Tayler Termeer",
    0.0006,
-   0.027777777777777776,
-   "+3500 (pointsbet)"
+   0.009900990099009901,
+   "+10000 (bovada)"
   ],
   [
    "Alejandro Fierro",
