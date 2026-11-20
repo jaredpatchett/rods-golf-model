@@ -3,7 +3,7 @@
   "event": "The RSM Classic",
   "course": "Sea Island Golf Club (Seaside Course)",
   "players": 147,
-  "generated": "2026-11-20 01:51:02",
+  "generated": "2026-11-20 19:42:13",
   "source": "DataGolf projections (Path A) + sim_engine.py for model% [round_matchups] + edge_engine (in-pipeline)",
   "draw_bias": null,
   "ev_threshold": 3.0
@@ -2327,8 +2327,8 @@
   [
    "Cameron Champ",
    0.0001,
-   0.0001999600079984003,
-   "+500000 (draftkings)"
+   0.00039984006397441024,
+   "+250000 (bovada)"
   ],
   [
    "Austin Cook",
@@ -3200,7 +3200,7 @@
    "Cameron Champ",
    0.0021,
    0.001996007984031936,
-   "+50000 (draftkings)"
+   "+50000 (bovada)"
   ],
   [
    "Nicholas Lindheim",
@@ -3235,14 +3235,14 @@
   [
    "Jeff Overton",
    0.0004,
-   0.006622516556291391,
-   "+15000 (fanduel)"
+   0.001996007984031936,
+   "+50000 (bovada)"
   ],
   [
    "Christo Lamprecht",
    0.0002,
-   0.006622516556291391,
-   "+15000 (fanduel)"
+   0.001996007984031936,
+   "+50000 (bovada)"
   ],
   [
    "Robert Streb",
@@ -3259,8 +3259,8 @@
   [
    "Calen Sanderson",
    0.0,
-   0.006622516556291391,
-   "+15000 (fanduel)"
+   0.001996007984031936,
+   "+50000 (bovada)"
   ],
   [
    "Ryan Brehm",
@@ -4071,8 +4071,8 @@
   [
    "Cameron Champ",
    0.0067,
-   0.0024937655860349127,
-   "+40000 (draftkings)"
+   0.00398406374501992,
+   "+25000 (bovada)"
   ],
   [
    "Matt Atkins",
@@ -4131,20 +4131,20 @@
   [
    "Christo Lamprecht",
    0.0011,
-   0.004975124378109453,
-   "+20000 (betway)"
+   0.00398406374501992,
+   "+25000 (bovada)"
   ],
   [
    "Jeff Overton",
    0.0008,
-   0.004975124378109453,
-   "+20000 (betway)"
+   0.00398406374501992,
+   "+25000 (bovada)"
   ],
   [
    "Calen Sanderson",
    0.0001,
-   0.004975124378109453,
-   "+20000 (betway)"
+   0.00398406374501992,
+   "+25000 (bovada)"
   ],
   [
    "Ryan Brehm",
@@ -4955,8 +4955,8 @@
   [
    "Cameron Champ",
    0.0211,
-   0.0033222591362126247,
-   "+30000 (draftkings)"
+   0.009900990099009901,
+   "+10000 (bovada)"
   ],
   [
    "Matt Atkins",
@@ -5003,8 +5003,8 @@
   [
    "Christo Lamprecht",
    0.0076,
-   0.01098901098901099,
-   "+9000 (caesars)"
+   0.009900990099009901,
+   "+10000 (bovada)"
   ],
   [
    "Robert Streb",
@@ -5021,8 +5021,8 @@
   [
    "Jeff Overton",
    0.0035,
-   0.01098901098901099,
-   "+9000 (caesars)"
+   0.009900990099009901,
+   "+10000 (bovada)"
   ],
   [
    "Ryan Brehm",
@@ -5033,8 +5033,8 @@
   [
    "Calen Sanderson",
    0.0006,
-   0.01098901098901099,
-   "+9000 (caesars)"
+   0.009900990099009901,
+   "+10000 (bovada)"
   ],
   [
    "Muzzy Donohue",
